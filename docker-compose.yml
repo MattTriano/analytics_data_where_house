@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+  database:
+    build:
+      context: ./
+      dockerfile: Dockerfiles/postgis.Dockerfile
+    shm_size: 4gb
+    env_file:
+      - .env
+    networks:
+      - re_etl_net
+    ports:
+      - "5432:5432"
+    volumes:
+      - re_etl_db:/var/lib/postgresql/data/
+      - ./data_raw:/home
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}"]
+      interval: 5s
+      retries: 5
+    restart: always
+
+  db_admin:
+    build:
+      context: ./
+      dockerfile: ./Dockerfiles/pgadmin4.Dockerfile
+    env_file:
+      - .env
+    restart: always
+    depends_on:
+      - database
+    networks:
+      - re_etl_net
+    ports:
+      - "5678:80"
+    volumes:
+      - re_etl_admin:/var/lib/pgadmin
+
+  dbt_pg:
+    build:
+      context: ./
+      dockerfile: ./Dockerfiles/dbt.Dockerfile
+    env_file:
+      - .env
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./re_dbt:/usr/app
+      - ./profiles.yml:/root/.dbt/profiles.yml
+    networks:
+      - re_etl_net
+    ports:
+      - "18080:18080"
+    depends_on:
+      - database
+
+
+networks:
+  re_etl_net:
+
+volumes:
+  re_etl_db:
+  re_etl_admin:
