@@ -67,7 +67,7 @@ services:
     volumes:
       - re_etl_admin:/var/lib/pgadmin
 
-  dbt_pg:
+  dbt_proj:
     build:
       context: ./
       dockerfile: ./Dockerfiles/dbt.Dockerfile

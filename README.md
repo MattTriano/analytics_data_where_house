@@ -99,7 +99,7 @@ user@host:.../your_local_repo$ docker-compose down -v
 Check `docker ps` for the name of the container for the dbt service (it should contain the name you gave that service in the `docker-compose.yml` file near the end of the name). Then use the command below to get an interactive shell inside that container where you can execute `dbt` commands.
 
 ```bash
-user@host:.../your_local_repo$ docker exec -it <project_name>_dbt_pg_1 /bin/bash
+user@host:.../your_local_repo$ docker exec -it <project_name>_dbt_proj_1 /bin/bash
 ```
 
 ### Initialize your dbt project (if you don't already have an existing dbt project)
