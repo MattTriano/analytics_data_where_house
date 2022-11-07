@@ -1,2 +1,4 @@
-data_raw/
 .venv
+.git
+data_raw/
+notes/

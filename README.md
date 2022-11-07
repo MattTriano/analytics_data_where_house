@@ -94,6 +94,23 @@ If something goes wrong during initialization or something's wrong with the buil
 user@host:.../your_local_repo$ docker-compose down -v
 ```
 
+#### Accessing the Airflow Web UI
+
+When the airflow system has been initialized and is running, the web ui can be accessed at http://localhost:8080/, and you'll log in with username ${_AIRFLOW_WWW_USER_USERNAME} and password ${_AIRFLOW_WWW_USER_PASSWORD}.
+
+### Setting up Airflow Connections to Data Sources
+
+There are several method you can use to set up connections to data sources that the Airflow executor can use to extract, load, or transform data.
+
+* Environment variables:
+  * The naming convention is AIRFLOW_CONN_{CONN_ID}, (all uppercase; single underscores surrounding CONN). 
+  * Example: The env-var name of AIRFLOW_CONN_MY_PROD_DB will have the connection_id `my_prod_db`.
+  * The value for this env-var will have the form '<conn-type>://<login>:<password>@<host>:<port>/<schema>?param1=val1&param2=val2&...'
+
+You can also create a connection through the admin interface of the web UI.
+
+[Further information on connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html).
+
 ### Get a shell in the dbt-service container
 
 Check `docker ps` for the name of the container for the dbt service (it should contain the name you gave that service in the `docker-compose.yml` file near the end of the name). Then use the command below to get an interactive shell inside that container where you can execute `dbt` commands.
