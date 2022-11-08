@@ -13,9 +13,9 @@ echo -e "AIRFLOW_UID=$(id -u)" > .env
 to create, then add the lines below to that file and replace the fake parameter values with real ones.
 
 ```
-POSTGRES_USER=replaceMe_pg_db_admin_username
-POSTGRES_PASSWORD=replace_me_pg_pw
-POSTGRES_DB=replace_me_pg_db_name
+POSTGRES_USER=replace_me_with_airflow_metadata_db_username
+POSTGRES_PASSWORD=replace_me_with_airflow_metadata_db_password
+POSTGRES_DB=replace_me_with_airflow_metadata_db_name
 PGADMIN_DEFAULT_EMAIL=yours@email.com
 PGADMIN_DEFAULT_PASSWORD=replace_me_pgAdmin_pw
 DBT_USER=replace_me_dbt_username
@@ -27,6 +27,14 @@ AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_
 _AIRFLOW_WWW_USER_USERNAME=replace_me_with_a_username_for_Airflow_WebUI
 _AIRFLOW_WWW_USER_PASSWORD=replace_me_with_password_for_Airflow_WebUI
 AIRFLOW__CORE__FERNET_KEY=replace_me_with_a_frenet_key_you_generate_with_the_snippet_below
+```
+
+And we'll also want to create a `.env` file for a separate database to actually use as our data warehouse, which we'll name `.dwh.env` and give it the env-vars:
+
+```bash
+POSTGRES_USER=replace_me_with_data_warehouse_username
+POSTGRES_PASSWORD=replace_me_with_data_warehouse_password
+POSTGRES_DB=replace_me_with_data_warehouse_db_name
 ```
 
 And make a file named `profiles.yml`
@@ -107,7 +115,17 @@ There are several method you can use to set up connections to data sources that 
   * Example: The env-var name of AIRFLOW_CONN_MY_PROD_DB will have the connection_id `my_prod_db`.
   * The value for this env-var will have the form '<conn-type>://<login>:<password>@<host>:<port>/<schema>?param1=val1&param2=val2&...'
 
-You can also create a connection through the admin interface of the web UI.
+You can also create a connection through the admin interface of the web UI by logging in, going to **Admin > Connections** then click the **Plus** sign to add a new connection.
+* Connection Id (conn_id): your choice; you'll use this when referencing this connection in DAGs,
+* Connection Type: Postgres,
+* Host: be the name of the `docker-compose.yml` service for your data warehouse database,
+* Schema: this will be the name of the database as set in `.dwh.env` as `POSTGRES_DB`
+    * Note: this "schema" field has nothing to do with postgres schemas; the word "schema" was foolishly overloaded with several different database-related meanings),
+* Login: the `POSTGRES_USER` env-var set in `.dwh.env`,
+* Password: the `POSTGRES_PASSWORD` env-var set in `.dwh.env`,
+* Port: the internal port number that the data warehouse database is using (as defined in `docker-compose.yml`, most likly 5432)
+
+
 
 [Further information on connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html).
 
