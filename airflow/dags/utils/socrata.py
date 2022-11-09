@@ -37,14 +37,21 @@ def extract_column_details_from_table_metadata(table_metadata: Dict) -> Dict:
     try:
         resource_metadata = table_metadata["resource"]
         column_metadata_fields = [
-            'columns_name', 'columns_field_name', 'columns_datatype', 'columns_description', 'columns_format'
+            "columns_name",
+            "columns_field_name",
+            "columns_datatype",
+            "columns_description",
+            "columns_format",
         ]
-        present_col_metadata_fields = [el for el in column_metadata_fields if el in resource_metadata.keys()]
-        col_json = {field:resource_metadata[field] for field in present_col_metadata_fields}
+        present_col_metadata_fields = [
+            el for el in column_metadata_fields if el in resource_metadata.keys()
+        ]
+        col_json = {field: resource_metadata[field] for field in present_col_metadata_fields}
         return col_json
     except Exception as err:
         print(f"Exception {err} with type {type(err)} raised.")
         raise
+
 
 def has_geospatial_feature(table_metadata: Dict) -> bool:
     socrata_geo_datatypes = [
@@ -65,3 +72,31 @@ def has_geospatial_feature(table_metadata: Dict) -> bool:
         return table_has_geo_column
     else:
         raise Exception("No 'columns_datatype' field found in table_metadata")
+
+
+def validate_metadata_fields(table_metadata: Dict) -> Dict:
+    try:
+        resource_metadata = table_metadata["resource"]
+        col_fields = [
+            "name",
+            "id",
+            "description",
+            "attribution",
+            "type",
+            "updatedAt",
+            "createdAt",
+            "metadata_updated_at",
+            "data_updated_at",
+            "provenance",
+            "lens_view_type",
+            "lens_display_type",
+            "publication_date",
+        ]
+        validated_field_vals = {
+            field: get_table_metadata_attr(metadata_dict=resource_metadata, attr_name=field)
+            for field in col_fields
+        }
+        return validated_field_vals
+    except Exception as err:
+        print(f"Exception {err} with type {type(err)} raised.")
+        raise
