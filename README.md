@@ -129,7 +129,15 @@ You can also create a connection through the admin interface of the web UI by lo
 
 [Further information on connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html).
 
-### Get a shell in the dbt-service container
+### Developing DAGs
+
+DAGs put or developed in the `/<repo>/airflow/dags/` directory will quickly be available through the web UI and can be manually triggered or run there.
+
+At present, a local mount is created at `/<repo>/data_raw` (host-side) to `/opt/airflow/data_raw` (container-side).
+
+
+
+#### Get a shell in the dbt-service container
 
 Check `docker ps` for the name of the container for the dbt service (it should contain the name you gave that service in the `docker-compose.yml` file near the end of the name). Then use the command below to get an interactive shell inside that container where you can execute `dbt` commands.
 
@@ -137,7 +145,7 @@ Check `docker ps` for the name of the container for the dbt service (it should c
 user@host:.../your_local_repo$ docker exec -it <project_name>_dbt_proj_1 /bin/bash
 ```
 
-### Initialize your dbt project (if you don't already have an existing dbt project)
+#### Initialize your dbt project (if you don't already have an existing dbt project)
 
 To initialize the dbt project (assuming you don't already have one, like this repo does), enter the command below at an interactive terminal inside the dbt container
 

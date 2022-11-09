@@ -22,6 +22,7 @@ x-airflow-common:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
+    - ./data_raw:/opt/airflow/data_raw
   user: "${AIRFLOW_UID:-50000}:0"
   networks:
       - re_etl_net
@@ -158,8 +159,8 @@ services:
         function ver() {
           printf "%04d%04d%04d%04d" $${1//./ }
         }
-        mkdir -p /sources/logs /sources/dags /sources/plugins
-        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
+        mkdir -p /sources/logs /sources/dags /sources/plugins /sources/data_raw
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins,data_raw}
         exec /entrypoint airflow version
     # yamllint enable rule:line-length
     environment:
