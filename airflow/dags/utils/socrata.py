@@ -2,7 +2,7 @@ import datetime as dt
 import json
 import re
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import requests
 
@@ -16,13 +16,17 @@ class SocrataTableMetadata:
         self.column_details = self.get_column_details()
         self.has_geospatial_feature = self.table_has_geospatial_feature()
         self.data_domain = self.get_data_domain()
+        self.is_geospatial = self.is_geospatial_table()
 
     def get_table_metadata(self) -> Dict:
         api_call = f"http://api.us.socrata.com/api/catalog/v1?ids={self.table_id}"
         response = requests.get(api_call)
         if response.status_code == 200:
             response_json = response.json()
-            metadata = {"_id": self.table_id, "time_of_collection": dt.datetime.utcnow()}
+            metadata = {
+                "_id": self.table_id,
+                "time_of_collection": dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            }
             metadata.update(response_json["results"][0])
             return metadata
         else:
@@ -158,20 +162,25 @@ class SocrataTableMetadata:
                 return domain_metadata_dict
         return None
 
-    def get_latest_data_update_datetime(self) -> dt.datetime:
+    def standardize_datetime_str_repr(self, datetime_obj: Union[str, dt.datetime]) -> str:
+        if isinstance(datetime_obj, str):
+            datetime_obj = dt.datetime.strptime(datetime_obj, "%Y-%m-%dT%H:%M:%S.%fZ")
+        return datetime_obj.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def get_latest_data_update_datetime(self) -> str:
         data_updated_at = self.get_table_metadata_attr(
             attr_dict=self.resource_metadata, attr_name="data_updated_at"
         )
         if data_updated_at is not None:
-            return dt.datetime.strptime(data_updated_at, "%Y-%m-%dT%H:%M:%S.%fZ")
+            return self.standardize_datetime_str_repr(datetime_obj=data_updated_at)
         return None
 
-    def get_latest_metadata_update_datetime(self) -> dt.datetime:
+    def get_latest_metadata_update_datetime(self) -> str:
         metadata_updated_at = self.get_table_metadata_attr(
             attr_dict=self.resource_metadata, attr_name="metadata_updated_at"
         )
         if metadata_updated_at is not None:
-            return dt.datetime.strptime(metadata_updated_at, "%Y-%m-%dT%H:%M:%S.%fZ")
+            return self.standardize_datetime_str_repr(datetime_obj=metadata_updated_at)
         return None
 
     def get_data_download_url(self, export_format: str = "GeoJSON") -> str:
