@@ -1,10 +1,20 @@
 from typing import List
 
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 import pandas as pd
 from sqlalchemy import inspect, text
 from sqlalchemy.schema import CreateSchema
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.dialects.postgresql import insert
+
+
+def get_pg_engine(conn_id: str) -> Engine:
+    try:
+        pg_hook = PostgresHook(conn_id)
+        engine = pg_hook.get_sqlalchemy_engine()
+        return engine
+    except Exception as e:
+        print(f"Failed to generate engine to pg db using conn_id {conn_id}. Error: {e}, {type(e)}")
 
 
 def get_data_schema_names(engine: Engine) -> List:
