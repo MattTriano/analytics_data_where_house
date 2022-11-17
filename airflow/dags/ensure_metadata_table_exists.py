@@ -1,11 +1,11 @@
 import datetime as dt
 import logging
-from typing import Dict
 
 from airflow.decorators import dag, task
+from airflow.operators.empty import EmptyOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-
-# from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.utils.trigger_rule import TriggerRule
 from sqlalchemy.engine.base import Engine
 
 from utils.db import (
@@ -37,8 +37,8 @@ def ensure_metadata_table_exists():
                 f"Failed to generate engine to pg db using conn_id {conn_id}. Error: {e}, {type(e)}"
             )
 
-    @task.branch
-    def db_has_metadata_schema(conn_id: str) -> str:
+    @task.branch(trigger_rule=TriggerRule.ALL_DONE)
+    def metadata_schema_exists(conn_id: str) -> str:
         if not database_has_schema(engine=_get_pg_engine(conn_id=conn_id), schema_name="metadata"):
             task_logger.info(
                 f"Schema 'metadata' not in database. Branching to create_metadata_schema task."
@@ -48,13 +48,9 @@ def ensure_metadata_table_exists():
             task_logger.info(
                 f"Schema 'metadata' in database. Branching to table_exists_in_schema task."
             )
-            return "table_exists_in_schema"
+            return "metadata_table_exists"
 
-    @task
-    def end() -> str:
-        task_logger.info(f"Ending DAG execution.")
-
-    @task
+    @task(trigger_rule=TriggerRule.ALL_DONE)
     def create_metadata_schema() -> None:
         task_logger.info(f"inside create_metadata_schema")
         engine = _get_pg_engine(conn_id=POSTGRES_CONN_ID)
@@ -73,34 +69,44 @@ def ensure_metadata_table_exists():
         except Exception as e:
             print(f"Failed to create metadata schema. Error: {e}, {type(e)}")
 
-    @task.branch
-    def table_exists_in_schema(
-        conn_id: str, schema_name: str = "metadata", table_name: str = "metadata"
+    @task.branch(trigger_rule=TriggerRule.ALL_DONE)
+    def metadata_table_exists(
+        conn_id: str,
     ) -> str:
+        schema_name = "metadata"
+        table_name = "table_metadata"
         tables_in_metadata_schema = get_data_table_names_in_schema(
             engine=_get_pg_engine(conn_id=conn_id), schema_name=schema_name
         )
         if table_name not in tables_in_metadata_schema:
             task_logger.info(f"Table {table_name} not found in schema {schema_name}. Creating")
+            task_logger.info(f"tables_in_metadata_schema: {tables_in_metadata_schema}")
             return "create_metadata_table"
         else:
             task_logger.info(f"Table {table_name} found in schema {schema_name}.")
-            return "end"
+            return "metadata_table_already_exists"
 
-    @task
-    def create_metadata_table(conn_id: str) -> str:
-        task_logger.info(f"Placeholder for create_metadata_table functionality.")
-
-    metadata_schema_exists_branch_1 = db_has_metadata_schema(conn_id=POSTGRES_CONN_ID)
-
+    metadata_schema_exists_branch_1 = metadata_schema_exists(conn_id=POSTGRES_CONN_ID)
     create_metadata_schema_1 = create_metadata_schema()
-    table_exists_in_schema_1 = table_exists_in_schema(conn_id=POSTGRES_CONN_ID)
-    create_metadata_table_1 = create_metadata_table(conn_id=POSTGRES_CONN_ID)
-    end_1 = end()
+    table_exists_in_schema_1 = metadata_table_exists(conn_id=POSTGRES_CONN_ID)
+    create_metadata_table_1 = PostgresOperator(
+        task_id="create_metadata_table",
+        postgres_conn_id=POSTGRES_CONN_ID,
+        sql="sql/create_metadata_table.sql",
+        trigger_rule=TriggerRule.ALL_DONE,
+    )
+    metadata_table_exists_1 = EmptyOperator(
+        task_id="metadata_table_already_exists", trigger_rule=TriggerRule.ALL_DONE
+    )
+    end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.ALL_DONE)
 
     metadata_schema_exists_branch_1 >> create_metadata_schema_1 >> create_metadata_table_1 >> end_1
-    metadata_schema_exists_branch_1 >> table_exists_in_schema_1 >> create_metadata_table_1 >> end_1
-    metadata_schema_exists_branch_1 >> table_exists_in_schema_1 >> end_1
+    (
+        metadata_schema_exists_branch_1
+        >> table_exists_in_schema_1
+        >> [create_metadata_table_1, metadata_table_exists_1]
+        >> end_1
+    )
 
 
-chack_metadata_schema_dag = ensure_metadata_table_exists()
+check_metadata_schema_dag = ensure_metadata_table_exists()
