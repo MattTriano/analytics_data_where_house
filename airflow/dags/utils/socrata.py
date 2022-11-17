@@ -4,7 +4,11 @@ import re
 from pathlib import Path
 from typing import Dict, Optional, Union
 
+import pandas as pd
 import requests
+from sqlalchemy.engine.base import Engine
+
+from db import execute_result_returning_query
 
 
 class SocrataTableMetadata:
@@ -191,3 +195,44 @@ class SocrataTableMetadata:
             return (
                 f"https://{self.data_domain}/api/views/{self.table_id}/rows.csv?accessType=DOWNLOAD"
             )
+
+    def get_prior_metadata_checks_from_db(self, engine: Engine) -> pd.DataFrame:
+        results_df = execute_result_returning_query(
+            query=f"""
+                SELECT *
+                FROM metadata.table_metadata
+                WHERE table_id = '{self.table_id}';
+            """,
+            engine=engine,
+        )
+        return results_df
+
+    def get_table_metadata_check_template(self) -> Dict:
+        return {
+            "table_id": self.table_id,
+            "table_name": self.table_name,
+            "source_data_last_updated": self.get_latest_data_update_datetime(),
+            "source_metadata_last_updated": self.get_latest_metadata_update_datetime(),
+            "updated_data_available": None,
+            "updated_metadata_available": None,
+            "data_pulled_this_check": None,
+            "time_of_check": self.metadata["time_of_collection"],
+            "metadata_json": self.metadata,
+        }
+
+    def check_table_metadata(self, engine: Engine):
+        check_df = self.get_prior_metadata_checks_from_db(engine=engine)
+        table_check = self.get_table_metadata_check_template()
+        table_check["updated_data_available"] = False
+        table_check["updated_metadata_available"] = False
+        if len(check_df) == 0:
+            table_check["updated_data_available"] = True
+            table_check["updated_metadata_available"] = True
+        else:
+            data_pull_mask = check_df["data_pulled_this_check"] == True
+            latest_pull = check_df.loc[data_pull_mask, "time_of_check"].max()
+            if self.get_latest_data_update_datetime() > latest_pull:
+                table_check["updated_data_available"] = True
+            if self.get_latest_metadata_update_datetime() > latest_pull:
+                table_check["updated_metadata_available"] = True
+        self.table_check
