@@ -12,7 +12,9 @@ from db import execute_result_returning_query
 
 
 class SocrataTableMetadata:
-    def __init__(self, table_id: str, table_name: Optional[str] = None):
+    def __init__(
+        self, table_id: str, table_name: Optional[str] = None, download_format: Optional[str] = None
+    ):
         self.table_id = table_id
         self.metadata = self.get_table_metadata()
         self.table_name = self.validate_table_name(table_name=table_name)
@@ -21,6 +23,8 @@ class SocrataTableMetadata:
         self.has_geospatial_feature = self.table_has_geospatial_feature()
         self.data_domain = self.get_data_domain()
         self.is_geospatial = self.is_geospatial_table()
+        self.download_format = self.validate_download_format(download_format=download_format)
+        self.table_check_metadata = self.get_initial_table_check_metadata()
 
     def get_table_metadata(self) -> Dict:
         api_call = f"http://api.us.socrata.com/api/catalog/v1?ids={self.table_id}"
@@ -107,16 +111,6 @@ class SocrataTableMetadata:
                 return any([col_dtype in socrata_geo_datatypes for col_dtype in column_datatypes])
         return False
 
-    def get_valid_geospatial_export_formats(self) -> Dict:
-        valid_export_formats = {
-            "shp": "Shapefile",
-            "shapefile": "Shapefile",
-            "geojson": "GeoJSON",
-            "kmz": "KMZ",
-            "kml": "KML",
-        }
-        return valid_export_formats
-
     def table_has_geo_type_view(self) -> bool:
         table_view_type = self.get_table_metadata_attr(
             attr_dict=self.resource_metadata, attr_name="lens_view_type"
@@ -141,14 +135,55 @@ class SocrataTableMetadata:
             and (self.table_has_geo_type_view() or self.table_has_map_type_display())
         ) or (self.has_geospatial_feature)
 
-    def format_geospatial_export_format(self, export_format: str) -> str:
-        valid_export_formats = self.get_valid_geospatial_export_formats()
-        if export_format in valid_export_formats.values():
-            return export_format
+    def get_valid_download_formats(self) -> Dict:
+        valid_download_formats = {
+            "flat": {
+                "CSV": "csv",
+                "TSV": "tsv",
+            },
+            "gis": {
+                "shp": "Shapefile",
+                "shapefile": "Shapefile",
+                "geojson": "GeoJSON",
+                "kmz": "KMZ",
+                "kml": "KML",
+            },
+        }
+        return valid_download_formats
+
+    def assert_download_format_is_supported(self, download_format: str) -> None:
+        valid_download_formats = self.get_valid_download_formats()
+        all_pairs = {}
+        [all_pairs.update(kv_pairs) for kv_pairs in valid_download_formats.values()]
+        if (download_format not in all_pairs.keys()) and (
+            download_format not in all_pairs.values()
+        ):
+            raise Exception(
+                f"Download format '{download_format}' isn't supported. Pick from {all_pairs}"
+            )
+
+    def validate_download_format(self, download_format: str = None) -> str:
+        if download_format is None:
+            if self.is_geospatial:
+                return "geojson"
+            else:
+                return "csv"
         else:
-            if export_format.lower() not in valid_export_formats.keys():
-                raise Exception("Invalid geospatial format")
-            return valid_export_formats[export_format.lower()]
+            download_format = download_format.lower()
+            self.assert_download_format_is_supported(download_format=download_format)
+            valid_download_formats = self.get_valid_download_formats()
+            if download_format in valid_download_formats.values():
+                return download_format
+            elif download_format in valid_download_formats.keys():
+                return valid_download_formats[download_format]
+            else:
+                raise Exception("Very invalid download format (should have already been caught)")
+
+    def get_data_download_url(self) -> str:
+        if self.is_geospatial:
+            return f"https://{self.data_domain}/api/geospatial/{self.table_id}?method=export&format={self.download_format}"
+        else:
+            return f"https://{self.data_domain}/api/views/{self.table_id}/rows.{self.download_format}?accessType=DOWNLOAD"
 
     def get_table_classification_metadata(self) -> Dict:
         return self.get_table_metadata_attr(attr_dict=self.metadata, attr_name="classification")
@@ -187,15 +222,6 @@ class SocrataTableMetadata:
             return self.standardize_datetime_str_repr(datetime_obj=metadata_updated_at)
         return None
 
-    def get_data_download_url(self, export_format: str = "GeoJSON") -> str:
-        export_format = self.format_geospatial_export_format(export_format=export_format)
-        if self.is_geospatial_table():
-            return f"https://{self.data_domain}/api/geospatial/{self.table_id}?method=export&format={export_format}"
-        else:
-            return (
-                f"https://{self.data_domain}/api/views/{self.table_id}/rows.csv?accessType=DOWNLOAD"
-            )
-
     def get_prior_metadata_checks_from_db(self, engine: Engine) -> pd.DataFrame:
         results_df = execute_result_returning_query(
             query=f"""
@@ -207,10 +233,11 @@ class SocrataTableMetadata:
         )
         return results_df
 
-    def get_table_metadata_check_template(self) -> Dict:
+    def get_initial_table_check_metadata(self) -> None:
         return {
             "table_id": self.table_id,
             "table_name": self.table_name,
+            # "data_download_url": self.
             "source_data_last_updated": self.get_latest_data_update_datetime(),
             "source_metadata_last_updated": self.get_latest_metadata_update_datetime(),
             "updated_data_available": None,
@@ -222,17 +249,15 @@ class SocrataTableMetadata:
 
     def check_table_metadata(self, engine: Engine):
         check_df = self.get_prior_metadata_checks_from_db(engine=engine)
-        table_check = self.get_table_metadata_check_template()
-        table_check["updated_data_available"] = False
-        table_check["updated_metadata_available"] = False
+        self.table_check_metadata["updated_data_available"] = False
+        self.table_check_metadata["updated_metadata_available"] = False
         if len(check_df) == 0:
-            table_check["updated_data_available"] = True
-            table_check["updated_metadata_available"] = True
+            self.table_check_metadata["updated_data_available"] = True
+            self.table_check_metadata["updated_metadata_available"] = True
         else:
             data_pull_mask = check_df["data_pulled_this_check"] == True
             latest_pull = check_df.loc[data_pull_mask, "time_of_check"].max()
             if self.get_latest_data_update_datetime() > latest_pull:
-                table_check["updated_data_available"] = True
+                self.table_check_metadata["updated_data_available"] = True
             if self.get_latest_metadata_update_datetime() > latest_pull:
-                table_check["updated_metadata_available"] = True
-        self.table_check
+                self.table_check_metadata["updated_metadata_available"] = True
