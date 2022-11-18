@@ -1,29 +1,40 @@
+from dataclasses import dataclass
 import datetime as dt
 import json
 import re
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Tuple
 
 import pandas as pd
 import requests
 from sqlalchemy.engine.base import Engine
 
-from db import execute_result_returning_query
+from .db import execute_result_returning_query
+
+
+@dataclass
+class SocrataTable:
+    table_id: str
+    table_name: Optional[str] = None
+    download_format: Optional[str] = None
 
 
 class SocrataTableMetadata:
     def __init__(
-        self, table_id: str, table_name: Optional[str] = None, download_format: Optional[str] = None
+        self,
+        socrata_table: SocrataTable,
     ):
-        self.table_id = table_id
+        self.table_id = socrata_table.table_id
         self.metadata = self.get_table_metadata()
-        self.table_name = self.validate_table_name(table_name=table_name)
+        self.table_name = self.validate_table_name(table_name=socrata_table.table_name)
         self.resource_metadata = self.get_resource_metadata()
         self.column_details = self.get_column_details()
         self.has_geospatial_feature = self.table_has_geospatial_feature()
         self.data_domain = self.get_data_domain()
         self.is_geospatial = self.is_geospatial_table()
-        self.download_format = self.validate_download_format(download_format=download_format)
+        self.download_format = self.validate_download_format(
+            download_format=socrata_table.download_format
+        )
         self.table_check_metadata = self.get_initial_table_check_metadata()
 
     def get_table_metadata(self) -> Dict:
@@ -165,7 +176,7 @@ class SocrataTableMetadata:
     def validate_download_format(self, download_format: str = None) -> str:
         if download_format is None:
             if self.is_geospatial:
-                return "geojson"
+                return "GeoJSON"
             else:
                 return "csv"
         else:
@@ -234,10 +245,15 @@ class SocrataTableMetadata:
         return results_df
 
     def get_initial_table_check_metadata(self) -> None:
+        """There's probably a better name for this idea than 'table_check_metadata'. The goal
+        is to see if fresh data is available, log the results of that freshness-check in the dwh,
+        and then triger data refreshing if appropriate."""
         return {
             "table_id": self.table_id,
             "table_name": self.table_name,
-            # "data_download_url": self.
+            "download_format": self.download_format,
+            "is_geospatial": self.is_geospatial,
+            "data_download_url": self.get_data_download_url(),
             "source_data_last_updated": self.get_latest_data_update_datetime(),
             "source_metadata_last_updated": self.get_latest_metadata_update_datetime(),
             "updated_data_available": None,
@@ -257,7 +273,18 @@ class SocrataTableMetadata:
         else:
             data_pull_mask = check_df["data_pulled_this_check"] == True
             latest_pull = check_df.loc[data_pull_mask, "time_of_check"].max()
-            if self.get_latest_data_update_datetime() > latest_pull:
+            latest_source_data_update = self.get_latest_data_update_datetime()
+            latest_source_metadata_update = self.get_latest_metadata_update_datetime()
+            if latest_source_data_update > latest_pull:
                 self.table_check_metadata["updated_data_available"] = True
-            if self.get_latest_metadata_update_datetime() > latest_pull:
+            if latest_source_metadata_update > latest_pull:
                 self.table_check_metadata["updated_metadata_available"] = True
+            if (latest_pull >= latest_source_data_update) & (
+                latest_pull >= latest_source_metadata_update
+            ):
+                self.table_check_metadata["data_pulled_this_check"] = False
+
+    def get_insertable_check_table_metadata_record(self, engine: Engine) -> Tuple:
+        if self.table_check_metadata["updated_data_available"] is None:
+            self.check_table_metadata(engine=engine)
+        return tuple(self.table_check_metadata.values())
