@@ -284,7 +284,22 @@ class SocrataTableMetadata:
             ):
                 self.table_check_metadata["data_pulled_this_check"] = False
 
-    def get_insertable_check_table_metadata_record(self, engine: Engine) -> Tuple:
+    def get_insertable_check_table_metadata_record(
+        self, engine: Engine, output_type: str = "DataFrame"
+    ) -> Union[pd.DataFrame, Tuple]:
+        output_type = output_type.lower()
+        assert output_type in [
+            "dataframe",
+            "tuple",
+        ], "Invalid 'output_type'; only [DataFrame or Tuple] are valid"
         if self.table_check_metadata["updated_data_available"] is None:
             self.check_table_metadata(engine=engine)
-        return tuple(self.table_check_metadata.values())
+        if output_type == "tuple":
+            return tuple(self.table_check_metadata.values())
+        else:
+            table_check_dict = self.table_check_metadata.copy()
+            for key in table_check_dict.keys():
+                table_check_dict[key] = [table_check_dict[key]]
+            table_check_df = pd.DataFrame(table_check_dict)
+            # table_check_df["metadata_json"] = table_check_df["metadata_json"].apply(json.dumps)
+            return table_check_df
