@@ -8,8 +8,22 @@ from typing import Dict, Optional, Union, Tuple
 import pandas as pd
 import requests
 from sqlalchemy.engine.base import Engine
+from sqlalchemy import select, insert
+from sqlalchemy.orm import Session
 
-from .db import execute_result_returning_query
+# for airflow container
+from .db import (
+    execute_result_returning_query,
+    get_reflected_db_table,
+    execute_result_returning_orm_query,
+)
+
+# for interactive dev work
+# from db import (
+#     execute_result_returning_query,
+#     get_reflected_db_table,
+#     execute_result_returning_orm_query,
+# )
 
 
 @dataclass
@@ -36,6 +50,7 @@ class SocrataTableMetadata:
             download_format=socrata_table.download_format
         )
         self.table_check_metadata = self.get_initial_table_check_metadata()
+        self.freshness_check_id = None
 
     def get_table_metadata(self) -> Dict:
         api_call = f"http://api.us.socrata.com/api/catalog/v1?ids={self.table_id}"
@@ -284,22 +299,60 @@ class SocrataTableMetadata:
             ):
                 self.table_check_metadata["data_pulled_this_check"] = False
 
-    def get_insertable_check_table_metadata_record(
-        self, engine: Engine, output_type: str = "DataFrame"
-    ) -> Union[pd.DataFrame, Tuple]:
-        output_type = output_type.lower()
-        assert output_type in [
-            "dataframe",
-            "tuple",
-        ], "Invalid 'output_type'; only [DataFrame or Tuple] are valid"
+    def get_this_tables_prior_freshness_checks_from_db(self, engine: Engine) -> pd.DataFrame:
+        table_metadata_obj = get_reflected_db_table(
+            engine=engine, table_name="table_metadata", schema_name="metadata"
+        )
+        select_query = select(table_metadata_obj).where(
+            table_metadata_obj.c.table_id == self.table_check_metadata["table_id"]
+        )
+        return execute_result_returning_orm_query(engine=engine, select_query=select_query)
+
+    def get_current_freshness_check_metadata_from_db(self, engine: Engine) -> pd.DataFrame:
         if self.table_check_metadata["updated_data_available"] is None:
             self.check_table_metadata(engine=engine)
-        if output_type == "tuple":
-            return tuple(self.table_check_metadata.values())
+        prior_freshness_check_df = self.get_this_table_ids_prior_freshness_checks_from_db(
+            engine=engine
+        )
+        return prior_freshness_check_df.loc[
+            prior_freshness_check_df["time_of_check"] == self.table_check_metadata["time_of_check"]
+        ].reset_index(drop=True)
+
+    def insert_current_freshness_check_to_db(self, engine: Engine) -> None:
+        if self.table_check_metadata["updated_data_available"] is None:
+            self.check_table_metadata(engine=engine)
+        metadata_table = get_reflected_db_table(
+            engine=engine, table_name="table_metadata", schema_name="metadata"
+        )
+        if self.freshness_check_id is None:
+            insert_statement = (
+                insert(metadata_table).values(self.table_check_metadata).returning(metadata_table)
+            )
+            result_df = execute_result_returning_query(engine=engine, query=insert_statement)
+            if len(result_df) != 1:
+                raise Exception("There should only be one result returned for this freshness check")
+            self.freshness_check_id = result_df["id"].max()
         else:
-            table_check_dict = self.table_check_metadata.copy()
-            for key in table_check_dict.keys():
-                table_check_dict[key] = [table_check_dict[key]]
-            table_check_df = pd.DataFrame(table_check_dict)
-            # table_check_df["metadata_json"] = table_check_df["metadata_json"].apply(json.dumps)
-            return table_check_df
+            # I'd rather separate insert and update logic, and I don't know if I want to
+            # throw an exception for this (although that may change).
+            pass
+
+    # def get_insertable_check_table_metadata_record(
+    #     self, engine: Engine, output_type: str = "DataFrame"
+    # ) -> Union[pd.DataFrame, Tuple]:
+    #     output_type = output_type.lower()
+    #     assert output_type in [
+    #         "dataframe",
+    #         "tuple",
+    #     ], "Invalid 'output_type'; only [DataFrame or Tuple] are valid"
+    #     if self.table_check_metadata["updated_data_available"] is None:
+    #         self.check_table_metadata(engine=engine)
+    #     if output_type == "tuple":
+    #         return tuple(self.table_check_metadata.values())
+    #     else:
+    #         table_check_dict = self.table_check_metadata.copy()
+    #         for key in table_check_dict.keys():
+    #             table_check_dict[key] = [table_check_dict[key]]
+    #         table_check_df = pd.DataFrame(table_check_dict)
+    #         # table_check_df["metadata_json"] = table_check_df["metadata_json"].apply(json.dumps)
+    #         return table_check_df
