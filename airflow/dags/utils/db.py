@@ -1,11 +1,15 @@
 from typing import List
 
 from airflow.providers.postgres.hooks.postgres import PostgresHook
+from geoalchemy2 import Geometry, Geography  # Necessary for reflection of cols with spatial dtypes
 import pandas as pd
 from sqlalchemy import inspect, text
-from sqlalchemy.schema import CreateSchema
-from sqlalchemy.engine.base import Engine
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.exc import NoSuchTableError
+from sqlalchemy.orm import Session
+from sqlalchemy.schema import CreateSchema, MetaData, Table
+from sqlalchemy.sql.selectable import Select
 
 
 def get_pg_engine(conn_id: str) -> Engine:
@@ -62,3 +66,30 @@ def execute_structural_command(query: str, engine: Engine) -> None:
 def to_sql_on_conflict_do_nothing(table, conn, keys, data_iter) -> None:
     data = [dict(zip(keys, row)) for row in data_iter]
     conn.execute(insert(table.table).on_conflict_do_nothing(), data)
+
+
+def get_reflected_db_table(engine: Engine, table_name: str, schema_name: str) -> Table:
+    try:
+        metadata_obj = MetaData(schema=schema_name)
+        metadata_obj.reflect(bind=engine)
+        full_table_name = f"{schema_name}.{table_name}"
+        if full_table_name in metadata_obj.tables.keys():
+            return metadata_obj.tables[full_table_name]
+        else:
+            raise NoSuchTableError(f"Table {table_name} not found in schema {schema_name}.")
+    except Exception as err:
+        print(f"Error while attempting table reflection. {err}, error type: {type(err)}")
+
+
+def execute_result_returning_orm_query(
+    engine: Engine, select_query: Select, limit_n: int = None
+) -> pd.DataFrame:
+    try:
+        with Session(engine) as session:
+            if limit_n is None:
+                query_result = session.execute(select_query).all()
+            else:
+                query_result = session.execute(select_query).fetchmany(size=limit_n)
+        return pd.DataFrame(query_result)
+    except Exception as err:
+        print(f"Couldn't execute the given ORM-style query: {err}, type: {type(err)}")
