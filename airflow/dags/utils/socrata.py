@@ -325,7 +325,7 @@ class SocrataTableMetadata:
         ].reset_index(drop=True)
 
     def format_file_name(self) -> str:
-        return f"{self.table_id}_{self.time_of_check}.{self.download_format}"
+        return f"{self.table_id}_{self.metadata['time_of_collection']}.{self.download_format}"
 
     def insert_current_freshness_check_to_db(self, engine: Engine) -> None:
         if self.data_freshness_check["updated_data_available"] is None:
