@@ -147,6 +147,16 @@ def ingest_into_temporary_table(conn_id: str, **kwargs) -> SocrataTableMetadata:
     return socrata_metadata
 
 
+@task
+def update_table_metadata_in_db(conn_id: str, **kwargs) -> SocrataTableMetadata:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="extract_load_task_group.download_fresh_data")
+    socrata_metadata.update_current_freshness_check_in_db(
+        engine=get_pg_engine(conn_id=conn_id), update_payload={"data_pulled_this_check": True}
+    )
+    return socrata_metadata
+
+
 @dag(
     schedule=None,
     start_date=dt.datetime(2022, 11, 1),
@@ -173,7 +183,10 @@ def update_socrata_data_table():
     fresh_source_data_available_1 = fresher_source_data_available(socrata_metadata=metadata_3)
     extract_load_task_group_1 = extract_load_task_group(POSTGRES_CONN_ID)
 
-    fresh_source_data_available_1 >> [extract_load_task_group_1, end_1]
+    metadata_5 = update_table_metadata_in_db(conn_id=POSTGRES_CONN_ID)
+
+    fresh_source_data_available_1 >> extract_load_task_group_1 >> metadata_5
+    fresh_source_data_available_1 >> end_1
 
 
 check_table_freshness_dag = update_socrata_data_table()
