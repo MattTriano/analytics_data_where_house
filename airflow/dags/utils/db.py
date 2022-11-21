@@ -90,6 +90,7 @@ def execute_result_returning_orm_query(
                 query_result = session.execute(select_query).all()
             else:
                 query_result = session.execute(select_query).fetchmany(size=limit_n)
+            session.commit()
         return pd.DataFrame(query_result)
     except Exception as err:
         print(f"Couldn't execute the given ORM-style query: {err}, type: {type(err)}")
