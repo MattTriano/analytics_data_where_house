@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from geoalchemy2 import Geometry, Geography  # Necessary for reflection of cols with spatial dtypes
@@ -10,6 +10,7 @@ from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema, MetaData, Table
 from sqlalchemy.sql.selectable import Select
+from sqlalchemy.sql.dml import Insert, Update
 
 
 def get_pg_engine(conn_id: str) -> Engine:
@@ -92,5 +93,14 @@ def execute_result_returning_orm_query(
                 query_result = session.execute(select_query).fetchmany(size=limit_n)
             session.commit()
         return pd.DataFrame(query_result)
+    except Exception as err:
+        print(f"Couldn't execute the given ORM-style query: {err}, type: {type(err)}")
+
+
+def execute_dml_orm_query(engine: Engine, dml_stmt: Union[Insert, Update]) -> None:
+    try:
+        with Session(engine) as session:
+            session.execute(dml_stmt)
+            session.commit()
     except Exception as err:
         print(f"Couldn't execute the given ORM-style query: {err}, type: {type(err)}")

@@ -3,19 +3,20 @@ import datetime as dt
 import json
 import re
 from pathlib import Path
-from typing import Dict, Optional, Union, Tuple
+from typing import Dict, Optional, Union
 
 import pandas as pd
 import requests
 from sqlalchemy.engine.base import Engine
 from sqlalchemy import select, insert
-from sqlalchemy.orm import Session
+from sqlalchemy.dialects import postgresql
 
 # for airflow container
 from .db import (
     execute_result_returning_query,
     get_reflected_db_table,
     execute_result_returning_orm_query,
+    execute_dml_orm_query,
 )
 from .utils import typeset_zulu_tz_datetime_str
 
@@ -24,6 +25,7 @@ from .utils import typeset_zulu_tz_datetime_str
 #     execute_result_returning_query,
 #     get_reflected_db_table,
 #     execute_result_returning_orm_query,
+#     execute_dml_orm_query,
 # )
 # from utils import typeset_zulu_tz_datetime_str
 
@@ -348,22 +350,23 @@ class SocrataTableMetadata:
             # throw an exception for this (although that may change).
             pass
 
-    # def get_insertable_check_table_metadata_record(
-    #     self, engine: Engine, output_type: str = "DataFrame"
-    # ) -> Union[pd.DataFrame, Tuple]:
-    #     output_type = output_type.lower()
-    #     assert output_type in [
-    #         "dataframe",
-    #         "tuple",
-    #     ], "Invalid 'output_type'; only [DataFrame or Tuple] are valid"
-    #     if self.table_check_metadata["updated_data_available"] is None:
-    #         self.check_table_metadata(engine=engine)
-    #     if output_type == "tuple":
-    #         return tuple(self.table_check_metadata.values())
-    #     else:
-    #         table_check_dict = self.table_check_metadata.copy()
-    #         for key in table_check_dict.keys():
-    #             table_check_dict[key] = [table_check_dict[key]]
-    #         table_check_df = pd.DataFrame(table_check_dict)
-    #         # table_check_df["metadata_json"] = table_check_df["metadata_json"].apply(json.dumps)
-    #         return table_check_df
+    def update_current_freshness_check_in_db(self, engine: Engine, update_payload: Dict) -> None:
+        update_fields = update_payload.keys()
+        valid_fields = self.data_freshness_check.keys()
+        if self.freshness_check_id is None:
+            raise Exception(f"Has this freshness check already been inserted in the db?")
+        if not all([el in valid_fields for el in update_fields]):
+            invalid_fields = [el for el in update_fields if el not in valid_fields]
+            raise Exception(f"Invalid fields entered: {invalid_fields}")
+        metadata_table = get_reflected_db_table(
+            engine=engine, table_name="table_metadata", schema_name="metadata"
+        )
+        update_dict = {}
+        update_dict["id"] = self.freshness_check_id
+        update_dict.update(update_fields)
+        upsert_query = (
+            postgresql.insert(metadata_table)
+            .values(update_dict)
+            .on_conflict_do_update(index_elements=["id"], set_=update_dict)
+        )
+        execute_dml_orm_query(engine=engine, dml_stmt=upsert_query)
