@@ -337,7 +337,9 @@ class SocrataTableMetadata:
             insert_statement = (
                 insert(metadata_table).values(self.data_freshness_check).returning(metadata_table)
             )
-            result_df = execute_result_returning_query(engine=engine, query=insert_statement)
+            result_df = execute_result_returning_orm_query(
+                engine=engine, select_query=insert_statement
+            )
             if len(result_df) != 1:
                 raise Exception("There should only be one result returned for this freshness check")
             self.freshness_check_id = result_df["id"].max()
