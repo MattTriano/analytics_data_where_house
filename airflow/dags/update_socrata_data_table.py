@@ -32,18 +32,19 @@ def ingest_into_table(
     socrata_metadata: SocrataTableMetadata, conn_id: str, temp_table: bool = False
 ) -> None:
     local_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
-
     if temp_table:
         table_name = f"temp_{socrata_metadata.table_name}"
         if_exists = "replace"
     else:
-        table_name = f"temp_{socrata_metadata.table_name}"
+        table_name = f"{socrata_metadata.table_name}"
         if_exists = "fail"
     task_logger.info(f"Ingesting data to database table 'data_raw.{table_name}'")
+    source_data_updated = socrata_metadata.data_freshness_check["source_data_last_updated"]
     time_of_check = socrata_metadata.data_freshness_check["time_of_check"]
     engine = get_pg_engine(conn_id=conn_id)
     if socrata_metadata.is_geospatial:
         gdf = gpd.read_file(local_file_path)
+        gdf["source_data_updated"] = source_data_updated
         gdf["ingestion_check_time"] = time_of_check
         gdf.to_postgis(
             name=table_name,
@@ -54,6 +55,7 @@ def ingest_into_table(
         task_logger.info("Successfully ingested data using gpd.to_postgis()")
     else:
         df = pd.read_csv(local_file_path)
+        df["source_data_updated"] = source_data_updated
         df["ingestion_check_time"] = time_of_check
         df.to_sql(
             name=table_name,
@@ -77,7 +79,7 @@ def get_socrata_table_metadata(socrata_table: SocrataTable) -> SocrataTableMetad
 @task
 def extract_table_freshness_info(
     socrata_metadata: SocrataTableMetadata, conn_id: str
-) -> pd.DataFrame:
+) -> SocrataTableMetadata:
     engine = get_pg_engine(conn_id=conn_id)
     socrata_metadata.check_warehouse_data_freshness(engine=engine)
     task_logger.info(
@@ -120,7 +122,7 @@ def download_fresh_data(**kwargs) -> SocrataTableMetadata:
     return socrata_metadata
 
 
-@task.branch(trigger_rule=TriggerRule.NONE_FAILED)
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
 def table_exists_in_warehouse(socrata_metadata: SocrataTableMetadata, conn_id: str) -> str:
     tables_in_data_raw_schema = get_data_table_names_in_schema(
         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
@@ -147,10 +149,11 @@ def ingest_into_temporary_table(conn_id: str, **kwargs) -> SocrataTableMetadata:
     return socrata_metadata
 
 
-@task
+@task(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
 def update_table_metadata_in_db(conn_id: str, **kwargs) -> SocrataTableMetadata:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="extract_load_task_group.download_fresh_data")
+    task_logger.info(f"Updating table_metadata record id #{socrata_metadata.freshness_check_id}.")
     socrata_metadata.update_current_freshness_check_in_db(
         engine=get_pg_engine(conn_id=conn_id), update_payload={"data_pulled_this_check": True}
     )
@@ -172,7 +175,7 @@ def update_socrata_data_table():
         metadata_4 = download_fresh_data()
         table_exists_1 = table_exists_in_warehouse(socrata_metadata=metadata_4, conn_id=conn_id)
         ingest_to_new_1 = ingest_into_new_table_in_data_raw(conn_id=conn_id)
-        ingest_to_temp_1 = ingest_into_new_table_in_data_raw(conn_id=conn_id)
+        ingest_to_temp_1 = ingest_into_temporary_table(conn_id=conn_id)
 
         metadata_4 >> table_exists_1 >> Label("Adding Table") >> ingest_to_new_1
         metadata_4 >> table_exists_1 >> Label("Updating Table") >> ingest_to_temp_1

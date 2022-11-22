@@ -8,8 +8,7 @@ from typing import Dict, Optional, Union
 import pandas as pd
 import requests
 from sqlalchemy.engine.base import Engine
-from sqlalchemy import select, insert
-from sqlalchemy.dialects import postgresql
+from sqlalchemy import select, insert, update
 
 # for airflow container
 from .db import (
@@ -20,7 +19,7 @@ from .db import (
 )
 from .utils import typeset_zulu_tz_datetime_str
 
-# for interactive dev work
+# # for interactive dev work
 # from db import (
 #     execute_result_returning_query,
 #     get_reflected_db_table,
@@ -363,10 +362,10 @@ class SocrataTableMetadata:
         )
         update_dict = {}
         update_dict["id"] = self.freshness_check_id
-        update_dict.update(update_fields)
-        upsert_query = (
-            postgresql.insert(metadata_table)
-            .values(update_dict)
-            .on_conflict_do_update(index_elements=["id"], set_=update_dict)
+        update_dict.update(update_payload)
+        update_query = (
+            update(metadata_table)
+            .where(metadata_table.c.time_of_check == self.data_freshness_check["time_of_check"])
+            .values(data_pulled_this_check=True)
         )
-        execute_dml_orm_query(engine=engine, dml_stmt=upsert_query)
+        execute_dml_orm_query(engine=engine, dml_stmt=update_query)
