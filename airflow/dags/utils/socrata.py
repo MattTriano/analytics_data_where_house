@@ -3,27 +3,30 @@ import datetime as dt
 import json
 import re
 from pathlib import Path
-from typing import Dict, Optional, Union, Tuple
+from typing import Dict, Optional, Union
 
 import pandas as pd
 import requests
 from sqlalchemy.engine.base import Engine
-from sqlalchemy import select, insert
-from sqlalchemy.orm import Session
+from sqlalchemy import select, insert, update
 
 # for airflow container
 from .db import (
     execute_result_returning_query,
     get_reflected_db_table,
     execute_result_returning_orm_query,
+    execute_dml_orm_query,
 )
+from .utils import typeset_zulu_tz_datetime_str
 
-# for interactive dev work
+# # for interactive dev work
 # from db import (
 #     execute_result_returning_query,
 #     get_reflected_db_table,
 #     execute_result_returning_orm_query,
+#     execute_dml_orm_query,
 # )
+# from utils import typeset_zulu_tz_datetime_str
 
 
 @dataclass
@@ -49,7 +52,7 @@ class SocrataTableMetadata:
         self.download_format = self.validate_download_format(
             download_format=socrata_table.download_format
         )
-        self.table_check_metadata = self.get_initial_table_check_metadata()
+        self.data_freshness_check = self.initialize_data_freshness_check_record()
         self.freshness_check_id = None
 
     def get_table_metadata(self) -> Dict:
@@ -259,7 +262,7 @@ class SocrataTableMetadata:
         )
         return results_df
 
-    def get_initial_table_check_metadata(self) -> None:
+    def initialize_data_freshness_check_record(self) -> None:
         """There's probably a better name for this idea than 'table_check_metadata'. The goal
         is to see if fresh data is available, log the results of that freshness-check in the dwh,
         and then triger data refreshing if appropriate."""
@@ -278,57 +281,66 @@ class SocrataTableMetadata:
             "metadata_json": self.metadata,
         }
 
-    def check_table_metadata(self, engine: Engine):
+    def check_warehouse_data_freshness(self, engine: Engine):
         check_df = self.get_prior_metadata_checks_from_db(engine=engine)
-        self.table_check_metadata["updated_data_available"] = False
-        self.table_check_metadata["updated_metadata_available"] = False
-        if len(check_df) == 0:
-            self.table_check_metadata["updated_data_available"] = True
-            self.table_check_metadata["updated_metadata_available"] = True
+        self.data_freshness_check["updated_data_available"] = False
+        self.data_freshness_check["updated_metadata_available"] = False
+        data_pulled_previously_mask = check_df["data_pulled_this_check"] == True
+        if (len(check_df) == 0) or (data_pulled_previously_mask.sum() == 0):
+            self.data_freshness_check["updated_data_available"] = True
+            self.data_freshness_check["updated_metadata_available"] = True
         else:
-            data_pull_mask = check_df["data_pulled_this_check"] == True
-            latest_pull = check_df.loc[data_pull_mask, "time_of_check"].max()
-            latest_source_data_update = self.get_latest_data_update_datetime()
-            latest_source_metadata_update = self.get_latest_metadata_update_datetime()
+            latest_pull = check_df.loc[data_pulled_previously_mask, "time_of_check"].max()
+            latest_source_data_update = typeset_zulu_tz_datetime_str(
+                datetime_str=self.get_latest_data_update_datetime()
+            )
+            latest_source_metadata_update = typeset_zulu_tz_datetime_str(
+                datetime_str=self.get_latest_metadata_update_datetime()
+            )
             if latest_source_data_update > latest_pull:
-                self.table_check_metadata["updated_data_available"] = True
+                self.data_freshness_check["updated_data_available"] = True
             if latest_source_metadata_update > latest_pull:
-                self.table_check_metadata["updated_metadata_available"] = True
+                self.data_freshness_check["updated_metadata_available"] = True
             if (latest_pull >= latest_source_data_update) & (
                 latest_pull >= latest_source_metadata_update
             ):
-                self.table_check_metadata["data_pulled_this_check"] = False
+                self.data_freshness_check["data_pulled_this_check"] = False
 
     def get_this_tables_prior_freshness_checks_from_db(self, engine: Engine) -> pd.DataFrame:
         table_metadata_obj = get_reflected_db_table(
             engine=engine, table_name="table_metadata", schema_name="metadata"
         )
         select_query = select(table_metadata_obj).where(
-            table_metadata_obj.c.table_id == self.table_check_metadata["table_id"]
+            table_metadata_obj.c.table_id == self.data_freshness_check["table_id"]
         )
         return execute_result_returning_orm_query(engine=engine, select_query=select_query)
 
     def get_current_freshness_check_metadata_from_db(self, engine: Engine) -> pd.DataFrame:
-        if self.table_check_metadata["updated_data_available"] is None:
-            self.check_table_metadata(engine=engine)
+        if self.data_freshness_check["updated_data_available"] is None:
+            self.check_warehouse_data_freshness(engine=engine)
         prior_freshness_check_df = self.get_this_table_ids_prior_freshness_checks_from_db(
             engine=engine
         )
         return prior_freshness_check_df.loc[
-            prior_freshness_check_df["time_of_check"] == self.table_check_metadata["time_of_check"]
+            prior_freshness_check_df["time_of_check"] == self.data_freshness_check["time_of_check"]
         ].reset_index(drop=True)
 
+    def format_file_name(self) -> str:
+        return f"{self.table_id}_{self.metadata['time_of_collection']}.{self.download_format}"
+
     def insert_current_freshness_check_to_db(self, engine: Engine) -> None:
-        if self.table_check_metadata["updated_data_available"] is None:
-            self.check_table_metadata(engine=engine)
+        if self.data_freshness_check["updated_data_available"] is None:
+            self.check_warehouse_data_freshness(engine=engine)
         metadata_table = get_reflected_db_table(
             engine=engine, table_name="table_metadata", schema_name="metadata"
         )
         if self.freshness_check_id is None:
             insert_statement = (
-                insert(metadata_table).values(self.table_check_metadata).returning(metadata_table)
+                insert(metadata_table).values(self.data_freshness_check).returning(metadata_table)
             )
-            result_df = execute_result_returning_query(engine=engine, query=insert_statement)
+            result_df = execute_result_returning_orm_query(
+                engine=engine, select_query=insert_statement
+            )
             if len(result_df) != 1:
                 raise Exception("There should only be one result returned for this freshness check")
             self.freshness_check_id = result_df["id"].max()
@@ -337,22 +349,23 @@ class SocrataTableMetadata:
             # throw an exception for this (although that may change).
             pass
 
-    # def get_insertable_check_table_metadata_record(
-    #     self, engine: Engine, output_type: str = "DataFrame"
-    # ) -> Union[pd.DataFrame, Tuple]:
-    #     output_type = output_type.lower()
-    #     assert output_type in [
-    #         "dataframe",
-    #         "tuple",
-    #     ], "Invalid 'output_type'; only [DataFrame or Tuple] are valid"
-    #     if self.table_check_metadata["updated_data_available"] is None:
-    #         self.check_table_metadata(engine=engine)
-    #     if output_type == "tuple":
-    #         return tuple(self.table_check_metadata.values())
-    #     else:
-    #         table_check_dict = self.table_check_metadata.copy()
-    #         for key in table_check_dict.keys():
-    #             table_check_dict[key] = [table_check_dict[key]]
-    #         table_check_df = pd.DataFrame(table_check_dict)
-    #         # table_check_df["metadata_json"] = table_check_df["metadata_json"].apply(json.dumps)
-    #         return table_check_df
+    def update_current_freshness_check_in_db(self, engine: Engine, update_payload: Dict) -> None:
+        update_fields = update_payload.keys()
+        valid_fields = self.data_freshness_check.keys()
+        if self.freshness_check_id is None:
+            raise Exception(f"Has this freshness check already been inserted in the db?")
+        if not all([el in valid_fields for el in update_fields]):
+            invalid_fields = [el for el in update_fields if el not in valid_fields]
+            raise Exception(f"Invalid fields entered: {invalid_fields}")
+        metadata_table = get_reflected_db_table(
+            engine=engine, table_name="table_metadata", schema_name="metadata"
+        )
+        update_dict = {}
+        update_dict["id"] = self.freshness_check_id
+        update_dict.update(update_payload)
+        update_query = (
+            update(metadata_table)
+            .where(metadata_table.c.time_of_check == self.data_freshness_check["time_of_check"])
+            .values(data_pulled_this_check=True)
+        )
+        execute_dml_orm_query(engine=engine, dml_stmt=update_query)
