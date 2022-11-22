@@ -18,7 +18,10 @@ task_logger = logging.getLogger("airflow.task")
 
 POSTGRES_CONN_ID = "dwh_db_conn"
 
-cook_county_parcel_sales = SocrataTable(table_id="wvhk-k5uv", table_name="cook_county_parcel_sales")
+cook_county_parcel_locations = SocrataTable(
+    table_id="c49d-89sn", table_name="cook_county_parcel_locations"
+)
+SOCRATA_TABLE = cook_county_parcel_locations
 
 
 def get_local_file_path(socrata_metadata: SocrataTableMetadata) -> Path:
@@ -166,7 +169,7 @@ def update_table_metadata_in_db(conn_id: str, **kwargs) -> SocrataTableMetadata:
     catchup=False,
     tags=["metadata"],
 )
-def update_cc_parcel_sales_table():
+def update_cc_parcel_locations_table():
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
 
     @task_group
@@ -180,7 +183,7 @@ def update_cc_parcel_sales_table():
         metadata_4 >> table_exists_1 >> Label("Adding Table") >> ingest_to_new_1
         metadata_4 >> table_exists_1 >> Label("Updating Table") >> ingest_to_temp_1
 
-    metadata_1 = get_socrata_table_metadata(socrata_table=cook_county_parcel_sales)
+    metadata_1 = get_socrata_table_metadata(socrata_table=SOCRATA_TABLE)
     metadata_2 = extract_table_freshness_info(metadata_1, POSTGRES_CONN_ID)
     metadata_3 = ingest_table_freshness_check_metadata(metadata_2, POSTGRES_CONN_ID)
     fresh_source_data_available_1 = fresher_source_data_available(socrata_metadata=metadata_3)
@@ -192,4 +195,4 @@ def update_cc_parcel_sales_table():
     fresh_source_data_available_1 >> end_1
 
 
-update_cc_parcel_sales_table_dag = update_cc_parcel_sales_table()
+update_cc_parcel_locations_table_dag = update_cc_parcel_locations_table()
