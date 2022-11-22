@@ -6,10 +6,10 @@ from urllib.request import urlretrieve
 
 from airflow.decorators import dag, task, task_group
 from airflow.operators.empty import EmptyOperator
-
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.utils.trigger_rule import TriggerRule
+from airflow.utils.edgemodifier import Label
 import pandas as pd
 import geopandas as gpd
 
@@ -21,6 +21,13 @@ task_logger = logging.getLogger("airflow.task")
 POSTGRES_CONN_ID = "dwh_db_conn"
 
 chicago_cta_stations_table = SocrataTable(table_id="8pix-ypme", table_name="chicago_cta_stations")
+
+
+def get_local_file_path(socrata_metadata: SocrataTableMetadata) -> Path:
+    output_dir = Path("data_raw").resolve()
+    output_dir.mkdir(exist_ok=True)
+    local_file_path = output_dir.joinpath(socrata_metadata.format_file_name())
+    return local_file_path
 
 
 @dag(
@@ -75,18 +82,13 @@ def check_table_freshness():
         else:
             return "end"
 
-    @task_group
+    @task_group(group_id="EL_task_group")
     def extract_load_task_group(socrata_metadata: SocrataTableMetadata, conn_id: str) -> None:
-        def get_local_file_path(socrata_metadata: SocrataTableMetadata) -> Path:
-            output_dir = Path("data_raw").resolve()
-            output_dir.mkdir(exist_ok=True)
-            local_file_path = output_dir.joinpath(socrata_metadata.format_file_name())
-            return local_file_path
-
         @task
-        def download_fresh_data(socrata_metadata: SocrataTableMetadata) -> None:
+        def download_fresh_data(socrata_metadata: SocrataTableMetadata) -> SocrataTableMetadata:
             output_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
             urlretrieve(url=socrata_metadata.get_data_download_url(), filename=output_file_path)
+            return socrata_metadata
 
         @task.branch(trigger_rule=TriggerRule.ALL_DONE)
         def table_exists_in_warehouse(
@@ -144,6 +146,7 @@ def check_table_freshness():
                 )
 
         socrata_metadata_1 = download_fresh_data(socrata_metadata=socrata_metadata)
+
         table_exists_1 = table_exists_in_warehouse(
             socrata_metadata=socrata_metadata_1, conn_id=conn_id
         )
@@ -176,6 +179,7 @@ def check_table_freshness():
     fresh_source_data_available_1 = fresher_source_data_available(
         socrata_metadata=socrata_table_metadata_2
     )
+    # fresh_source_data_available_1 = download_fresh_data(socrata_metadata=fresh_source_data_available_1)
     extract_load_task_group_1 = extract_load_task_group(
         socrata_metadata=socrata_table_metadata_2, conn_id=POSTGRES_CONN_ID
     )
