@@ -22,7 +22,7 @@ x-airflow-common:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
-    - ./data_raw:/opt/airflow/data_raw
+    - ./airflow/data_raw:/opt/airflow/data_raw
   user: "${AIRFLOW_UID:-50000}:0"
   networks:
       - re_etl_net

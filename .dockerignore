@@ -1,4 +1,6 @@
 .venv
 .git
-data_raw/
-notes/
+.vscode/
+notes/*
+airflow/data_raw*
+airflow/logs*
