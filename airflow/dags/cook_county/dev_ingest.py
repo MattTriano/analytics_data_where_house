@@ -14,7 +14,7 @@ from utils.db import get_pg_engine, execute_structural_command
 from utils.utils import (
     get_lines_in_file,
     produce_ingest_slices_for_gpd_read_file,
-    produce_ingest_indexes_for_gpd_read_file,
+    produce_slice_indices_for_gpd_read_file,
 )
 
 task_logger = logging.getLogger("airflow.task")
@@ -109,9 +109,9 @@ def get_lines_in_geojson_file(file_path) -> int:
 
 
 @task
-def get_geospatial_load_indexes(file_path: Path, task_logger: Logger):
+def get_geospatial_load_indices(file_path: Path, task_logger: Logger):
     n_rows = get_lines_in_geojson_file(file_path=file_path)
-    indexes = produce_ingest_indexes_for_gpd_read_file(n_rows=n_rows, rows_per_batch=2000)
+    indexes = produce_slice_indices_for_gpd_read_file(n_rows=n_rows, rows_per_batch=2000)
 
     task_logger.info(f"slices spanning data: {indexes}")
     return indexes
@@ -193,7 +193,7 @@ def ingest_geojson_data_in_indexes(
 
 @dag(schedule=None, start_date=dt.datetime(2022, 11, 1), catchup=False, tags=["metadata"])
 def an_ingest_dag():
-    ingest_indexes_1 = get_geospatial_load_indexes(
+    ingest_indexes_1 = get_geospatial_load_indices(
         file_path=Path("/opt/airflow/data_raw/hvnx-qtky_2022-11-27T14:59:04.975359Z.GeoJSON"),
         task_logger=task_logger,
     )
