@@ -8,6 +8,7 @@ from airflow.decorators import dag, task_group, task
 from airflow.operators.empty import EmptyOperator
 from airflow.utils.trigger_rule import TriggerRule
 from airflow.utils.edgemodifier import Label
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 from utils.socrata import SocrataTable, SocrataTableMetadata
 from utils.db import execute_structural_command
@@ -54,14 +55,14 @@ def fresher_source_data_available(
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
-def table_exists_in_warehouse(socrata_metadata: SocrataTableMetadata, conn_id: str) -> str:
+def table_exists_in_data_raw(socrata_metadata: SocrataTableMetadata, conn_id: str) -> str:
     tables_in_data_raw_schema = get_data_table_names_in_schema(
         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
     )
     if socrata_metadata.table_name not in tables_in_data_raw_schema:
-        return "extract_load_task_group.ingest_into_new_table_in_data_raw"
+        return "load_data_tg.create_table_in_data_raw"
     else:
-        return "extract_load_task_group.ingest_into_temporary_table"
+        return "load_data_tg.file_ext_branch_router"
 
 
 @task
@@ -77,13 +78,28 @@ def download_fresh_data(**kwargs) -> SocrataTableMetadata:
     return socrata_metadata
 
 
+@task
+def create_table_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> SocrataTableMetadata:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+    create_data_raw_table(
+        socrata_metadata=socrata_metadata,
+        conn_id=conn_id,
+        task_logger=task_logger,
+        temp_table=False,
+    )
+    return socrata_metadata
+
+
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
-def file_ext_branch_router(socrata_metadata: SocrataTableMetadata) -> str:
+def file_ext_branch_router(**kwargs) -> str:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
     dl_format = socrata_metadata.download_format
     if dl_format.lower() == "geojson":
-        return "load_data_tg.ingest_geojson_data.drop_temp_table"
+        return "load_data_tg.load_geojson_data.drop_temp_table"
     elif dl_format.lower() == "csv":
-        return "load_data_tg.ingest_csv_data.drop_temp_table"
+        return "load_data_tg.load_csv_data.drop_temp_table"
     else:
         raise Exception(f"Download format '{dl_format}' not supported yet. CSV or GeoJSON for now")
 
@@ -117,8 +133,6 @@ def create_temp_table_for_geojson_data(
         execute_structural_command(
             query=f"""
                 CREATE TABLE {full_temp_table_name} (
-                    source_data_updated TEXT,
-                    ingestion_check_time TEXT,
                     json_data JSONB
                 );
                 """,
@@ -139,31 +153,84 @@ def create_temp_table_for_csv_data(
     return socrata_metadata
 
 
+@task
+def ingest_csv_data(
+    socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
+) -> SocrataTableMetadata:
+    try:
+        full_temp_table_name = f"data_raw.temp_{socrata_metadata.table_name}"
+        file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+
+        postgres_hook = PostgresHook(postgres_conn_id=conn_id)
+        conn = postgres_hook.get_conn()
+        cur = conn.cursor()
+        with open(file_path, "r") as file:
+            cur.copy_expert(
+                f"COPY {full_temp_table_name} FROM {file_path} WITH CSV HEADER DELIMITER AS ',';",
+                file,
+            )
+        conn.commit()
+    except Exception as e:
+        task_logger.info(f"Failed to ingest csv file to temp table. Error: {e}, {type(e)}")
+
+
+@task
+def ingest_geojson_data(
+    socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
+) -> SocrataTableMetadata:
+    try:
+        full_temp_table_name = f"data_raw.temp_{socrata_metadata.table_name}"
+        file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+
+        postgres_hook = PostgresHook(postgres_conn_id=conn_id)
+        conn = postgres_hook.get_conn()
+        cur = conn.cursor()
+        with open(file_path, "r") as file:
+            cur.copy_expert(
+                f"COPY {full_temp_table_name} FROM PROGRAM 'jq -c -r .[] < {file_path}';", file
+            )
+        conn.commit()
+    except Exception as e:
+        task_logger.info(f"Failed to ingest geojson file to temp table. Error: {e}, {type(e)}")
+
+
 @task_group
-def ingest_geojson_data(route_str: str) -> SocrataTableMetadata:
-    drop_temp_geoj_1 = drop_temp_table(route_str=route_str)
-    create_temp_geoj_1 = create_temp_table_for_geojson_data(socrata_metadata=drop_temp_geoj_1)
+def load_geojson_data(route_str: str) -> SocrataTableMetadata:
+    drop_temp_geojson_1 = drop_temp_table(route_str=route_str)
+    create_temp_geojson_1 = create_temp_table_for_geojson_data(socrata_metadata=drop_temp_geojson_1)
+    ingest_temp_geojson_1 = ingest_geojson_data(socrata_metadata=create_temp_geojson_1)
 
-    chain(drop_temp_geoj_1, create_temp_geoj_1)
+    chain(drop_temp_geojson_1, create_temp_geojson_1, ingest_temp_geojson_1)
 
 
 @task_group
-def ingest_csv_data(route_str: str) -> SocrataTableMetadata:
+def load_csv_data(route_str: str) -> SocrataTableMetadata:
     drop_temp_csv_1 = drop_temp_table(route_str=route_str)
     create_temp_csv_1 = create_temp_table_for_csv_data(socrata_metadata=drop_temp_csv_1)
+    ingest_temp_csv_1 = ingest_csv_data(socrata_metadata=create_temp_csv_1)
 
-    chain(drop_temp_csv_1, create_temp_csv_1)
+    chain(drop_temp_csv_1, create_temp_csv_1, ingest_temp_csv_1)
 
 
 @task_group
 def load_data_tg(socrata_metadata: SocrataTableMetadata) -> SocrataTableMetadata:
     task_logger.info(f"Entered load_data_tg task_group")
-    file_ext_route_1 = file_ext_branch_router(socrata_metadata=socrata_metadata)
+    table_exists_1 = table_exists_in_data_raw(socrata_metadata=socrata_metadata)
+    create_staging_table_1 = create_table_in_data_raw()
 
-    geojson_route_1 = ingest_geojson_data(route_str=file_ext_route_1)
-    csv_route_1 = ingest_csv_data(route_str=file_ext_route_1)
+    file_ext_route_1 = file_ext_branch_router()
 
-    chain(file_ext_route_1, [geojson_route_1, csv_route_1])
+    geojson_route_1 = load_geojson_data(route_str=file_ext_route_1)
+    csv_route_1 = load_csv_data(route_str=file_ext_route_1)
+
+    chain(table_exists_1, Label("Table Exists"), file_ext_route_1, [geojson_route_1, csv_route_1])
+    chain(
+        table_exists_1,
+        Label("Creating Table"),
+        create_staging_table_1,
+        file_ext_route_1,
+        [geojson_route_1, csv_route_1],
+    )
 
 
 @dag(
