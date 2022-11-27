@@ -2,7 +2,7 @@ from logging import Logger
 from pathlib import Path
 from urllib.request import urlretrieve
 
-from airflow.decorators import task
+from airflow.decorators import task, task_group
 from airflow.utils.trigger_rule import TriggerRule
 
 from utils.db import get_pg_engine, get_data_table_names_in_schema
@@ -44,6 +44,7 @@ def ingest_into_table(
             schema="data_raw",
             con=engine,
             if_exists=if_exists,
+            chunksize=100000,
         )
         task_logger.info("Successfully ingested data using gpd.to_postgis()")
     else:
@@ -57,8 +58,42 @@ def ingest_into_table(
             schema="data_raw",
             con=engine,
             if_exists=if_exists,
+            chunksize=100000,
         )
         task_logger.info("Successfully ingested data using pd.to_sql()")
+
+
+def create_data_raw_table(
+    socrata_metadata: SocrataTableMetadata,
+    conn_id: str,
+    task_logger: Logger,
+    temp_table: bool = False,
+) -> None:
+    if temp_table:
+        table_name = f"temp_{socrata_metadata.table_name}"
+    else:
+        table_name = socrata_metadata.table_name
+    local_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+    if local_file_path.is_file():
+        engine = get_pg_engine(conn_id=conn_id)
+        from pandas.io.sql import SQLTable
+
+        if socrata_metadata.download_format == "csv":
+            import pandas as pd
+
+            df_subset = pd.read_csv(local_file_path, nrows=2000000)
+        elif socrata_metadata.is_geospatial:
+            import geopandas as gpd
+
+            df_subset = gpd.read_file(local_file_path, rows=2000000)
+        a_table = SQLTable(
+            frame=df_subset, name=table_name, schema="data_raw", pandas_sql_engine=engine
+        )
+        table_create_obj = a_table._create_table_setup()
+        table_create_obj.create(bind=engine)
+        task_logger.info(f"Successfully created table 'data_raw.{table_name}'")
+    else:
+        raise Exception(f"File not found in expected location.")
 
 
 @task
@@ -174,3 +209,13 @@ def update_table_metadata_in_db(
         engine=get_pg_engine(conn_id=conn_id), update_payload={"data_pulled_this_check": True}
     )
     return socrata_metadata
+
+
+@task_group
+def check_table_metadata(socrata_table: SocrataTable) -> SocrataTableMetadata:
+    metadata_1 = get_socrata_table_metadata(socrata_table=socrata_table)
+    metadata_2 = extract_table_freshness_info(metadata_1)
+    metadata_3 = ingest_table_freshness_check_metadata(metadata_2)
+
+    metadata_1 >> metadata_2 >> metadata_3
+    return metadata_3

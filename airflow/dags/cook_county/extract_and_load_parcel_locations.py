@@ -30,6 +30,7 @@ SOCRATA_TABLE = SocrataTable(table_id="c49d-89sn", table_name="cook_county_parce
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
     tags=["metadata"],
+    default_args={"conn_id": "dwh_db_conn", "task_logger": task_logger},
 )
 def update_cc_parcel_locations_table():
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
