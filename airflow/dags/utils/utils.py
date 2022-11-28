@@ -50,3 +50,11 @@ def get_lines_in_geojson_file(file_path) -> int:
         raise Exception(
             "Not a geojson, or maybe it's formatted differently than this jq cmd can handle"
         )
+
+
+def produce_offset_and_nrows_counts_for_pd_read_csv(file_path: Path, rows_per_batch: int = 3000000):
+    n_rows = get_lines_in_file(file_path)
+    offsets = list(range(0, n_rows, rows_per_batch))
+    nrow_nums = list(range(rows_per_batch, n_rows + rows_per_batch, rows_per_batch))
+    nrow_and_offset_nums = [{"offset": el[0], "nrows": el[1]} for el in zip(offsets, nrow_nums)]
+    return nrow_and_offset_nums
