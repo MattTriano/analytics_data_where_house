@@ -18,8 +18,6 @@ from tasks.socrata_tasks import (
     get_socrata_table_metadata,
     extract_table_freshness_info,
     ingest_table_freshness_check_metadata,
-    # fresher_source_data_available,
-    # download_fresh_data,
     table_exists_in_warehouse,
     ingest_into_new_table_in_data_raw,
     ingest_into_temporary_table,
@@ -38,7 +36,7 @@ SOCRATA_TABLE = SocrataTable(table_id="hvnx-qtky", table_name="chicago_cta_bus_s
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
 def fresher_source_data_available(
-    socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger, **kwargs
+    socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
 ) -> str:
     tables_in_data_raw_schema = get_data_table_names_in_schema(
         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
@@ -57,7 +55,9 @@ def fresher_source_data_available(
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
-def table_exists_in_data_raw(socrata_metadata: SocrataTableMetadata, conn_id: str) -> str:
+def table_exists_in_data_raw(conn_id: str, **kwargs) -> str:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
     tables_in_data_raw_schema = get_data_table_names_in_schema(
         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
     )
@@ -68,7 +68,7 @@ def table_exists_in_data_raw(socrata_metadata: SocrataTableMetadata, conn_id: st
 
 
 @task
-def download_fresh_data(**kwargs) -> SocrataTableMetadata:
+def download_fresh_data(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(
         task_ids="check_table_metadata.ingest_table_freshness_check_metadata"
@@ -94,9 +94,7 @@ def create_table_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> Soc
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
-def file_ext_branch_router(**kwargs) -> str:
-    ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+def file_ext_branch_router(socrata_metadata: SocrataTableMetadata) -> str:
     dl_format = socrata_metadata.download_format
     if dl_format.lower() == "geojson":
         return "load_data_tg.load_geojson_data.drop_temp_table"
@@ -107,11 +105,13 @@ def file_ext_branch_router(**kwargs) -> str:
 
 
 @task
-def drop_temp_table(route_str: str, conn_id: str, **kwargs) -> SocrataTableMetadata:
+def drop_temp_table(
+    route_str: str, conn_id: str, task_logger: Logger, **kwargs
+) -> SocrataTableMetadata:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
 
-    task_logger.info(f"inside drop_temp_table")
+    task_logger.info(f"inside drop_temp_table, from {route_str}")
     engine = get_pg_engine(conn_id=conn_id)
     try:
         full_temp_table_name = f"data_raw.temp_{socrata_metadata.table_name}"
@@ -122,27 +122,6 @@ def drop_temp_table(route_str: str, conn_id: str, **kwargs) -> SocrataTableMetad
         return socrata_metadata
     except Exception as e:
         print(f"Failed to create temp table {full_temp_table_name}. Error: {e}, {type(e)}")
-
-
-# @task
-# def create_temp_table_for_geojson_data(
-#     socrata_metadata: SocrataTableMetadata, conn_id: str
-# ) -> SocrataTableMetadata:
-#     task_logger.info(f"inside create_temp_table_for_geojson_data")
-#     engine = get_pg_engine(conn_id=conn_id)
-#     try:
-#         full_temp_table_name = f"data_raw.temp_{socrata_metadata.table_name}"
-#         execute_structural_command(
-#             query=f"""
-#                 CREATE TABLE {full_temp_table_name} (
-#                     data JSONB
-#                 );
-#                 """,
-#             engine=engine,
-#         )
-#         return socrata_metadata
-#     except Exception as e:
-#         print(f"Failed to create temp table {full_temp_table_name}. Error: {e}, {type(e)}")
 
 
 @task
@@ -175,33 +154,6 @@ def ingest_csv_data(
         return socrata_metadata
     except Exception as e:
         task_logger.info(f"Failed to ingest csv file to temp table. Error: {e}, {type(e)}")
-
-
-# @task
-# def ingest_geojson_data(
-#     socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
-# ) -> SocrataTableMetadata:
-#     try:
-#         full_temp_table_name = f"data_raw.temp_{socrata_metadata.table_name}"
-#         # file_path = Path("/home").joinpath(socrata_metadata.format_file_name())
-#         file_path = get_local_file_path(socrata_metadata=socrata_metadata)
-#         task_logger.info(f"file_path: {file_path}, is_file: {file_path.is_file()}")
-
-#         postgres_hook = PostgresHook(postgres_conn_id=conn_id)
-#         postgres_hook.copy_expert(
-#             f"COPY {full_temp_table_name} FROM PROGRAM 'jq -c -r .[] < {file_path}';",
-#             file_path
-#         )
-#         # conn = postgres_hook.get_conn()
-#         # cur = conn.cursor()
-#         # with open(file_path, "r") as file:
-#         #     cur.copy_expert(
-#         #         f"COPY {full_temp_table_name} FROM PROGRAM 'jq -c -r .[] < {file_path}';", file
-#         #     )
-#         # conn.commit()
-#         return socrata_metadata
-#     except Exception as e:
-#         task_logger.info(f"Failed to ingest geojson file to temp table. Error: {e}, {type(e)}")
 
 
 @task
@@ -255,8 +207,9 @@ def ingest_geojson_data(
 
 @task_group
 def load_geojson_data(route_str: str, conn_id: str, task_logger: Logger) -> SocrataTableMetadata:
-    drop_temp_geojson_1 = drop_temp_table(route_str=route_str)
-    # create_temp_geojson_1 = create_temp_table_for_geojson_data(socrata_metadata=drop_temp_geojson_1)
+    drop_temp_geojson_1 = drop_temp_table(
+        route_str=route_str, conn_id=conn_id, task_logger=task_logger
+    )
     slice_indices_1 = get_geospatial_load_indices(
         socrata_metadata=drop_temp_geojson_1, task_logger=task_logger, rows_per_batch=500000
     )
@@ -268,10 +221,14 @@ def load_geojson_data(route_str: str, conn_id: str, task_logger: Logger) -> Socr
 
 
 @task_group
-def load_csv_data(route_str: str) -> SocrataTableMetadata:
-    drop_temp_csv_1 = drop_temp_table(route_str=route_str)
-    create_temp_csv_1 = create_temp_table_for_csv_data(socrata_metadata=drop_temp_csv_1)
-    ingest_temp_csv_1 = ingest_csv_data(socrata_metadata=create_temp_csv_1)
+def load_csv_data(route_str: str, conn_id: str, task_logger: Logger) -> SocrataTableMetadata:
+    drop_temp_csv_1 = drop_temp_table(route_str=route_str, conn_id=conn_id, task_logger=task_logger)
+    create_temp_csv_1 = create_temp_table_for_csv_data(
+        socrata_metadata=drop_temp_csv_1, conn_id=conn_id, task_logger=task_logger
+    )
+    ingest_temp_csv_1 = ingest_csv_data(
+        socrata_metadata=create_temp_csv_1, conn_id=conn_id, task_logger=task_logger
+    )
 
     chain(drop_temp_csv_1, create_temp_csv_1, ingest_temp_csv_1)
 
@@ -281,23 +238,33 @@ def load_data_tg(
     socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
 ) -> SocrataTableMetadata:
     task_logger.info(f"Entered load_data_tg task_group")
-    table_exists_1 = table_exists_in_data_raw(socrata_metadata=socrata_metadata)
-    create_staging_table_1 = create_table_in_data_raw()
-
-    file_ext_route_1 = file_ext_branch_router()
+    file_ext_route_1 = file_ext_branch_router(socrata_metadata=socrata_metadata)
 
     geojson_route_1 = load_geojson_data(
         route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
     )
-    csv_route_1 = load_csv_data(route_str=file_ext_route_1)
+    csv_route_1 = load_csv_data(
+        route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
+    )
+    table_exists_1 = table_exists_in_data_raw(conn_id=conn_id)
+    create_staging_table_1 = create_table_in_data_raw(conn_id=conn_id, task_logger=task_logger)
 
-    chain(table_exists_1, Label("Table Exists"), file_ext_route_1, [geojson_route_1, csv_route_1])
+    data_load_end_1 = EmptyOperator(task_id="data_load_end", trigger_rule=TriggerRule.NONE_FAILED)
+
     chain(
+        file_ext_route_1,
+        [geojson_route_1, csv_route_1],
+        table_exists_1,
+        Label("Table Exists"),
+        data_load_end_1,
+    )
+    chain(
+        file_ext_route_1,
+        [geojson_route_1, csv_route_1],
         table_exists_1,
         Label("Creating Table"),
         create_staging_table_1,
-        file_ext_route_1,
-        [geojson_route_1, csv_route_1],
+        data_load_end_1,
     )
 
 
@@ -306,31 +273,26 @@ def load_data_tg(
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
     tags=["metadata"],
-    default_args={"conn_id": "dwh_db_conn", "task_logger": task_logger},
+    # default_args={"conn_id": "dwh_db_conn", "task_logger": task_logger},
 )
 def update_cta_bus_stops_table():
+    POSTGRES_CONN_ID = "dwh_db_conn"
+
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
 
-    @task_group
-    def extract_load_task_group(socrata_metadata) -> None:
-        task_logger.info(f"In extract_load_task_group")
-
-        table_exists_1 = table_exists_in_warehouse(socrata_metadata=socrata_metadata)
-        ingest_to_new_1 = ingest_into_new_table_in_data_raw()
-        ingest_to_temp_1 = ingest_into_temporary_table()
-
-        table_exists_1 >> Label("Adding Table") >> ingest_to_new_1
-        table_exists_1 >> Label("Updating Table") >> ingest_to_temp_1
-
-    metadata_1 = check_table_metadata(socrata_table=SOCRATA_TABLE)
-    fresh_source_data_available_1 = fresher_source_data_available(socrata_metadata=metadata_1)
-    extract_data_1 = download_fresh_data()
+    metadata_1 = check_table_metadata(
+        socrata_table=SOCRATA_TABLE, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
+    )
+    fresh_source_data_available_1 = fresher_source_data_available(
+        socrata_metadata=metadata_1, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
+    )
+    extract_data_1 = download_fresh_data(task_logger=task_logger)
     load_data_tg_1 = load_data_tg(
-        socrata_metadata=extract_data_1, conn_id="dwh_db_conn", task_logger=task_logger
+        socrata_metadata=extract_data_1, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
     )
 
     chain(metadata_1, fresh_source_data_available_1, extract_data_1, load_data_tg_1)
-    metadata_1 >> fresh_source_data_available_1 >> end_1
+    chain(metadata_1, fresh_source_data_available_1, end_1)
 
 
 chicago_cta_bus_stop_dag = update_cta_bus_stops_table()

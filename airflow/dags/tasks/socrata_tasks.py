@@ -212,10 +212,14 @@ def update_table_metadata_in_db(
 
 
 @task_group
-def check_table_metadata(socrata_table: SocrataTable) -> SocrataTableMetadata:
-    metadata_1 = get_socrata_table_metadata(socrata_table=socrata_table)
-    metadata_2 = extract_table_freshness_info(metadata_1)
-    metadata_3 = ingest_table_freshness_check_metadata(metadata_2)
+def check_table_metadata(
+    socrata_table: SocrataTable, conn_id: str, task_logger: Logger
+) -> SocrataTableMetadata:
+    metadata_1 = get_socrata_table_metadata(socrata_table=socrata_table, task_logger=task_logger)
+    metadata_2 = extract_table_freshness_info(metadata_1, conn_id=conn_id, task_logger=task_logger)
+    metadata_3 = ingest_table_freshness_check_metadata(
+        metadata_2, conn_id=conn_id, task_logger=task_logger
+    )
 
     metadata_1 >> metadata_2 >> metadata_3
     return metadata_3
