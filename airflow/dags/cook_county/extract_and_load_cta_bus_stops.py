@@ -125,13 +125,43 @@ def drop_temp_table(
 
 
 @task
-def create_temp_table_for_csv_data(
-    socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
-) -> SocrataTableMetadata:
-    create_data_raw_table(
-        socrata_metadata=socrata_metadata, conn_id=conn_id, task_logger=task_logger, temp_table=True
-    )
-    return socrata_metadata
+def create_data_raw_table(
+    socrata_metadata: SocrataTableMetadata,
+    conn_id: str,
+    task_logger: Logger,
+    temp_table: bool = False,
+) -> None:
+    if temp_table:
+        table_name = f"temp_{socrata_metadata.table_name}"
+    else:
+        table_name = socrata_metadata.table_name
+    local_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+    if local_file_path.is_file():
+        engine = get_pg_engine(conn_id=conn_id)
+        from pandas.io.sql import SQLTable
+
+        if socrata_metadata.download_format == "csv":
+            import pandas as pd
+
+            df_subset = pd.read_csv(local_file_path, nrows=2000000)
+            task_logger.info(f"df_subset: {df_subset.head(2)}")
+            task_logger.info(f"df_subset.columns: {df_subset.columns}")
+        elif socrata_metadata.is_geospatial:
+            import geopandas as gpd
+
+            df_subset = gpd.read_file(local_file_path, rows=2000000)
+        a_table = SQLTable(
+            frame=df_subset,
+            name=table_name,
+            schema="data_raw",
+            pandas_sql_engine=engine,
+            index=False,
+        )
+        table_create_obj = a_table._create_table_setup()
+        table_create_obj.create(bind=engine)
+        task_logger.info(f"Successfully created table 'data_raw.{table_name}'")
+    else:
+        raise Exception(f"File not found in expected location.")
 
 
 @task
@@ -141,19 +171,39 @@ def ingest_csv_data(
     try:
         full_temp_table_name = f"data_raw.temp_{socrata_metadata.table_name}"
         file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+        task_logger.info(f"file_path: {file_path}, is_file: {file_path.is_file()}")
 
         postgres_hook = PostgresHook(postgres_conn_id=conn_id)
         conn = postgres_hook.get_conn()
-        cur = conn.cursor()
-        with open(file_path, "r") as file:
-            cur.copy_expert(
-                f"COPY {full_temp_table_name} FROM {file_path} WITH CSV HEADER DELIMITER AS ',';",
-                file,
-            )
-        conn.commit()
+        with conn:
+            with conn.cursor() as cur:
+                with open(file_path, "r") as f:
+                    cur.copy_expert(
+                        sql=f"""
+                            COPY {full_temp_table_name}
+                            FROM STDIN
+                            WITH (FORMAT CSV, HEADER, DELIMITER ',');
+                        """,
+                        file=f,
+                    )
+        conn.close()
+        task_logger.info(f"Successfully ingested csv data into {full_temp_table_name} via COPY.")
         return socrata_metadata
     except Exception as e:
-        task_logger.info(f"Failed to ingest csv file to temp table. Error: {e}, {type(e)}")
+        task_logger.info(f"Failed to ingest flat file to temp table. Error: {e}, {type(e)}")
+
+
+@task_group
+def load_csv_data(route_str: str, conn_id: str, task_logger: Logger) -> None:
+    drop_temp_csv_1 = drop_temp_table(route_str=route_str, conn_id=conn_id, task_logger=task_logger)
+    create_temp_csv_1 = create_data_raw_table(
+        socrata_metadata=drop_temp_csv_1, conn_id=conn_id, task_logger=task_logger, temp_table=True
+    )
+    ingest_temp_csv_1 = ingest_csv_data(
+        socrata_metadata=create_temp_csv_1, conn_id=conn_id, task_logger=task_logger
+    )
+
+    chain(drop_temp_csv_1, create_temp_csv_1, ingest_temp_csv_1)
 
 
 @task
@@ -218,19 +268,6 @@ def load_geojson_data(route_str: str, conn_id: str, task_logger: Logger) -> Socr
     ).expand_kwargs(slice_indices_1)
 
     chain(drop_temp_geojson_1, slice_indices_1, ingest_temp_geojson_1)
-
-
-@task_group
-def load_csv_data(route_str: str, conn_id: str, task_logger: Logger) -> SocrataTableMetadata:
-    drop_temp_csv_1 = drop_temp_table(route_str=route_str, conn_id=conn_id, task_logger=task_logger)
-    create_temp_csv_1 = create_temp_table_for_csv_data(
-        socrata_metadata=drop_temp_csv_1, conn_id=conn_id, task_logger=task_logger
-    )
-    ingest_temp_csv_1 = ingest_csv_data(
-        socrata_metadata=create_temp_csv_1, conn_id=conn_id, task_logger=task_logger
-    )
-
-    chain(drop_temp_csv_1, create_temp_csv_1, ingest_temp_csv_1)
 
 
 @task_group

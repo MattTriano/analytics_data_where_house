@@ -191,7 +191,8 @@ Notes:
   * You can also remove the `airflow-worker` and `flower` services, which are also only used for managing `celery`.
 
 
-
+Notes- organization:
+Airflow dynamically adds the `/plugins`, `/dags`, and `/config` folders to `PYTHONPATH` (per the documentation), and non-DAG code should be kept out of `/dags`, but `/plugins` isn't checked constantly for changes like `/dags` is, so you'll have to change some configs in `airflow.cfg` (ctrl+f for plugin and change the ones that seem like they should be changed; I think I changed `[core] lazy_load_plugins` to `False` and `[webserver] reload_on_plugin_change` to `True`)
 
 
 
