@@ -71,7 +71,7 @@ def ingest_csv_data(offset: int, nrows: int, conn_id: str, task_logger: Logger) 
 
 
 @task
-def get_flat_file_load_indices(file_path: Path, task_logger: Logger, rows_per_batch: int = 3500000):
+def get_flat_file_load_indices(file_path: Path, task_logger: Logger, rows_per_batch: int = 3000000):
     # file_path = get_local_file_path(socrata_metadata=socrata_metadata)
     assert file_path.name.lower().endswith(
         ".csv"
