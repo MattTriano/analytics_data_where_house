@@ -5,8 +5,9 @@ from urllib.request import urlretrieve
 
 from airflow.decorators import task, task_group
 from airflow.models.baseoperator import chain
-from airflow.utils.edgemodifier import Label
 from airflow.operators.empty import EmptyOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
 
 from utils.db import get_pg_engine, get_data_table_names_in_schema, execute_structural_command
@@ -72,51 +73,13 @@ def ingest_into_table(
 
 
 @task
-def create_data_raw_table(
-    socrata_metadata: SocrataTableMetadata,
-    conn_id: str,
-    task_logger: Logger,
-    temp_table: bool = False,
-) -> None:
-    if temp_table:
-        table_name = f"temp_{socrata_metadata.table_name}"
-    else:
-        table_name = socrata_metadata.table_name
-    local_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
-    if local_file_path.is_file():
-        engine = get_pg_engine(conn_id=conn_id)
-        from pandas.io.sql import SQLTable
-
-        if socrata_metadata.download_format == "csv":
-            import pandas as pd
-
-            df_subset = pd.read_csv(local_file_path, nrows=2000000)
-        elif socrata_metadata.is_geospatial:
-            import geopandas as gpd
-
-            df_subset = gpd.read_file(local_file_path, rows=2000000)
-        a_table = SQLTable(
-            frame=df_subset,
-            name=table_name,
-            schema="data_raw",
-            pandas_sql_engine=engine,
-            index=False,
-        )
-        table_create_obj = a_table._create_table_setup()
-        table_create_obj.create(bind=engine)
-        task_logger.info(f"Successfully created table 'data_raw.{table_name}'")
-    else:
-        raise Exception(f"File not found in expected location.")
-
-
-@task
 def get_socrata_table_metadata(
     socrata_table: SocrataTable, task_logger: Logger
 ) -> SocrataTableMetadata:
     socrata_metadata = SocrataTableMetadata(socrata_table=socrata_table)
     task_logger.info(
-        f"Retrieved metadata for socrata table {socrata_metadata.table_name} and table_id",
-        f" {socrata_metadata.table_id}.",
+        f"Retrieved metadata for socrata table {socrata_metadata.table_name} and table_id"
+        + f" {socrata_metadata.table_id}."
     )
     return socrata_metadata
 
@@ -294,8 +257,8 @@ def ingest_csv_data(
 @task_group
 def load_csv_data(route_str: str, conn_id: str, task_logger: Logger) -> None:
     drop_temp_csv_1 = drop_temp_table(route_str=route_str, conn_id=conn_id, task_logger=task_logger)
-    create_temp_csv_1 = create_data_raw_table(
-        socrata_metadata=drop_temp_csv_1, conn_id=conn_id, task_logger=task_logger, temp_table=True
+    create_temp_csv_1 = create_table_in_data_raw(
+        conn_id=conn_id, task_logger=task_logger, temp_table=True
     )
     ingest_temp_csv_1 = ingest_csv_data(
         socrata_metadata=create_temp_csv_1, conn_id=conn_id, task_logger=task_logger
@@ -379,15 +342,60 @@ def file_ext_branch_router(socrata_metadata: SocrataTableMetadata) -> str:
         raise Exception(f"Download format '{dl_format}' not supported yet. CSV or GeoJSON for now")
 
 
+def create_data_raw_table(
+    socrata_metadata: SocrataTableMetadata,
+    conn_id: str,
+    task_logger: Logger,
+    temp_table: bool = False,
+) -> None:
+    if temp_table:
+        table_name = f"temp_{socrata_metadata.table_name}"
+    else:
+        table_name = socrata_metadata.table_name
+    local_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+    task_logger.info(
+        f"Attempting to create table 'data_raw.{table_name}, "
+        + f"dtypes inferred from file {local_file_path}."
+    )
+    if local_file_path.is_file():
+        engine = get_pg_engine(conn_id=conn_id)
+        from pandas.io.sql import SQLTable
+
+        if socrata_metadata.download_format == "csv":
+            import pandas as pd
+
+            df_subset = pd.read_csv(local_file_path, nrows=2000000)
+        elif socrata_metadata.is_geospatial:
+            import geopandas as gpd
+
+            df_subset = gpd.read_file(local_file_path, rows=2000000)
+        a_table = SQLTable(
+            frame=df_subset,
+            name=table_name,
+            schema="data_raw",
+            pandas_sql_engine=engine,
+            index=False,
+        )
+        table_create_obj = a_table._create_table_setup()
+        table_create_obj.create(bind=engine)
+        task_logger.info(f"Successfully created table 'data_raw.{table_name}'")
+
+    else:
+        raise Exception(f"File not found in expected location.")
+
+
 @task
-def create_table_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> SocrataTableMetadata:
+def create_table_in_data_raw(
+    conn_id: str, task_logger: Logger, temp_table: bool, **kwargs
+) -> SocrataTableMetadata:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+    task_logger.info(f"In create_table_in_data_raw; table_name: {socrata_metadata.table_name}")
     create_data_raw_table(
         socrata_metadata=socrata_metadata,
         conn_id=conn_id,
         task_logger=task_logger,
-        temp_table=False,
+        temp_table=temp_table,
     )
     return socrata_metadata
 
@@ -405,8 +413,10 @@ def load_data_tg(
     csv_route_1 = load_csv_data(
         route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
     )
-    table_exists_1 = table_exists_in_data_raw(conn_id=conn_id)
-    create_staging_table_1 = create_table_in_data_raw(conn_id=conn_id, task_logger=task_logger)
+    table_exists_1 = table_exists_in_data_raw(conn_id=conn_id, task_logger=task_logger)
+    create_staging_table_1 = create_table_in_data_raw(
+        conn_id=conn_id, task_logger=task_logger, temp_table=False
+    )
 
     data_load_end_1 = EmptyOperator(task_id="data_load_end", trigger_rule=TriggerRule.NONE_FAILED)
 
@@ -448,13 +458,16 @@ def fresher_source_data_available(
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
-def table_exists_in_data_raw(conn_id: str, **kwargs) -> str:
+def table_exists_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
     tables_in_data_raw_schema = get_data_table_names_in_schema(
         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
     )
+    task_logger.info(f"tables_in_data_raw_schema: {tables_in_data_raw_schema}")
     if socrata_metadata.table_name not in tables_in_data_raw_schema:
+        task_logger.info(f"Table {socrata_metadata.table_name} not in data_raw; creating.")
         return "load_data_tg.create_table_in_data_raw"
     else:
-        return "load_data_tg.file_ext_branch_router"
+        task_logger.info(f"Table {socrata_metadata.table_name} in data_raw; skipping.")
+        return "load_data_tg.data_load_end"
