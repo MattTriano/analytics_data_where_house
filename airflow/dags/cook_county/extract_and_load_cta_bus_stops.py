@@ -45,4 +45,4 @@ def update_cta_bus_stops_table():
     chain(metadata_1, fresh_source_data_available_1, end_1)
 
 
-chicago_cta_bus_stop_dag = update_cta_bus_stops_table()
+update_cta_bus_stops_table()
