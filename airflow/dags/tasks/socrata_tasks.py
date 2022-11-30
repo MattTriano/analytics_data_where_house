@@ -1,0 +1,473 @@
+import datetime as dt
+from logging import Logger
+from pathlib import Path
+from urllib.request import urlretrieve
+
+from airflow.decorators import task, task_group
+from airflow.models.baseoperator import chain
+from airflow.operators.empty import EmptyOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.utils.edgemodifier import Label
+from airflow.utils.trigger_rule import TriggerRule
+
+from utils.db import get_pg_engine, get_data_table_names_in_schema, execute_structural_command
+from utils.socrata import SocrataTable, SocrataTableMetadata
+from utils.utils import (
+    get_local_data_raw_dir,
+    get_lines_in_geojson_file,
+    produce_slice_indices_for_gpd_read_file,
+)
+
+
+def get_local_file_path(socrata_metadata: SocrataTableMetadata) -> Path:
+    output_dir = get_local_data_raw_dir()
+    local_file_path = output_dir.joinpath(socrata_metadata.format_file_name())
+    return local_file_path
+
+
+def ingest_into_table(
+    socrata_metadata: SocrataTableMetadata,
+    conn_id: str,
+    task_logger: Logger,
+    temp_table: bool = False,
+) -> None:
+    local_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+    if temp_table:
+        table_name = f"temp_{socrata_metadata.table_name}"
+        if_exists = "replace"
+    else:
+        table_name = f"{socrata_metadata.table_name}"
+        if_exists = "fail"
+    task_logger.info(f"Ingesting data to database table 'data_raw.{table_name}'")
+    source_data_updated = socrata_metadata.data_freshness_check["source_data_last_updated"]
+    time_of_check = socrata_metadata.data_freshness_check["time_of_check"]
+    engine = get_pg_engine(conn_id=conn_id)
+    if socrata_metadata.is_geospatial:
+        import geopandas as gpd
+
+        gdf = gpd.read_file(local_file_path)
+        gdf["source_data_updated"] = source_data_updated
+        gdf["ingestion_check_time"] = time_of_check
+        gdf.to_postgis(
+            name=table_name,
+            schema="data_raw",
+            con=engine,
+            if_exists=if_exists,
+            chunksize=100000,
+        )
+        task_logger.info("Successfully ingested data using gpd.to_postgis()")
+    else:
+        import pandas as pd
+
+        df = pd.read_csv(local_file_path)
+        df["source_data_updated"] = source_data_updated
+        df["ingestion_check_time"] = time_of_check
+        df.to_sql(
+            name=table_name,
+            schema="data_raw",
+            con=engine,
+            if_exists=if_exists,
+            chunksize=100000,
+        )
+        task_logger.info("Successfully ingested data using pd.to_sql()")
+
+
+@task
+def get_socrata_table_metadata(
+    socrata_table: SocrataTable, task_logger: Logger
+) -> SocrataTableMetadata:
+    socrata_metadata = SocrataTableMetadata(socrata_table=socrata_table)
+    task_logger.info(
+        f"Retrieved metadata for socrata table {socrata_metadata.table_name} and table_id"
+        + f" {socrata_metadata.table_id}."
+    )
+    return socrata_metadata
+
+
+@task
+def extract_table_freshness_info(
+    socrata_metadata: SocrataTableMetadata,
+    conn_id: str,
+    task_logger: Logger,
+) -> SocrataTableMetadata:
+    engine = get_pg_engine(conn_id=conn_id)
+    socrata_metadata.check_warehouse_data_freshness(engine=engine)
+    task_logger.info(
+        f"Extracted table freshness information. "
+        + f"Fresh source data available: {socrata_metadata.data_freshness_check['updated_data_available']} "
+        + f"Fresh source metadata available: {socrata_metadata.data_freshness_check['updated_metadata_available']}"
+    )
+    return socrata_metadata
+
+
+@task
+def ingest_table_freshness_check_metadata(
+    socrata_metadata: SocrataTableMetadata,
+    conn_id: str,
+    task_logger: Logger,
+) -> None:
+    engine = get_pg_engine(conn_id=conn_id)
+    socrata_metadata.insert_current_freshness_check_to_db(engine=engine)
+    task_logger.info(
+        f"Ingested table freshness check results into metadata table.  "
+        + f"Freshness check id: {socrata_metadata.freshness_check_id}",
+    )
+    return socrata_metadata
+
+
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED)
+def fresher_source_data_available(
+    socrata_metadata: SocrataTableMetadata, task_logger: Logger, **kwargs
+) -> str:
+    task_logger.info(f"In fresher_source_data_available, here's what kwargs looks like {kwargs}")
+    if socrata_metadata.data_freshness_check["updated_data_available"]:
+        task_logger.info(f"Fresh data available, entering extract-load branch")
+        return "extract_load_task_group.download_fresh_data"
+    else:
+        return "end"
+
+
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+def table_exists_in_warehouse(socrata_metadata: SocrataTableMetadata, conn_id: str) -> str:
+    tables_in_data_raw_schema = get_data_table_names_in_schema(
+        engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
+    )
+    if socrata_metadata.table_name not in tables_in_data_raw_schema:
+        return "extract_load_task_group.ingest_into_new_table_in_data_raw"
+    else:
+        return "extract_load_task_group.ingest_into_temporary_table"
+
+
+@task
+def ingest_into_new_table_in_data_raw(
+    conn_id: str, task_logger: Logger, **kwargs
+) -> SocrataTableMetadata:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="extract_load_task_group.download_fresh_data")
+    ingest_into_table(
+        socrata_metadata=socrata_metadata,
+        conn_id=conn_id,
+        task_logger=task_logger,
+        temp_table=False,
+    )
+    return socrata_metadata
+
+
+@task
+def ingest_into_temporary_table(
+    conn_id: str, task_logger: Logger, **kwargs
+) -> SocrataTableMetadata:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="extract_load_task_group.download_fresh_data")
+    ingest_into_table(
+        socrata_metadata=socrata_metadata, conn_id=conn_id, task_logger=task_logger, temp_table=True
+    )
+    return socrata_metadata
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+def update_table_metadata_in_db(
+    conn_id: str, task_logger: Logger, **kwargs
+) -> SocrataTableMetadata:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="extract_load_task_group.download_fresh_data")
+    task_logger.info(f"Updating table_metadata record id #{socrata_metadata.freshness_check_id}.")
+    socrata_metadata.update_current_freshness_check_in_db(
+        engine=get_pg_engine(conn_id=conn_id), update_payload={"data_pulled_this_check": True}
+    )
+    return socrata_metadata
+
+
+@task_group
+def check_table_metadata(
+    socrata_table: SocrataTable, conn_id: str, task_logger: Logger
+) -> SocrataTableMetadata:
+    metadata_1 = get_socrata_table_metadata(socrata_table=socrata_table, task_logger=task_logger)
+    metadata_2 = extract_table_freshness_info(metadata_1, conn_id=conn_id, task_logger=task_logger)
+    metadata_3 = ingest_table_freshness_check_metadata(
+        metadata_2, conn_id=conn_id, task_logger=task_logger
+    )
+
+    metadata_1 >> metadata_2 >> metadata_3
+    return metadata_3
+
+
+@task
+def download_fresh_data(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(
+        task_ids="check_table_metadata.ingest_table_freshness_check_metadata"
+    )
+    output_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+    task_logger.info(f"Started downloading data at {dt.datetime.utcnow()} UTC")
+    urlretrieve(url=socrata_metadata.get_data_download_url(), filename=output_file_path)
+    task_logger.info(f"Finished downloading data at {dt.datetime.utcnow()} UTC")
+    return socrata_metadata
+
+
+@task
+def drop_temp_table(
+    route_str: str, conn_id: str, task_logger: Logger, **kwargs
+) -> SocrataTableMetadata:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+
+    task_logger.info(f"inside drop_temp_table, from {route_str}")
+    engine = get_pg_engine(conn_id=conn_id)
+    try:
+        full_temp_table_name = f"data_raw.temp_{socrata_metadata.table_name}"
+        execute_structural_command(
+            query=f"DROP TABLE IF EXISTS {full_temp_table_name};",
+            engine=engine,
+        )
+        return socrata_metadata
+    except Exception as e:
+        print(f"Failed to create temp table {full_temp_table_name}. Error: {e}, {type(e)}")
+
+
+@task
+def ingest_csv_data(
+    socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
+) -> SocrataTableMetadata:
+    try:
+        full_temp_table_name = f"data_raw.temp_{socrata_metadata.table_name}"
+        file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+        task_logger.info(f"file_path: {file_path}, is_file: {file_path.is_file()}")
+
+        postgres_hook = PostgresHook(postgres_conn_id=conn_id)
+        conn = postgres_hook.get_conn()
+        with conn:
+            with conn.cursor() as cur:
+                with open(file_path, "r") as f:
+                    cur.copy_expert(
+                        sql=f"""
+                            COPY {full_temp_table_name}
+                            FROM STDIN
+                            WITH (FORMAT CSV, HEADER, DELIMITER ',');
+                        """,
+                        file=f,
+                    )
+        conn.close()
+        task_logger.info(f"Successfully ingested csv data into {full_temp_table_name} via COPY.")
+        return socrata_metadata
+    except Exception as e:
+        task_logger.info(f"Failed to ingest flat file to temp table. Error: {e}, {type(e)}")
+
+
+@task_group
+def load_csv_data(route_str: str, conn_id: str, task_logger: Logger) -> None:
+    drop_temp_csv_1 = drop_temp_table(route_str=route_str, conn_id=conn_id, task_logger=task_logger)
+    create_temp_csv_1 = create_table_in_data_raw(
+        conn_id=conn_id, task_logger=task_logger, temp_table=True
+    )
+    ingest_temp_csv_1 = ingest_csv_data(
+        socrata_metadata=create_temp_csv_1, conn_id=conn_id, task_logger=task_logger
+    )
+
+    chain(drop_temp_csv_1, create_temp_csv_1, ingest_temp_csv_1)
+
+
+@task
+def get_geospatial_load_indices(
+    socrata_metadata: SocrataTableMetadata, task_logger: Logger, rows_per_batch: int = 500000
+):
+    file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+    assert file_path.name.lower().endswith(
+        ".geojson"
+    ), "Geojson is the only supported geospatial type at the moment."
+    n_rows = get_lines_in_geojson_file(file_path=file_path)
+    indexes = produce_slice_indices_for_gpd_read_file(n_rows=n_rows, rows_per_batch=rows_per_batch)
+    task_logger.info(f"slices spanning data: {indexes}")
+    return indexes
+
+
+@task
+def ingest_geojson_data(
+    start_index: int, end_index: int, conn_id: str, task_logger: Logger, **kwargs
+) -> None:
+    try:
+        ti = kwargs["ti"]
+        socrata_metadata = ti.xcom_pull(task_ids="load_data_tg.load_geojson_data.drop_temp_table")
+
+        engine = get_pg_engine(conn_id=conn_id)
+        temp_table_name = f"temp_{socrata_metadata.table_name}"
+        file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+        task_logger.info(f"file_path: {file_path}, is_file: {file_path.is_file()}")
+        source_data_updated = socrata_metadata.data_freshness_check["source_data_last_updated"]
+        time_of_check = socrata_metadata.data_freshness_check["time_of_check"]
+
+        import geopandas as gpd
+
+        gdf = gpd.read_file(file_path, rows=slice(start_index, end_index))
+        gdf["source_data_updated"] = source_data_updated
+        gdf["ingestion_check_time"] = time_of_check
+        task_logger.info(f"Shape of gdf: {gdf.shape}, columns: {gdf.columns}")
+
+        gdf.to_postgis(
+            name=temp_table_name,
+            schema="data_raw",
+            con=engine,
+            if_exists="append",
+        )
+        task_logger.info(
+            f"Successfully ingested records {start_index} to {end_index} using gpd.to_postgis()"
+        )
+    except Exception as e:
+        task_logger.info(f"Failed to ingest geojson file to temp table. Error: {e}, {type(e)}")
+
+
+@task_group
+def load_geojson_data(route_str: str, conn_id: str, task_logger: Logger) -> SocrataTableMetadata:
+    drop_temp_geojson_1 = drop_temp_table(
+        route_str=route_str, conn_id=conn_id, task_logger=task_logger
+    )
+    slice_indices_1 = get_geospatial_load_indices(
+        socrata_metadata=drop_temp_geojson_1, task_logger=task_logger, rows_per_batch=500000
+    )
+    ingest_temp_geojson_1 = ingest_geojson_data.partial(
+        conn_id=conn_id, task_logger=task_logger
+    ).expand_kwargs(slice_indices_1)
+
+    chain(drop_temp_geojson_1, slice_indices_1, ingest_temp_geojson_1)
+
+
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+def file_ext_branch_router(socrata_metadata: SocrataTableMetadata) -> str:
+    dl_format = socrata_metadata.download_format
+    if dl_format.lower() == "geojson":
+        return "load_data_tg.load_geojson_data.drop_temp_table"
+    elif dl_format.lower() == "csv":
+        return "load_data_tg.load_csv_data.drop_temp_table"
+    else:
+        raise Exception(f"Download format '{dl_format}' not supported yet. CSV or GeoJSON for now")
+
+
+def create_data_raw_table(
+    socrata_metadata: SocrataTableMetadata,
+    conn_id: str,
+    task_logger: Logger,
+    temp_table: bool = False,
+) -> None:
+    if temp_table:
+        table_name = f"temp_{socrata_metadata.table_name}"
+    else:
+        table_name = socrata_metadata.table_name
+    local_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+    task_logger.info(
+        f"Attempting to create table 'data_raw.{table_name}, "
+        + f"dtypes inferred from file {local_file_path}."
+    )
+    if local_file_path.is_file():
+        engine = get_pg_engine(conn_id=conn_id)
+        from pandas.io.sql import SQLTable
+
+        if socrata_metadata.download_format == "csv":
+            import pandas as pd
+
+            df_subset = pd.read_csv(local_file_path, nrows=2000000)
+        elif socrata_metadata.is_geospatial:
+            import geopandas as gpd
+
+            df_subset = gpd.read_file(local_file_path, rows=2000000)
+        a_table = SQLTable(
+            frame=df_subset,
+            name=table_name,
+            schema="data_raw",
+            pandas_sql_engine=engine,
+            index=False,
+        )
+        table_create_obj = a_table._create_table_setup()
+        table_create_obj.create(bind=engine)
+        task_logger.info(f"Successfully created table 'data_raw.{table_name}'")
+
+    else:
+        raise Exception(f"File not found in expected location.")
+
+
+@task
+def create_table_in_data_raw(
+    conn_id: str, task_logger: Logger, temp_table: bool, **kwargs
+) -> SocrataTableMetadata:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+    task_logger.info(f"In create_table_in_data_raw; table_name: {socrata_metadata.table_name}")
+    create_data_raw_table(
+        socrata_metadata=socrata_metadata,
+        conn_id=conn_id,
+        task_logger=task_logger,
+        temp_table=temp_table,
+    )
+    return socrata_metadata
+
+
+@task_group
+def load_data_tg(
+    socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
+) -> SocrataTableMetadata:
+    task_logger.info(f"Entered load_data_tg task_group")
+    file_ext_route_1 = file_ext_branch_router(socrata_metadata=socrata_metadata)
+
+    geojson_route_1 = load_geojson_data(
+        route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
+    )
+    csv_route_1 = load_csv_data(
+        route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
+    )
+    table_exists_1 = table_exists_in_data_raw(conn_id=conn_id, task_logger=task_logger)
+    create_staging_table_1 = create_table_in_data_raw(
+        conn_id=conn_id, task_logger=task_logger, temp_table=False
+    )
+
+    data_load_end_1 = EmptyOperator(task_id="data_load_end", trigger_rule=TriggerRule.NONE_FAILED)
+
+    chain(
+        file_ext_route_1,
+        [geojson_route_1, csv_route_1],
+        table_exists_1,
+        Label("Table Exists"),
+        data_load_end_1,
+    )
+    chain(
+        file_ext_route_1,
+        [geojson_route_1, csv_route_1],
+        table_exists_1,
+        Label("Creating Table"),
+        create_staging_table_1,
+        data_load_end_1,
+    )
+
+
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+def fresher_source_data_available(
+    socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
+) -> str:
+    tables_in_data_raw_schema = get_data_table_names_in_schema(
+        engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
+    )
+    table_does_not_exist = socrata_metadata.table_name not in tables_in_data_raw_schema
+    update_availble = socrata_metadata.data_freshness_check["updated_data_available"]
+    task_logger.info(
+        f"In fresher_source_data_available; table_does_not_exist: {table_does_not_exist}"
+    )
+    task_logger.info(f" --- table_does_not_exist: {table_does_not_exist}")
+    task_logger.info(f" --- update_availble:      {update_availble}")
+    if table_does_not_exist or update_availble:
+        return "download_fresh_data"
+    else:
+        return "end"
+
+
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+def table_exists_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> str:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+    tables_in_data_raw_schema = get_data_table_names_in_schema(
+        engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
+    )
+    task_logger.info(f"tables_in_data_raw_schema: {tables_in_data_raw_schema}")
+    if socrata_metadata.table_name not in tables_in_data_raw_schema:
+        task_logger.info(f"Table {socrata_metadata.table_name} not in data_raw; creating.")
+        return "load_data_tg.create_table_in_data_raw"
+    else:
+        task_logger.info(f"Table {socrata_metadata.table_name} in data_raw; skipping.")
+        return "load_data_tg.data_load_end"

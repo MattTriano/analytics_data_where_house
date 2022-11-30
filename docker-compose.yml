@@ -22,7 +22,7 @@ x-airflow-common:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
-    - ./data_raw:/opt/airflow/data_raw
+    - ./airflow/data_raw:/opt/airflow/data_raw
   user: "${AIRFLOW_UID:-50000}:0"
   networks:
       - re_etl_net
@@ -64,7 +64,6 @@ services:
       - "5431:5432"
     volumes:
       - re_dwh_db:/var/lib/postgresql/data/
-      - ./data_raw:/home
     healthcheck:
       test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-p", "5431", "-U", "${POSTGRES_USER}"]
       interval: 5s
