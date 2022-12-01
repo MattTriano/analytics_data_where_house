@@ -23,6 +23,8 @@ x-airflow-common:
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/data_raw:/opt/airflow/data_raw
+    - ./airflow/dbt:/opt/airflow/dbt
+    - ./profiles.yml:/opt/airflow/.dbt/profiles.yml
   user: "${AIRFLOW_UID:-50000}:0"
   networks:
       - re_etl_net
@@ -95,7 +97,7 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - ./re_dbt:/usr/app
+      - ./airflow/dbt:/usr/app
       - ./profiles.yml:/root/.dbt/profiles.yml
     networks:
       - re_etl_net
