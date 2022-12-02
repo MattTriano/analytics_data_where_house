@@ -4,6 +4,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
          jq \
          postgresql-client \
+         git \
   && apt-get autoremove -yqq --purge \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*

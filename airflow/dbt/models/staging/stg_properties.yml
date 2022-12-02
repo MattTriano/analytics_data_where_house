@@ -2,13 +2,17 @@ version: 2
 
 sources:
   - name: staging
-    database: real_estate_db
+    database: re_dwh
     schema: data_raw
     tables:
       - name: cook_county_parcel_sales
+      - name: temp_cook_county_parcel_sales
       - name: cook_county_parcel_locations
-      - name: cook_county_neighborhoods
-      - name: cook_county_historic_assessed_parcel_values
+      - name: temp_cook_county_parcel_locations
+      - name: cook_county_neighborhood_boundaries
+      - name: temp_cook_county_neighborhood_boundaries
+      - name: cook_county_parcel_value_assessments
+      - name: temp_cook_county_parcel_value_assessments
 
 models:
   - name: stg_cc_parcel_locations
