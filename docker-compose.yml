@@ -24,7 +24,7 @@ x-airflow-common:
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/data_raw:/opt/airflow/data_raw
     - ./airflow/dbt:/opt/airflow/dbt
-    - ./profiles.yml:/opt/airflow/.dbt/profiles.yml
+    - ./profiles.yml:/home/airflow/.dbt/profiles.yml
   user: "${AIRFLOW_UID:-50000}:0"
   networks:
       - re_etl_net
