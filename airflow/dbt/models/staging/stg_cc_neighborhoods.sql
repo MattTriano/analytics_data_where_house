@@ -7,7 +7,6 @@ WITH neighborhood_boundary_data AS
 )
 
 SELECT
-    {{ dbt_utils.surrogate_key(['town_nbhd']) }} AS nbhd_id,
     upper(triad_name::text) AS triad_name,
     lpad(town_nbhd::int::varchar(5), 5, '0') AS town_nbhd,
     lpad(township_code::int::varchar(2), 2, '0') AS township_code,
