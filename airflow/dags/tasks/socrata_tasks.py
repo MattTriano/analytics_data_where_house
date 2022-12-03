@@ -230,7 +230,7 @@ def drop_temp_table(
         )
         return socrata_metadata
     except Exception as e:
-        print(f"Failed to create temp table {full_temp_table_name}. Error: {e}, {type(e)}")
+        print(f"Failed to drop temp table {full_temp_table_name}. Error: {e}, {type(e)}")
 
 
 @task
@@ -354,61 +354,26 @@ def file_ext_branch_router(socrata_metadata: SocrataTableMetadata) -> str:
         raise Exception(f"Download format '{dl_format}' not supported yet. CSV or GeoJSON for now")
 
 
-def create_data_raw_table(
-    socrata_metadata: SocrataTableMetadata,
-    conn_id: str,
-    task_logger: Logger,
-    temp_table: bool = False,
-) -> None:
-    if temp_table:
-        table_name = f"temp_{socrata_metadata.table_name}"
-    else:
-        table_name = socrata_metadata.table_name
-    local_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
-    task_logger.info(
-        f"Attempting to create table 'data_raw.{table_name}, "
-        + f"dtypes inferred from file {local_file_path}."
-    )
-    if local_file_path.is_file():
-        engine = get_pg_engine(conn_id=conn_id)
-        from pandas.io.sql import SQLTable
-
-        if socrata_metadata.download_format == "csv":
-            import pandas as pd
-
-            df_subset = pd.read_csv(local_file_path, nrows=2000000)
-        elif socrata_metadata.is_geospatial:
-            import geopandas as gpd
-
-            df_subset = gpd.read_file(local_file_path, rows=2000000)
-        a_table = SQLTable(
-            frame=df_subset,
-            name=table_name,
-            schema="data_raw",
-            pandas_sql_engine=engine,
-            index=False,
-        )
-        table_create_obj = a_table._create_table_setup()
-        table_create_obj.create(bind=engine)
-        task_logger.info(f"Successfully created table 'data_raw.{table_name}'")
-
-    else:
-        raise Exception(f"File not found in expected location.")
-
-
 @task
 def create_table_in_data_raw(
     conn_id: str, task_logger: Logger, temp_table: bool, **kwargs
 ) -> SocrataTableMetadata:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
-    task_logger.info(f"In create_table_in_data_raw; table_name: {socrata_metadata.table_name}")
-    create_data_raw_table(
-        socrata_metadata=socrata_metadata,
-        conn_id=conn_id,
-        task_logger=task_logger,
-        temp_table=temp_table,
-    )
+    try:
+        table_name = socrata_metadata.table_name
+        task_logger.info(f"Creating table data_raw.{table_name}")
+        postgres_hook = PostgresHook(postgres_conn_id=conn_id)
+        conn = postgres_hook.get_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"CREATE TABLE data_raw.{table_name} (LIKE data_raw.temp_{table_name} INCLUDING ALL);"
+        )
+        conn.commit()
+    except Exception as e:
+        print(
+            f"Failed to create data_raw table {table_name} from temp_{table_name}. Error: {e}, {type(e)}"
+        )
     return socrata_metadata
 
 
