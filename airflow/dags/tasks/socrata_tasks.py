@@ -10,9 +10,9 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
 
-from utils.db import get_pg_engine, get_data_table_names_in_schema, execute_structural_command
-from utils.socrata import SocrataTable, SocrataTableMetadata
-from utils.utils import (
+from cc_utils.db import get_pg_engine, get_data_table_names_in_schema, execute_structural_command
+from cc_utils.socrata import SocrataTable, SocrataTableMetadata
+from cc_utils.utils import (
     get_local_data_raw_dir,
     get_lines_in_geojson_file,
     produce_slice_indices_for_gpd_read_file,

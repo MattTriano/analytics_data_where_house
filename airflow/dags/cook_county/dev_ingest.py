@@ -10,8 +10,8 @@ from airflow.decorators import dag, task, task_group
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from geoalchemy2.types import Geometry, Geography
 
-from utils.db import get_pg_engine, execute_structural_command
-from utils.utils import (
+from cc_utils.db import get_pg_engine, execute_structural_command
+from cc_utils.utils import (
     get_lines_in_file,
     produce_ingest_slices_for_gpd_read_file,
     produce_slice_indices_for_gpd_read_file,

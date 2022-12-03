@@ -6,7 +6,7 @@ from airflow.decorators import dag
 from airflow.operators.empty import EmptyOperator
 from airflow.utils.trigger_rule import TriggerRule
 
-from utils.socrata import SocrataTable
+from cc_utils.socrata import SocrataTable
 from tasks.socrata_tasks import (
     download_fresh_data,
     fresher_source_data_available,

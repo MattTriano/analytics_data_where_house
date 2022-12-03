@@ -5,7 +5,7 @@ from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
 from airflow.utils.trigger_rule import TriggerRule
 
-from utils.db import (
+from cc_utils.db import (
     get_pg_engine,
     database_has_schema,
     execute_structural_command,

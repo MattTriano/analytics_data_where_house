@@ -8,7 +8,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.utils.trigger_rule import TriggerRule
 from sqlalchemy.engine.base import Engine
 
-from utils.db import (
+from cc_utils.db import (
     database_has_schema,
     execute_structural_command,
     get_data_table_names_in_schema,

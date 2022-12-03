@@ -11,22 +11,13 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy import select, insert, update
 
 # for airflow container
-from utils.db import (
+from cc_utils.db import (
     execute_result_returning_query,
     get_reflected_db_table,
     execute_result_returning_orm_query,
     execute_dml_orm_query,
 )
-from utils.utils import typeset_zulu_tz_datetime_str
-
-# # for interactive dev work
-# from db import (
-#     execute_result_returning_query,
-#     get_reflected_db_table,
-#     execute_result_returning_orm_query,
-#     execute_dml_orm_query,
-# )
-# from utils import typeset_zulu_tz_datetime_str
+from cc_utils.utils import typeset_zulu_tz_datetime_str
 
 
 @dataclass

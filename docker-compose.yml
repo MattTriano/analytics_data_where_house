@@ -160,8 +160,8 @@ services:
         function ver() {
           printf "%04d%04d%04d%04d" $${1//./ }
         }
-        mkdir -p /sources/logs /sources/dags /sources/plugins /sources/data_raw
-        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins,data_raw}
+        mkdir -p /sources/logs /sources/dags /sources/plugins /sources/data_raw /sources/dbt
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins,data_raw,dbt}
         exec /entrypoint airflow version
     # yamllint enable rule:line-length
     environment:
