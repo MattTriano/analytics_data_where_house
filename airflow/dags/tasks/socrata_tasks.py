@@ -10,7 +10,11 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
 
-from cc_utils.db import get_pg_engine, get_data_table_names_in_schema, execute_structural_command
+from cc_utils.db import (
+    get_pg_engine,
+    get_data_table_names_in_schema,
+    execute_structural_command,
+)
 from cc_utils.socrata import SocrataTable, SocrataTableMetadata
 from cc_utils.utils import (
     get_local_data_raw_dir,
@@ -160,7 +164,10 @@ def ingest_into_temporary_table(
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="extract_load_task_group.download_fresh_data")
     ingest_into_table(
-        socrata_metadata=socrata_metadata, conn_id=conn_id, task_logger=task_logger, temp_table=True
+        socrata_metadata=socrata_metadata,
+        conn_id=conn_id,
+        task_logger=task_logger,
+        temp_table=True,
     )
     return socrata_metadata
 
@@ -173,7 +180,8 @@ def update_table_metadata_in_db(
     socrata_metadata = ti.xcom_pull(task_ids="extract_load_task_group.download_fresh_data")
     task_logger.info(f"Updating table_metadata record id #{socrata_metadata.freshness_check_id}.")
     socrata_metadata.update_current_freshness_check_in_db(
-        engine=get_pg_engine(conn_id=conn_id), update_payload={"data_pulled_this_check": True}
+        engine=get_pg_engine(conn_id=conn_id),
+        update_payload={"data_pulled_this_check": True},
     )
     return socrata_metadata
 
@@ -217,7 +225,7 @@ def drop_temp_table(
     try:
         full_temp_table_name = f"data_raw.temp_{socrata_metadata.table_name}"
         execute_structural_command(
-            query=f"DROP TABLE IF EXISTS {full_temp_table_name};",
+            query=f"DROP TABLE IF EXISTS {full_temp_table_name} CASCADE;",
             engine=engine,
         )
         return socrata_metadata
@@ -269,7 +277,9 @@ def load_csv_data(route_str: str, conn_id: str, task_logger: Logger) -> None:
 
 @task
 def get_geospatial_load_indices(
-    socrata_metadata: SocrataTableMetadata, task_logger: Logger, rows_per_batch: int = 500000
+    socrata_metadata: SocrataTableMetadata,
+    task_logger: Logger,
+    rows_per_batch: int = 500000,
 ):
     file_path = get_local_file_path(socrata_metadata=socrata_metadata)
     assert file_path.name.lower().endswith(
@@ -322,7 +332,9 @@ def load_geojson_data(route_str: str, conn_id: str, task_logger: Logger) -> Socr
         route_str=route_str, conn_id=conn_id, task_logger=task_logger
     )
     slice_indices_1 = get_geospatial_load_indices(
-        socrata_metadata=drop_temp_geojson_1, task_logger=task_logger, rows_per_batch=500000
+        socrata_metadata=drop_temp_geojson_1,
+        task_logger=task_logger,
+        rows_per_batch=500000,
     )
     ingest_temp_geojson_1 = ingest_geojson_data.partial(
         conn_id=conn_id, task_logger=task_logger

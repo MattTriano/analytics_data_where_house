@@ -25,13 +25,17 @@ def a_dbt_data_raw_update_test():
         task_id="dbt_stage_table",
         bash_command="cd /opt/airflow/dbt && dbt run --select models/staging/stg_cc_neighborhoods.sql",
     )
-    dbt_update_table_1 = BashOperator(
-        task_id="dbt_update_table",
+    dbt_update_view_1 = BashOperator(
+        task_id="dbt_update_view",
+        bash_command="cd /opt/airflow/dbt && dbt run --select models/staging/cook_county_neighborhood_boundaries.sql",
+    )
+    dbt_update_data_raw_table_1 = BashOperator(
+        task_id="dbt_update_data_raw_table",
         bash_command="cd /opt/airflow/dbt && dbt run --select models/staging/cook_county_neighborhood_boundaries.sql",
     )
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
 
-    dbt_stage_table_1 >> dbt_update_table_1 >> end_1
+    dbt_stage_table_1 >> dbt_update_view_1 >> dbt_update_data_raw_table_1 >> end_1
 
 
 a_dbt_data_raw_update_test()
