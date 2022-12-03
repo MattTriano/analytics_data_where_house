@@ -16,7 +16,7 @@ from tasks.socrata_tasks import (
 
 task_logger = logging.getLogger("airflow.task")
 
-SOCRATA_TABLE = SocrataTable(table_id="pcdw-pxtg", table_name="cook_county_neighborhood_boundaries")
+SOCRATA_TABLE = SocrataTable(table_id="wyzt-dzf8", table_name="cook_county_neighborhood_boundaries")
 
 
 @dag(
