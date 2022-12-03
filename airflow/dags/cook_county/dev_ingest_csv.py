@@ -15,7 +15,9 @@ from cc_utils.utils import (
     get_lines_in_file,
     produce_offset_and_nrows_counts_for_pd_read_csv,
 )
-from tasks.socrata_tasks import create_data_raw_table
+
+# from tasks.socrata_tasks import create_table_in_data_raw
+# create_data_raw_table
 
 task_logger = logging.getLogger("airflow.task")
 
@@ -182,29 +184,29 @@ def ingest_csv_data(conn_id: str, task_logger: Logger) -> str:
         task_logger.info(f"Failed to ingest flat file to temp table. Error: {e}, {type(e)}")
 
 
-@task_group
-def load_csv_data(conn_id: str, task_logger: Logger) -> None:
-    """Try 2, this time with COPY"""
-    temp_table_name = f"temp_cook_county_parcel_value_assessments"
-    file_name = "uzyt-m557_2022-11-26T23:58:09.460579Z.csv"
-    # file_path = Path("/home").joinpath(socrata_metadata.format_file_name())
-    file_path = Path("/opt/airflow/data_raw").joinpath(file_name)
+# @task_group
+# def load_csv_data(conn_id: str, task_logger: Logger) -> None:
+#     """Try 2, this time with COPY"""
+#     temp_table_name = f"temp_cook_county_parcel_value_assessments"
+#     file_name = "uzyt-m557_2022-11-26T23:58:09.460579Z.csv"
+#     # file_path = Path("/home").joinpath(socrata_metadata.format_file_name())
+#     file_path = Path("/opt/airflow/data_raw").joinpath(file_name)
 
-    drop_temp_csv_1 = drop_temp_table(conn_id=conn_id, task_logger=task_logger)
-    create_temp_csv_1 = create_data_raw_table(
-        conn_id=conn_id, task_logger=task_logger, temp_table=True
-    )
-    ingest_temp_csv_1 = ingest_csv_data(conn_id=conn_id, task_logger=task_logger)
+#     drop_temp_csv_1 = drop_temp_table(conn_id=conn_id, task_logger=task_logger)
+#     create_temp_csv_1 = create_data_raw_table(
+#         conn_id=conn_id, task_logger=task_logger, temp_table=True
+#     )
+#     ingest_temp_csv_1 = ingest_csv_data(conn_id=conn_id, task_logger=task_logger)
 
-    chain(drop_temp_csv_1, create_temp_csv_1, ingest_temp_csv_1)
-
-
-@dag(schedule=None, start_date=dt.datetime(2022, 11, 1), catchup=False, tags=["metadata"])
-def a_csv_ingest_dag():
-    POSTGRES_CONN_ID = "dwh_db_conn"
-
-    load_csv_1 = load_csv_data(conn_id=POSTGRES_CONN_ID, task_logger=task_logger)
-    load_csv_1
+#     chain(drop_temp_csv_1, create_temp_csv_1, ingest_temp_csv_1)
 
 
-a_csv_ingest_dag()
+# @dag(schedule=None, start_date=dt.datetime(2022, 11, 1), catchup=False, tags=["metadata"])
+# def a_csv_ingest_dag():
+#     POSTGRES_CONN_ID = "dwh_db_conn"
+
+#     load_csv_1 = load_csv_data(conn_id=POSTGRES_CONN_ID, task_logger=task_logger)
+#     load_csv_1
+
+
+# a_csv_ingest_dag()

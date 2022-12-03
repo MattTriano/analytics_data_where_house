@@ -10,7 +10,7 @@ SELECT
     {{ dbt_utils.surrogate_key(['pin', 'sale_document_num', 'sale_date', 'sale_price']) }} AS parcel_sale_id,
     pin::bigint AS pin,
     year::int AS year,
-    lpad(township_code::int::varchar(2), 2, '0') AS township_code,
+    township_code::bigint AS township_code,
     upper(class::varchar(6)) AS class,
     sale_date::timestamp AS sale_date,
     is_mydec_date::boolean AS is_mydec_date,
@@ -22,14 +22,12 @@ SELECT
     num_parcels_sale::int AS num_parcels_sale,
     upper(sale_buyer_name::text) AS sale_buyer_name,
     upper(sale_type::text) AS sale_type,
-    latest_date_in_data_pull::timestamp AS latest_date_in_data_pull,
-    ingested_on::text AS ingested_on
+    source_data_updated::text AS source_data_updated,
+    ingestion_check_time::text AS ingestion_check_time
 FROM parcel_sales_data
 WHERE rn = 1
 
--- dbt build --m <model.sql> --var 'is_test_run: false'
-{% if var('is_test_run', default=true) %}
-
-  limit 100
-
-{% endif %}
+-- -- dbt build --m <model.sql> --var 'is_test_run: false'
+-- {% if var('is_test_run', default=true) %}
+--   limit 100
+-- {% endif %}

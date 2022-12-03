@@ -1,4 +1,4 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
 WITH data_raw_neighborhood_boundary_data AS (
   SELECT *
