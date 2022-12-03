@@ -3,7 +3,7 @@
 WITH assessment_data AS
 (
   SELECT *, row_number() over(partition by pin, tax_year) as rn
-  FROM {{ source('staging','cook_county_historic_assessed_parcel_values') }}
+  FROM {{ source('staging','temp_cook_county_parcel_value_assessments') }}
 )
 
 SELECT

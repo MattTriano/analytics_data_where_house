@@ -3,7 +3,7 @@
 WITH parcel_sales_data AS
 (
   SELECT *, row_number() over(partition by pin, sale_document_num, sale_date, sale_price) as rn
-  FROM {{ source('staging','cook_county_parcel_sales') }}
+  FROM {{ source('staging','temp_cook_county_parcel_sales') }}
 )
 
 SELECT
