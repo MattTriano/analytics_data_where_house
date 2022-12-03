@@ -21,17 +21,18 @@ task_logger = logging.getLogger("airflow.task")
     tags=["cook_county", "boundary_lines", "dimension_table", "geospatial"],
 )
 def update_data_raw_cook_county_parcel_sales():
-    dbt_stage_table_1 = BashOperator(
-        task_id="dbt_stage_table",
-        bash_command="cd /opt/airflow/dbt && dbt run --select models/staging/stg_cc_parcel_sales.sql",
-    )
+    # dbt_stage_table_1 = BashOperator(
+    #     task_id="dbt_stage_table",
+    #     bash_command="cd /opt/airflow/dbt && dbt run --select models/staging/stg_cc_parcel_sales.sql",
+    # )
     dbt_update_data_raw_table_1 = BashOperator(
         task_id="dbt_update_data_raw_table",
-        bash_command="cd /opt/airflow/dbt && dbt run --select models/staging/cook_county_parcel_sales.sql",
+        bash_command="cd /opt/airflow/dbt && dbt run --select models/staging/cook_county_parcel_sales_test.sql",
     )
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
 
-    dbt_stage_table_1 >> dbt_update_data_raw_table_1 >> end_1
+    # dbt_stage_table_1 >>
+    dbt_update_data_raw_table_1 >> end_1
 
 
 update_data_raw_cook_county_parcel_sales()
