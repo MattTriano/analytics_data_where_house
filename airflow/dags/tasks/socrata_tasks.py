@@ -255,6 +255,26 @@ def ingest_csv_data(
                         """,
                         file=f,
                     )
+                conn.commit()
+                cur.execute(
+                    f"""
+                ALTER TABLE {full_temp_table_name} ADD COLUMN source_data_updated TEXT;
+                ALTER TABLE {full_temp_table_name} ADD COLUMN ingestion_check_time TEXT;
+                """
+                )
+                update_time = socrata_metadata.data_freshness_check["source_data_last_updated"]
+                cur.execute(
+                    f"""
+                UPDATE {full_temp_table_name} SET source_data_updated = '{update_time}';
+                """
+                )
+                conn.commit()
+                check_time = socrata_metadata.data_freshness_check["time_of_check"]
+                cur.execute(
+                    f"""
+                UPDATE {full_temp_table_name} SET ingestion_check_time = '{check_time}';
+                """
+                )
         conn.close()
         task_logger.info(f"Successfully ingested csv data into {full_temp_table_name} via COPY.")
         return socrata_metadata
@@ -265,9 +285,7 @@ def ingest_csv_data(
 @task_group
 def load_csv_data(route_str: str, conn_id: str, task_logger: Logger) -> None:
     drop_temp_csv_1 = drop_temp_table(route_str=route_str, conn_id=conn_id, task_logger=task_logger)
-    create_temp_csv_1 = create_table_in_data_raw(
-        conn_id=conn_id, task_logger=task_logger, temp_table=True
-    )
+    create_temp_csv_1 = create_temp_data_raw_table(conn_id=conn_id, task_logger=task_logger)
     ingest_temp_csv_1 = ingest_csv_data(
         socrata_metadata=create_temp_csv_1, conn_id=conn_id, task_logger=task_logger
     )
@@ -355,6 +373,43 @@ def file_ext_branch_router(socrata_metadata: SocrataTableMetadata) -> str:
 
 
 @task
+def create_temp_data_raw_table(conn_id: str, task_logger: Logger, **kwargs) -> None:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+    table_name = f"temp_{socrata_metadata.table_name}"
+    local_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
+    task_logger.info(
+        f"Attempting to create table 'data_raw.{table_name}, "
+        + f"dtypes inferred from file {local_file_path}."
+    )
+    if local_file_path.is_file():
+        engine = get_pg_engine(conn_id=conn_id)
+        from pandas.io.sql import SQLTable
+
+        if socrata_metadata.download_format == "csv":
+            import pandas as pd
+
+            df_subset = pd.read_csv(local_file_path, nrows=2000000)
+        elif socrata_metadata.is_geospatial:
+            import geopandas as gpd
+
+            df_subset = gpd.read_file(local_file_path, rows=2000000)
+        a_table = SQLTable(
+            frame=df_subset,
+            name=table_name,
+            schema="data_raw",
+            pandas_sql_engine=engine,
+            index=False,
+        )
+        table_create_obj = a_table._create_table_setup()
+        table_create_obj.create(bind=engine)
+        task_logger.info(f"Successfully created table 'data_raw.{table_name}'")
+        return socrata_metadata
+    else:
+        raise Exception(f"File not found in expected location.")
+
+
+@task
 def create_table_in_data_raw(
     conn_id: str, task_logger: Logger, temp_table: bool, **kwargs
 ) -> SocrataTableMetadata:
@@ -391,9 +446,7 @@ def load_data_tg(
         route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
     )
     table_exists_1 = table_exists_in_data_raw(conn_id=conn_id, task_logger=task_logger)
-    create_staging_table_1 = create_table_in_data_raw(
-        conn_id=conn_id, task_logger=task_logger, temp_table=False
-    )
+    create_staging_table_1 = create_temp_data_raw_table(conn_id=conn_id, task_logger=task_logger)
 
     data_load_end_1 = EmptyOperator(task_id="data_load_end", trigger_rule=TriggerRule.NONE_FAILED)
 

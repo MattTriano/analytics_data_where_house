@@ -85,7 +85,7 @@ models:
       - name: geometry
       - name: ingested_on
 
-  - name: stg_cc_parcel_sales
+  - name: cook_county_parcel_sales
     description: >
       Parcel sales for real property in Cook County, from 1999 to present.
       The Assessor's Office uses this data in its modeling to estimate the fair market value of unsold properties.
@@ -99,9 +99,9 @@ models:
     columns:
       - name: parcel_sale_id
         description: Surrogate key for defining a unique sale.
-        tests:
-          - unique
-          - not_null
+        # tests:
+        #   - unique
+        #   - not_null
       - name: pin
         description: Property Index Number (uniquely defines a parcel of property).
       - name: year
