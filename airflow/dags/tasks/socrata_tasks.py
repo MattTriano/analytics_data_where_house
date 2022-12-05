@@ -325,8 +325,10 @@ def ingest_geojson_data(
         time_of_check = socrata_metadata.data_freshness_check["time_of_check"]
 
         import geopandas as gpd
+        from cc_utils.geo import impute_empty_geometries_into_missing_geometries
 
         gdf = gpd.read_file(file_path, rows=slice(start_index, end_index))
+        gdf = impute_empty_geometries_into_missing_geometries(gdf=gdf, logger=task_logger)
         gdf["source_data_updated"] = source_data_updated
         gdf["ingestion_check_time"] = time_of_check
         task_logger.info(f"Shape of gdf: {gdf.shape}, columns: {gdf.columns}")
@@ -336,12 +338,15 @@ def ingest_geojson_data(
             schema="data_raw",
             con=engine,
             if_exists="append",
+            index=False,
         )
         task_logger.info(
             f"Successfully ingested records {start_index} to {end_index} using gpd.to_postgis()"
         )
     except Exception as e:
-        task_logger.info(f"Failed to ingest geojson file to temp table. Error: {e}, {type(e)}")
+        task_logger.error(
+            f"Failed to ingest geojson file to temp table. Error: {e}, {type(e)}", exc_info=True
+        )
 
 
 @task_group
@@ -432,9 +437,61 @@ def create_table_in_data_raw(
     return socrata_metadata
 
 
+# @task_group
+# def load_data_tg(
+#     socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
+# ) -> SocrataTableMetadata:
+#     task_logger.info(f"Entered load_data_tg task_group")
+#     file_ext_route_1 = file_ext_branch_router(socrata_metadata=socrata_metadata)
+
+#     geojson_route_1 = load_geojson_data(
+#         route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
+#     )
+#     csv_route_1 = load_csv_data(
+#         route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
+#     )
+#     table_exists_1 = table_exists_in_data_raw(conn_id=conn_id, task_logger=task_logger)
+#     create_staging_table_1 = create_temp_data_raw_table(conn_id=conn_id, task_logger=task_logger)
+
+#     data_load_end_1 = EmptyOperator(task_id="data_load_end", trigger_rule=TriggerRule.NONE_FAILED)
+
+#     chain(
+#         file_ext_route_1,
+#         [geojson_route_1, csv_route_1],
+#         table_exists_1,
+#         Label("Table Exists"),
+#         data_load_end_1,
+#     )
+#     chain(
+#         file_ext_route_1,
+#         [geojson_route_1, csv_route_1],
+#         table_exists_1,
+#         Label("Creating Table"),
+#         create_staging_table_1,
+#         data_load_end_1,
+#     )
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED)
+def update_result_of_check_in_metadata_table(
+    conn_id: str, task_logger: Logger, data_updated: bool, **kwargs
+) -> SocrataTableMetadata:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+    task_logger.info(f"Updating table_metadata record id #{socrata_metadata.freshness_check_id}.")
+    socrata_metadata.update_current_freshness_check_in_db(
+        engine=get_pg_engine(conn_id=conn_id),
+        update_payload={"data_pulled_this_check": data_updated},
+    )
+    return socrata_metadata
+
+
 @task_group
 def load_data_tg(
-    socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
+    socrata_metadata: SocrataTableMetadata,
+    socrata_table: SocrataTable,
+    conn_id: str,
+    task_logger: Logger,
 ) -> SocrataTableMetadata:
     task_logger.info(f"Entered load_data_tg task_group")
     file_ext_route_1 = file_ext_branch_router(socrata_metadata=socrata_metadata)
@@ -446,16 +503,31 @@ def load_data_tg(
         route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
     )
     table_exists_1 = table_exists_in_data_raw(conn_id=conn_id, task_logger=task_logger)
-    create_staging_table_1 = create_temp_data_raw_table(conn_id=conn_id, task_logger=task_logger)
+    create_staging_table_1 = create_table_in_data_raw(
+        conn_id=conn_id, task_logger=task_logger, temp_table=False
+    )
+    # dbt_update_data_raw_table_1 = BashOperator(
+    #     task_id="update_data_raw_table",
+    #     bash_command=f"""cd /opt/airflow/dbt && \
+    #         dbt run --select models/staging/{socrata_table.table_name}.sql""",
+    #     trigger_rule=TriggerRule.NONE_FAILED,
+    # )
+    # update_metadata_true_1 = update_result_of_check_in_metadata_table(
+    #     conn_id=conn_id, task_logger=task_logger, data_updated=True
+    # )
 
-    data_load_end_1 = EmptyOperator(task_id="data_load_end", trigger_rule=TriggerRule.NONE_FAILED)
+    update_data_raw_table_1 = EmptyOperator(
+        task_id="update_data_raw_table", trigger_rule=TriggerRule.NONE_FAILED
+    )
+    # data_load_end_1 = EmptyOperator(task_id="data_load_end", trigger_rule=TriggerRule.NONE_FAILED)
 
     chain(
         file_ext_route_1,
         [geojson_route_1, csv_route_1],
         table_exists_1,
         Label("Table Exists"),
-        data_load_end_1,
+        update_data_raw_table_1,
+        # update_metadata_true_1,
     )
     chain(
         file_ext_route_1,
@@ -463,7 +535,8 @@ def load_data_tg(
         table_exists_1,
         Label("Creating Table"),
         create_staging_table_1,
-        data_load_end_1,
+        update_data_raw_table_1,
+        # update_metadata_true_1,
     )
 
 
@@ -487,7 +560,7 @@ def fresher_source_data_available(
         return "end"
 
 
-@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED)
 def table_exists_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
@@ -500,4 +573,4 @@ def table_exists_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> str
         return "load_data_tg.create_table_in_data_raw"
     else:
         task_logger.info(f"Table {socrata_metadata.table_name} in data_raw; skipping.")
-        return "load_data_tg.data_load_end"
+        return "load_data_tg.update_data_raw_table"
