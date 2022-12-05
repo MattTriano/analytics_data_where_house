@@ -5,6 +5,7 @@ from urllib.request import urlretrieve
 
 from airflow.decorators import task, task_group
 from airflow.models.baseoperator import chain
+from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.edgemodifier import Label
@@ -437,41 +438,6 @@ def create_table_in_data_raw(
     return socrata_metadata
 
 
-# @task_group
-# def load_data_tg(
-#     socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
-# ) -> SocrataTableMetadata:
-#     task_logger.info(f"Entered load_data_tg task_group")
-#     file_ext_route_1 = file_ext_branch_router(socrata_metadata=socrata_metadata)
-
-#     geojson_route_1 = load_geojson_data(
-#         route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
-#     )
-#     csv_route_1 = load_csv_data(
-#         route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
-#     )
-#     table_exists_1 = table_exists_in_data_raw(conn_id=conn_id, task_logger=task_logger)
-#     create_staging_table_1 = create_temp_data_raw_table(conn_id=conn_id, task_logger=task_logger)
-
-#     data_load_end_1 = EmptyOperator(task_id="data_load_end", trigger_rule=TriggerRule.NONE_FAILED)
-
-#     chain(
-#         file_ext_route_1,
-#         [geojson_route_1, csv_route_1],
-#         table_exists_1,
-#         Label("Table Exists"),
-#         data_load_end_1,
-#     )
-#     chain(
-#         file_ext_route_1,
-#         [geojson_route_1, csv_route_1],
-#         table_exists_1,
-#         Label("Creating Table"),
-#         create_staging_table_1,
-#         data_load_end_1,
-#     )
-
-
 @task(trigger_rule=TriggerRule.NONE_FAILED)
 def update_result_of_check_in_metadata_table(
     conn_id: str, task_logger: Logger, data_updated: bool, **kwargs
@@ -506,20 +472,15 @@ def load_data_tg(
     create_staging_table_1 = create_table_in_data_raw(
         conn_id=conn_id, task_logger=task_logger, temp_table=False
     )
-    # dbt_update_data_raw_table_1 = BashOperator(
-    #     task_id="update_data_raw_table",
-    #     bash_command=f"""cd /opt/airflow/dbt && \
-    #         dbt run --select models/staging/{socrata_table.table_name}.sql""",
-    #     trigger_rule=TriggerRule.NONE_FAILED,
-    # )
-    # update_metadata_true_1 = update_result_of_check_in_metadata_table(
-    #     conn_id=conn_id, task_logger=task_logger, data_updated=True
-    # )
-
-    update_data_raw_table_1 = EmptyOperator(
-        task_id="update_data_raw_table", trigger_rule=TriggerRule.NONE_FAILED
+    update_data_raw_table_1 = BashOperator(
+        task_id="update_data_raw_table",
+        bash_command=f"""cd /opt/airflow/dbt && \
+            dbt run --select models/staging/{socrata_table.table_name}.sql""",
+        trigger_rule=TriggerRule.NONE_FAILED,
     )
-    # data_load_end_1 = EmptyOperator(task_id="data_load_end", trigger_rule=TriggerRule.NONE_FAILED)
+    update_metadata_true_1 = update_result_of_check_in_metadata_table(
+        conn_id=conn_id, task_logger=task_logger, data_updated=True
+    )
 
     chain(
         file_ext_route_1,
@@ -527,7 +488,7 @@ def load_data_tg(
         table_exists_1,
         Label("Table Exists"),
         update_data_raw_table_1,
-        # update_metadata_true_1,
+        update_metadata_true_1,
     )
     chain(
         file_ext_route_1,
@@ -536,7 +497,7 @@ def load_data_tg(
         Label("Creating Table"),
         create_staging_table_1,
         update_data_raw_table_1,
-        # update_metadata_true_1,
+        update_metadata_true_1,
     )
 
 

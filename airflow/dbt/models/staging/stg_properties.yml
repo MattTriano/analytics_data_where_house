@@ -13,9 +13,11 @@ sources:
       - name: temp_cook_county_neighborhood_boundaries
       - name: cook_county_parcel_value_assessments
       - name: temp_cook_county_parcel_value_assessments
+      - name: chicago_homicide_and_shooting_victimizations
+      - name: temp_chicago_homicide_and_shooting_victimizations
 
 models:
-  - name: stg_cc_parcel_locations
+  - name: cook_county_parcel_locations
     description: >
       This data set includes property locations and attached spatial data for all Cook County parcels. Spatial matching was based on parcel centroids. Older properties may be missing latitude and longitude data because they are not contained in the most recent parcel shape layer. Brand new properties may be missing a mailing/property address because the postal service has not yet assigned the property an address. Data attached to each PIN is the most recent available. For example, Census tract data is drawn from the 2014-2018 5-year American Community Survey.
     columns:
@@ -63,7 +65,7 @@ models:
       - name: board_tot
         description: Board of Review certified total value
 
-  - name: stg_cc_neighborhoods
+  - name: cook_county_neighborhood_boundaries
     description: >
       Neighborhood polygons used by the Cook County Assessor's Office for valuation and reporting. These neighborhoods are specific to the Assessor. They are intended to represent homogenous housing submarkets, NOT Chicago community areas or municipalities.
       These neighborhoods were reconstructed from individual parcels using spatial buffering and simplification. The full transformation script can be found on the Assessor's GitLab.
