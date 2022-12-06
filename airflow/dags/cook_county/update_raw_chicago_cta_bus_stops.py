@@ -23,9 +23,9 @@ SOCRATA_TABLE = SocrataTable(table_id="hvnx-qtky", table_name="chicago_cta_bus_s
     schedule=None,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["transit", "chicago", "cook_county", "geospatial"],
+    tags=["transit", "chicago", "cook_county", "geospatial", "data_raw"],
 )
-def update_cta_bus_stops_table():
+def update_data_raw_chicago_cta_bus_stops():
     POSTGRES_CONN_ID = "dwh_db_conn"
 
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
@@ -48,4 +48,4 @@ def update_cta_bus_stops_table():
     chain(metadata_1, fresh_source_data_available_1, end_1)
 
 
-update_cta_bus_stops_table()
+update_data_raw_chicago_cta_bus_stops()

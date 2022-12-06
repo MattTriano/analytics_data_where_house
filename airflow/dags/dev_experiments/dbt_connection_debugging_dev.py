@@ -18,7 +18,7 @@ SOCRATA_TABLE = SocrataTable(table_id="wvhk-k5uv", table_name="cook_county_parce
     schedule=None,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["transit", "chicago", "cook_county", "geospatial"],
+    tags=["dev_experiment"],
 )
 def a_dbt_test():
     # dbt_run = BashOperator(

@@ -114,7 +114,7 @@ def load_data_tg(
     schedule="0 6 4 * *",
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["cook_county", "parcels", "fact_table"],
+    tags=["cook_county", "parcels", "fact_table", "dev_experiment"],
 )
 def extract_load_update_cc_parcel_sales_table():
     POSTGRES_CONN_ID = "dwh_db_conn"

@@ -1,6 +1,8 @@
 import datetime as dt
 import logging
+from logging import Logger
 
+from airflow.decorators import task, task_group
 from airflow.models.baseoperator import chain
 from airflow.decorators import dag
 from airflow.operators.empty import EmptyOperator
@@ -16,16 +18,18 @@ from tasks.socrata_tasks import (
 
 task_logger = logging.getLogger("airflow.task")
 
-SOCRATA_TABLE = SocrataTable(table_id="8pix-ypme", table_name="chicago_cta_train_stations")
+SOCRATA_TABLE = SocrataTable(
+    table_id="gumc-mgzr", table_name="chicago_homicide_and_shooting_victimizations"
+)
 
 
 @dag(
-    schedule="0 5 5 * *",
+    schedule="0 7 * * *",
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["transit", "chicago", "cook_county", "geospatial"],
+    tags=["chicago", "violent_crime", "fact_table", "data_raw"],
 )
-def update_chicago_cta_train_stations_table():
+def update_data_raw_chicago_homicide_and_shooting_victimizations():
     POSTGRES_CONN_ID = "dwh_db_conn"
 
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
@@ -48,4 +52,4 @@ def update_chicago_cta_train_stations_table():
     chain(metadata_1, fresh_source_data_available_1, end_1)
 
 
-update_chicago_cta_train_stations_table()
+update_data_raw_chicago_homicide_and_shooting_victimizations()

@@ -191,7 +191,7 @@ def ingest_geojson_data_in_indexes(
 #     print(file_path)
 
 
-@dag(schedule=None, start_date=dt.datetime(2022, 11, 1), catchup=False, tags=["metadata"])
+@dag(schedule=None, start_date=dt.datetime(2022, 11, 1), catchup=False, tags=["dev_experiment"])
 def an_ingest_dag():
     ingest_indexes_1 = get_geospatial_load_indices(
         file_path=Path("/opt/airflow/data_raw/hvnx-qtky_2022-11-27T14:59:04.975359Z.GeoJSON"),

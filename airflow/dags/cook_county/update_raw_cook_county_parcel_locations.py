@@ -14,20 +14,19 @@ from tasks.socrata_tasks import (
     load_data_tg,
 )
 
+
 task_logger = logging.getLogger("airflow.task")
 
-SOCRATA_TABLE = SocrataTable(
-    table_id="uzyt-m557", table_name="cook_county_parcel_value_assessments"
-)
+SOCRATA_TABLE = SocrataTable(table_id="c49d-89sn", table_name="cook_county_parcel_locations")
 
 
 @dag(
-    schedule="0 3 4 * *",
+    schedule="0 7 4 * *",
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["cook_county", "parcels", "fact_table"],
+    tags=["cook_county", "parcels", "dimension_table", "data_raw"],
 )
-def update_cc_parcel_value_assessments_table():
+def update_data_raw_cook_county_parcel_locations():
     POSTGRES_CONN_ID = "dwh_db_conn"
 
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
@@ -50,4 +49,4 @@ def update_cc_parcel_value_assessments_table():
     chain(metadata_1, fresh_source_data_available_1, end_1)
 
 
-update_cc_parcel_value_assessments_table()
+update_data_raw_cook_county_parcel_locations()
