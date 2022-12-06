@@ -33,7 +33,9 @@ def impute_empty_geometries_into_missing_geometries(
         return gdf
     except TypeError as te:
         logger.error(f"Entered object wasn't a GeoDataFrame: {te}, type: {type(te)}", exc_info=True)
+        raise
     except Exception as e:
         logger.error(
             f"Error while attempting to handle null geom vals: {e}, type: {type(e)}", exc_info=True
         )
+        raise
