@@ -20,7 +20,7 @@ task_logger = logging.getLogger("airflow.task")
     catchup=False,
     tags=["dev_experiment"],
 )
-def update_data_raw_cook_county_parcel_sales():
+def dbt_dev_update_data_raw_cook_county_parcel_sales():
     # dbt_stage_table_1 = BashOperator(
     #     task_id="dbt_stage_table",
     #     bash_command="cd /opt/airflow/dbt && dbt run --select models/staging/stg_cc_parcel_sales.sql",
@@ -36,4 +36,4 @@ def update_data_raw_cook_county_parcel_sales():
     dbt_update_data_raw_table_1 >> end_1
 
 
-update_data_raw_cook_county_parcel_sales()
+dbt_dev_update_data_raw_cook_county_parcel_sales()

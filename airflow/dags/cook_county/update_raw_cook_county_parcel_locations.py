@@ -5,6 +5,7 @@ from airflow.models.baseoperator import chain
 from airflow.decorators import dag
 from airflow.operators.empty import EmptyOperator
 from airflow.utils.trigger_rule import TriggerRule
+from airflow.utils.edgemodifier import Label
 
 from cc_utils.socrata import SocrataTable
 from tasks.socrata_tasks import (
@@ -12,6 +13,7 @@ from tasks.socrata_tasks import (
     fresher_source_data_available,
     check_table_metadata,
     load_data_tg,
+    update_result_of_check_in_metadata_table,
 )
 
 
@@ -44,9 +46,23 @@ def update_data_raw_cook_county_parcel_locations():
         conn_id=POSTGRES_CONN_ID,
         task_logger=task_logger,
     )
+    update_metadata_false_1 = update_result_of_check_in_metadata_table(
+        conn_id=POSTGRES_CONN_ID, task_logger=task_logger, data_updated=False
+    )
 
-    chain(metadata_1, fresh_source_data_available_1, extract_data_1, load_data_tg_1)
-    chain(metadata_1, fresh_source_data_available_1, end_1)
+    chain(
+        metadata_1,
+        fresh_source_data_available_1,
+        Label("Fresher data available"),
+        extract_data_1,
+        load_data_tg_1,
+    )
+    chain(
+        metadata_1,
+        fresh_source_data_available_1,
+        Label("Local data is fresh"),
+        update_metadata_false_1,
+    )
 
 
 update_data_raw_cook_county_parcel_locations()

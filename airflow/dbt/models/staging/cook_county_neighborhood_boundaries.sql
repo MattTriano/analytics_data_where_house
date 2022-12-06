@@ -23,13 +23,20 @@ new_or_updated_records_in_current_pull AS (
   WHERE NOT EXISTS (
     SELECT
     FROM records_in_data_raw_table old
-    WHERE new.triad_name = old.triad_name AND
-          new.town_nbhd = old.town_nbhd AND
-          new.township_code = old.township_code AND
-          new.triad_code = old.triad_code AND
-          new.township_name = old.township_name AND
-          new.nbhd = old.nbhd AND
-          new.geometry = old.geometry
+    WHERE ((new.triad_name = old.triad_name) OR
+           (new.triad_name IS NULL AND old.triad_name IS NULL))
+      AND ((new.town_nbhd = old.town_nbhd) OR
+           (new.town_nbhd IS NULL AND old.town_nbhd IS NULL))
+      AND ((new.township_code = old.township_code) OR
+           (new.township_code IS NULL AND old.township_code IS NULL))
+      AND ((new.triad_code = old.triad_code) OR
+           (new.triad_code IS NULL AND old.triad_code IS NULL))
+      AND ((new.township_name = old.township_name) OR
+           (new.township_name IS NULL AND old.township_name IS NULL))
+      AND ((new.nbhd = old.nbhd) OR
+           (new.nbhd IS NULL AND old.nbhd IS NULL))
+      AND ((new.geometry = old.geometry) OR
+           (new.geometry IS NULL AND old.geometry IS NULL))
   )
 ),
 data_raw_table_with_new_and_updated_records AS (
