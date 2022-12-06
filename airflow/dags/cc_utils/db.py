@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import List, Union
 
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -100,11 +101,18 @@ def execute_result_returning_orm_query(
         raise
 
 
-def execute_dml_orm_query(engine: Engine, dml_stmt: Union[Insert, Update]) -> None:
+def execute_dml_orm_query(
+    engine: Engine, dml_stmt: Union[Insert, Update], logger: Logger = None
+) -> None:
     try:
         with Session(engine) as session:
             session.execute(dml_stmt)
             session.commit()
     except Exception as err:
-        print(f"Couldn't execute the given ORM-style query: {err}, type: {type(err)}")
+        msg = f"Couldn't execute the given ORM-style query: {err}, type: {type(err)}"
+        if logger:
+            logger.error(msg)
+            logger.info(f"offending query: {dml_stmt}")
+        else:
+            print(msg)
         raise

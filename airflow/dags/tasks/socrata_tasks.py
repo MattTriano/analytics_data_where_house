@@ -183,6 +183,7 @@ def update_table_metadata_in_db(
     socrata_metadata.update_current_freshness_check_in_db(
         engine=get_pg_engine(conn_id=conn_id),
         update_payload={"data_pulled_this_check": True},
+        logger=task_logger,
     )
     return socrata_metadata
 
@@ -438,7 +439,7 @@ def create_table_in_data_raw(
     return socrata_metadata
 
 
-@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS, depends_on_past=True)
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def update_result_of_check_in_metadata_table(
     conn_id: str, task_logger: Logger, data_updated: bool, **kwargs
 ) -> SocrataTableMetadata:
@@ -447,6 +448,7 @@ def update_result_of_check_in_metadata_table(
         task_ids="check_table_metadata.ingest_table_freshness_check_metadata"
     )
     task_logger.info(f"Updating table_metadata record id #{socrata_metadata.freshness_check_id}.")
+    task_logger.info(f"Data_pulled_this_check: {data_updated}.")
     socrata_metadata.update_current_freshness_check_in_db(
         engine=get_pg_engine(conn_id=conn_id),
         update_payload={"data_pulled_this_check": data_updated},
@@ -537,3 +539,10 @@ def table_exists_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> str
     else:
         task_logger.info(f"Table {socrata_metadata.table_name} in data_raw; skipping.")
         return "load_data_tg.update_data_raw_table"
+
+
+@task.short_circuit(ignore_downstream_trigger_rules=True)
+def short_circuit_downstream():
+    # airflow's short_circuit operator shorts downstream tasks by returning False
+    # or proceeds if the short_circuit task returns True.
+    return False
