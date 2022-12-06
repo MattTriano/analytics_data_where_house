@@ -132,7 +132,7 @@ def fresher_source_data_available(
         return "end"
 
 
-@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def table_exists_in_warehouse(socrata_metadata: SocrataTableMetadata, conn_id: str) -> str:
     tables_in_data_raw_schema = get_data_table_names_in_schema(
         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
@@ -438,12 +438,14 @@ def create_table_in_data_raw(
     return socrata_metadata
 
 
-@task(trigger_rule=TriggerRule.NONE_FAILED)
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS, depends_on_past=True)
 def update_result_of_check_in_metadata_table(
     conn_id: str, task_logger: Logger, data_updated: bool, **kwargs
 ) -> SocrataTableMetadata:
     ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+    socrata_metadata = ti.xcom_pull(
+        task_ids="check_table_metadata.ingest_table_freshness_check_metadata"
+    )
     task_logger.info(f"Updating table_metadata record id #{socrata_metadata.freshness_check_id}.")
     socrata_metadata.update_current_freshness_check_in_db(
         engine=get_pg_engine(conn_id=conn_id),
@@ -476,7 +478,7 @@ def load_data_tg(
         task_id="update_data_raw_table",
         bash_command=f"""cd /opt/airflow/dbt && \
             dbt run --select models/staging/{socrata_table.table_name}.sql""",
-        trigger_rule=TriggerRule.NONE_FAILED,
+        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
     update_metadata_true_1 = update_result_of_check_in_metadata_table(
         conn_id=conn_id, task_logger=task_logger, data_updated=True
@@ -518,10 +520,10 @@ def fresher_source_data_available(
     if table_does_not_exist or update_availble:
         return "download_fresh_data"
     else:
-        return "end"
+        return "update_result_of_check_in_metadata_table"
 
 
-@task.branch(trigger_rule=TriggerRule.NONE_FAILED)
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def table_exists_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
