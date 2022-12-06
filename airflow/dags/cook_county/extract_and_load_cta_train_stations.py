@@ -39,6 +39,7 @@ def update_chicago_cta_train_stations_table():
     extract_data_1 = download_fresh_data(task_logger=task_logger)
     load_data_tg_1 = load_data_tg(
         socrata_metadata=extract_data_1,
+        socrata_table=SOCRATA_TABLE,
         conn_id=POSTGRES_CONN_ID,
         task_logger=task_logger,
     )
