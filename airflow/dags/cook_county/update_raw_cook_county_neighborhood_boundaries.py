@@ -3,15 +3,16 @@ import logging
 
 from airflow.models.baseoperator import chain
 from airflow.decorators import dag
-from airflow.operators.empty import EmptyOperator
-from airflow.utils.trigger_rule import TriggerRule
+from airflow.utils.edgemodifier import Label
 
-from utils.socrata import SocrataTable
+from cc_utils.socrata import SocrataTable
 from tasks.socrata_tasks import (
     download_fresh_data,
     fresher_source_data_available,
     check_table_metadata,
     load_data_tg,
+    update_result_of_check_in_metadata_table,
+    short_circuit_downstream,
 )
 
 task_logger = logging.getLogger("airflow.task")
@@ -23,12 +24,10 @@ SOCRATA_TABLE = SocrataTable(table_id="wyzt-dzf8", table_name="cook_county_neigh
     schedule="0 4 3 3 *",
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["cook_county", "boundary_lines", "dimension_table", "geospatial"],
+    tags=["cook_county", "boundary_lines", "dimension_table", "geospatial", "data_raw"],
 )
-def update_cc_neighborhood_boundaries_table():
+def update_data_raw_cook_county_neighborhood_boundaries():
     POSTGRES_CONN_ID = "dwh_db_conn"
-
-    end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
 
     metadata_1 = check_table_metadata(
         socrata_table=SOCRATA_TABLE, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
@@ -39,12 +38,29 @@ def update_cc_neighborhood_boundaries_table():
     extract_data_1 = download_fresh_data(task_logger=task_logger)
     load_data_tg_1 = load_data_tg(
         socrata_metadata=extract_data_1,
+        socrata_table=SOCRATA_TABLE,
         conn_id=POSTGRES_CONN_ID,
         task_logger=task_logger,
     )
+    update_metadata_false_1 = update_result_of_check_in_metadata_table(
+        conn_id=POSTGRES_CONN_ID, task_logger=task_logger, data_updated=False
+    )
+    short_circuit_update_1 = short_circuit_downstream()
 
-    chain(metadata_1, fresh_source_data_available_1, extract_data_1, load_data_tg_1)
-    chain(metadata_1, fresh_source_data_available_1, end_1)
+    chain(
+        metadata_1,
+        fresh_source_data_available_1,
+        Label("Fresher data available"),
+        extract_data_1,
+        load_data_tg_1,
+    )
+    chain(
+        metadata_1,
+        fresh_source_data_available_1,
+        Label("Local data is fresh"),
+        update_metadata_false_1,
+        short_circuit_update_1,
+    )
 
 
-update_cc_neighborhood_boundaries_table()
+update_data_raw_cook_county_neighborhood_boundaries()

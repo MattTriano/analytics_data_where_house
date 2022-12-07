@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import List, Union
 
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -20,6 +21,7 @@ def get_pg_engine(conn_id: str) -> Engine:
         return engine
     except Exception as e:
         print(f"Failed to generate engine to pg db using conn_id {conn_id}. Error: {e}, {type(e)}")
+        raise
 
 
 def get_data_schema_names(engine: Engine) -> List:
@@ -80,6 +82,7 @@ def get_reflected_db_table(engine: Engine, table_name: str, schema_name: str) ->
             raise NoSuchTableError(f"Table {table_name} not found in schema {schema_name}.")
     except Exception as err:
         print(f"Error while attempting table reflection. {err}, error type: {type(err)}")
+        raise
 
 
 def execute_result_returning_orm_query(
@@ -95,12 +98,21 @@ def execute_result_returning_orm_query(
         return pd.DataFrame(query_result)
     except Exception as err:
         print(f"Couldn't execute the given ORM-style query: {err}, type: {type(err)}")
+        raise
 
 
-def execute_dml_orm_query(engine: Engine, dml_stmt: Union[Insert, Update]) -> None:
+def execute_dml_orm_query(
+    engine: Engine, dml_stmt: Union[Insert, Update], logger: Logger = None
+) -> None:
     try:
         with Session(engine) as session:
             session.execute(dml_stmt)
             session.commit()
     except Exception as err:
-        print(f"Couldn't execute the given ORM-style query: {err}, type: {type(err)}")
+        msg = f"Couldn't execute the given ORM-style query: {err}, type: {type(err)}"
+        if logger:
+            logger.error(msg)
+            logger.info(f"offending query: {dml_stmt}")
+        else:
+            print(msg)
+        raise

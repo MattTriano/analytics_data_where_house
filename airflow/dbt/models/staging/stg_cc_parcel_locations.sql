@@ -3,7 +3,7 @@
 WITH parcel_location_data AS
 (
   SELECT *, row_number() over(partition by pin) as rn
-  FROM {{ source('staging','cook_county_parcel_locations') }}
+  FROM {{ source('staging','temp_cook_county_parcel_locations') }}
 )
 
 SELECT

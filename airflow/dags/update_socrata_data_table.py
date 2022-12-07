@@ -11,8 +11,8 @@ from airflow.utils.edgemodifier import Label
 import pandas as pd
 import geopandas as gpd
 
-from utils.db import get_pg_engine, get_data_table_names_in_schema
-from utils.socrata import SocrataTable, SocrataTableMetadata
+from cc_utils.db import get_pg_engine, get_data_table_names_in_schema
+from cc_utils.socrata import SocrataTable, SocrataTableMetadata
 
 task_logger = logging.getLogger("airflow.task")
 

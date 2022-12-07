@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import datetime as dt
 import json
+from logging import Logger
 import re
 from pathlib import Path
 from typing import Dict, Optional, Union
@@ -11,22 +12,13 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy import select, insert, update
 
 # for airflow container
-from utils.db import (
+from cc_utils.db import (
     execute_result_returning_query,
     get_reflected_db_table,
     execute_result_returning_orm_query,
     execute_dml_orm_query,
 )
-from utils.utils import typeset_zulu_tz_datetime_str
-
-# # for interactive dev work
-# from db import (
-#     execute_result_returning_query,
-#     get_reflected_db_table,
-#     execute_result_returning_orm_query,
-#     execute_dml_orm_query,
-# )
-# from utils import typeset_zulu_tz_datetime_str
+from cc_utils.utils import typeset_zulu_tz_datetime_str
 
 
 @dataclass
@@ -349,7 +341,9 @@ class SocrataTableMetadata:
             # throw an exception for this (although that may change).
             pass
 
-    def update_current_freshness_check_in_db(self, engine: Engine, update_payload: Dict) -> None:
+    def update_current_freshness_check_in_db(
+        self, engine: Engine, update_payload: Dict, logger: Logger = None
+    ) -> None:
         update_fields = update_payload.keys()
         valid_fields = self.data_freshness_check.keys()
         if self.freshness_check_id is None:
@@ -360,12 +354,13 @@ class SocrataTableMetadata:
         metadata_table = get_reflected_db_table(
             engine=engine, table_name="table_metadata", schema_name="metadata"
         )
-        update_dict = {}
-        update_dict["id"] = self.freshness_check_id
-        update_dict.update(update_payload)
+        data_pulled_value = update_payload["data_pulled_this_check"]
         update_query = (
             update(metadata_table)
             .where(metadata_table.c.time_of_check == self.data_freshness_check["time_of_check"])
-            .values(data_pulled_this_check=True)
+            .values(data_pulled_this_check=data_pulled_value)
         )
-        execute_dml_orm_query(engine=engine, dml_stmt=update_query)
+        if logger:
+            logger.info(f"Updating record {self.freshness_check_id} with payload {update_payload}")
+            logger.info(f"update_query: {update_query}")
+        execute_dml_orm_query(engine=engine, dml_stmt=update_query, logger=logger)

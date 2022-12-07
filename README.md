@@ -27,32 +27,38 @@ AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_
 _AIRFLOW_WWW_USER_USERNAME=replace_me_with_a_username_for_Airflow_WebUI
 _AIRFLOW_WWW_USER_PASSWORD=replace_me_with_password_for_Airflow_WebUI
 AIRFLOW__CORE__FERNET_KEY=replace_me_with_a_frenet_key_you_generate_with_the_snippet_below
+
+DWH_POSTGRES_USER=replace_me_with_data_warehouse_username
+DWH_POSTGRES_PASSWORD=replace_me_with_data_warehouse_password
+DWH_POSTGRES_DB=replace_me_with_data_warehouse_db_name
 ```
 
 And we'll also want to create a `.env` file for a separate database to actually use as our data warehouse, which we'll name `.dwh.env` and give it the env-vars:
 
 ```bash
-POSTGRES_USER=replace_me_with_data_warehouse_username
-POSTGRES_PASSWORD=replace_me_with_data_warehouse_password
-POSTGRES_DB=replace_me_with_data_warehouse_db_name
+POSTGRES_USER=DWH_POSTGRES_USER (from the .env file above)
+POSTGRES_PASSWORD=DWH_POSTGRES_USER (from the .env file above)
+POSTGRES_DB=DWH_POSTGRES_DB (from the .env file above)
 ```
 
 And make a file named `profiles.yml`
 
 ```yml
-re_dbt_pg_raw:
+cc_where_house:
   target: dev
   outputs:
     dev:
       type: postgres
-      host: localhost
-      user: user: "{{ env_var('POSTGRES_USER') }}"
-      password: "{{ env_var('POSTGRES_PASSWORD') }}"
+      host: dwh_db  # or whatever name you gave the warehouse-database-service in the docker-compose file
+      user: user: "{{ env_var('DWH_POSTGRES_USER') }}"
+      password: "{{ env_var('DWH_POSTGRES_PASSWORD') }}"
       port: 5432 # or whatever port your database is listening to
-      dbname: "{{ env_var('POSTGRES_DB') }}"
+      dbname: "{{ env_var('DWH_POSTGRES_DB') }}"
       schema: data_raw
       threads: 4
 ```
+
+Note: if `dbt debug` indicates your `profiles.yml` file was found and is valid but failed to connect to the database, you'll have to at least cycle `docker-compose down` and `docker-compose up` if you change the `profiles.yml` file (and you might also have to `docker-compose up --build`).
 
 ##### Generating a Frenet Key to use as env var AIRFLOW__CORE__FERNET_KEY
 ```python
@@ -193,9 +199,6 @@ Notes:
 
 Notes- organization:
 Airflow dynamically adds the `/plugins`, `/dags`, and `/config` folders to `PYTHONPATH` (per the documentation), and non-DAG code should be kept out of `/dags`, but `/plugins` isn't checked constantly for changes like `/dags` is, so you'll have to change some configs in `airflow.cfg` (ctrl+f for plugin and change the ones that seem like they should be changed; I think I changed `[core] lazy_load_plugins` to `False` and `[webserver] reload_on_plugin_change` to `True`)
-
-
-
 
 
 
