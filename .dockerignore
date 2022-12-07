@@ -1,6 +1,8 @@
-.venv
 .git
+.startup
+.venv
 .vscode/
-notes/*
 airflow/data_raw*
 airflow/logs*
+notes/*
+sandbox/*

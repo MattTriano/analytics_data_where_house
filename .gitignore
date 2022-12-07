@@ -1,8 +1,9 @@
 *__pycache__
 *.ipynb_checkpoints
-data_raw/
 .env
 .dwh.env
 .venv
+
+sandbox/
 *profiles.yml
 **/logs

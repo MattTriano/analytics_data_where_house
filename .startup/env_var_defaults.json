@@ -1,0 +1,184 @@
+{
+  ".env::POSTGRES_USER": {
+    "file": ".env",
+    "name": "POSTGRES_USER",
+    "group": "Airflow",
+    "default_value": "airflow_metadata_db_username",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::POSTGRES_PASSWORD": {
+    "file": ".env",
+    "name": "POSTGRES_PASSWORD",
+    "group": "Airflow",
+    "default_value": "airflow_metadata_db_password",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::POSTGRES_DB": {
+    "file": ".env",
+    "name": "POSTGRES_DB",
+    "group": "Airflow",
+    "default_value": "airflow_metadata_db_database_name",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::_AIRFLOW_WWW_USER_USERNAME": {
+    "file": ".env",
+    "name": "_AIRFLOW_WWW_USER_USERNAME",
+    "group": "Airflow",
+    "default_value": "airflow_UI_admin_username",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::_AIRFLOW_WWW_USER_PASSWORD": {
+    "file": ".env",
+    "name": "_AIRFLOW_WWW_USER_PASSWORD",
+    "group": "Airflow",
+    "default_value": "airflow_UI_admin_password",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::AIRFLOW__CORE__FERNET_KEY": {
+    "file": ".env",
+    "name": "AIRFLOW__CORE__FERNET_KEY",
+    "group": "Airflow",
+    "default_value": "44_chars_of_gibberish_to_keep_secret_asdfklj",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::AIRFLOW__CORE__SQL_ALCHEMY_CONN": {
+    "file": ".env",
+    "name": "AIRFLOW__CORE__SQL_ALCHEMY_CONN",
+    "group": "Airflow",
+    "default_value": "postgresql+psycopg2://<POSTGRES_USER>:<POSTGRES_PASSWORD>@airflow_db/<POSTGRES_DB>",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "env_var_mappings": {
+      "<POSTGRES_USER>": ".env::POSTGRES_USER",
+      "<POSTGRES_PASSWORD>": ".env::POSTGRES_PASSWORD",
+      "<POSTGRES_DB>": ".env::POSTGRES_DB"
+    }
+  },
+  ".env::AIRFLOW__CORE__ENABLE_XCOM_PICKLING": {
+    "file": ".env",
+    "name": "AIRFLOW__CORE__ENABLE_XCOM_PICKLING",
+    "group": "Airflow",
+    "default_value": true,
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env::PGADMIN_DEFAULT_EMAIL": {
+    "file": ".env",
+    "name": "PGADMIN_DEFAULT_EMAIL",
+    "group": "pgAdmin4 Database Admin Interface",
+    "default_value": "pgAdmin_UI_admin_email@email.com",
+    "user_input": true,
+    "valid_pattern": "[^@\\s]+@[^@\\s]+\\.[\\w]+$",
+    "invalid_substrings": null,
+    "dependant_on_other_env_vars": false
+  },
+  ".env::PGADMIN_DEFAULT_PASSWORD": {
+    "file": ".env",
+    "name": "PGADMIN_DEFAULT_PASSWORD",
+    "group": "pgAdmin4 Database Admin Interface",
+    "default_value": "pgAdmin_UI_admin_password",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::DBT_USER": {
+    "file": ".env",
+    "name": "DBT_USER",
+    "group": "dbt Credentials (maybe unnecessary, not currently used)",
+    "default_value": "dbt_some_username",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::DBT_PASSWORD": {
+    "file": ".env",
+    "name": "DBT_PASSWORD",
+    "group": "dbt Credentials (maybe unnecessary, not currently used)",
+    "default_value": "dbt_some_password",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::DWH_POSTGRES_USER": {
+    "file": ".env",
+    "name": "DWH_POSTGRES_USER",
+    "group": "Data Warehouse DB",
+    "default_value": "data_warehouse_db_username",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::DWH_POSTGRES_PASSWORD": {
+    "file": ".env",
+    "name": "DWH_POSTGRES_PASSWORD",
+    "group": "Data Warehouse DB",
+    "default_value": "data_warehouse_db_password",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::DWH_POSTGRES_DB": {
+    "file": ".env",
+    "name": "DWH_POSTGRES_DB",
+    "group": "Data Warehouse DB",
+    "default_value": "re_dwh",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".dwh.env::POSTGRES_USER": {
+    "file": ".dwh.env",
+    "name": "POSTGRES_USER",
+    "group": "Data Warehouse DB",
+    "default_value": "DWH_POSTGRES_USER",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "env_var_mappings": {
+      "DWH_POSTGRES_USER": ".env::DWH_POSTGRES_USER"
+    }
+  },
+  ".dwh.env::POSTGRES_PASSWORD": {
+    "file": ".dwh.env",
+    "name": "POSTGRES_PASSWORD",
+    "group": "Data Warehouse DB",
+    "default_value": "DWH_POSTGRES_PASSWORD",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "env_var_mappings": {
+      "DWH_POSTGRES_PASSWORD": ".env::DWH_POSTGRES_PASSWORD"
+    }
+  },
+  ".dwh.env::POSTGRES_DB": {
+    "file": ".dwh.env",
+    "name": "POSTGRES_DB",
+    "group": "Data Warehouse DB",
+    "default_value": "DWH_POSTGRES_DB",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "env_var_mappings": {
+      "DWH_POSTGRES_DB": ".env::DWH_POSTGRES_DB"
+    }
+  }
+}
