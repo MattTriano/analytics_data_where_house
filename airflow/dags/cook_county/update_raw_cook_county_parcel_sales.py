@@ -2,7 +2,7 @@ import datetime as dt
 import logging
 
 from airflow.models.baseoperator import chain
-from airflow.decorators import dag, task
+from airflow.decorators import dag
 from airflow.utils.edgemodifier import Label
 
 from cc_utils.socrata import SocrataTable

@@ -3,8 +3,6 @@ import logging
 
 from airflow.models.baseoperator import chain
 from airflow.decorators import dag
-from airflow.operators.empty import EmptyOperator
-from airflow.utils.trigger_rule import TriggerRule
 from airflow.utils.edgemodifier import Label
 
 from cc_utils.socrata import SocrataTable
@@ -14,6 +12,7 @@ from tasks.socrata_tasks import (
     check_table_metadata,
     load_data_tg,
     update_result_of_check_in_metadata_table,
+    short_circuit_downstream,
 )
 
 task_logger = logging.getLogger("airflow.task")
@@ -29,8 +28,6 @@ SOCRATA_TABLE = SocrataTable(table_id="8pix-ypme", table_name="chicago_cta_train
 )
 def update_data_raw_chicago_cta_train_stations():
     POSTGRES_CONN_ID = "dwh_db_conn"
-
-    end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
 
     metadata_1 = check_table_metadata(
         socrata_table=SOCRATA_TABLE, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
@@ -48,6 +45,7 @@ def update_data_raw_chicago_cta_train_stations():
     update_metadata_false_1 = update_result_of_check_in_metadata_table(
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger, data_updated=False
     )
+    short_circuit_update_1 = short_circuit_downstream()
 
     chain(
         metadata_1,
@@ -61,6 +59,7 @@ def update_data_raw_chicago_cta_train_stations():
         fresh_source_data_available_1,
         Label("Local data is fresh"),
         update_metadata_false_1,
+        short_circuit_update_1,
     )
 
 

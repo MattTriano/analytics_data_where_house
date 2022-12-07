@@ -1,15 +1,16 @@
 {{ config(materialized='table') }}
 {% set source_cols = [
-     "location_state", "location_zip", "station_descriptive_name", "blue", "station_name", "y",
-     "location_address", "location_city", "brn", "direction_id", "map_id", "g", "stop_name", "p",
-     "ada", "pnk", "pexp", "stop_id", "red", "o", "geometry"
+    "pin", "tax_year", "class", "township_code", "township_name", "mailed_bldg", "mailed_land",
+    "mailed_tot", "certified_bldg", "certified_land", "certified_tot", "board_bldg", "board_land",
+    "board_tot"
 ] %}
 {% set metadata_cols = ["source_data_updated", "ingestion_check_time"] %}
+
 
 -- selecting all records already in the full data_raw table
 WITH records_in_data_raw_table AS (
      SELECT *, 1 AS retention_priority
-     FROM {{ source('staging', 'chicago_cta_train_stations') }}
+     FROM {{ source('staging', 'cook_county_parcel_value_assessments') }}
 ),
 
 -- selecting all distinct records from the latest data pull (in the "temp" table)
@@ -19,7 +20,7 @@ current_pull_with_distinct_combos_numbered AS (
                {% for sc in source_cols %}{{ sc }},{% endfor %}
                {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
           ) as rn
-     FROM {{ source('staging', 'temp_chicago_cta_train_stations') }}
+     FROM {{ source('staging', 'temp_cook_county_parcel_value_assessments') }}
 ),
 distinct_records_in_current_pull AS (
      SELECT
@@ -57,6 +58,6 @@ distinct_records_for_data_raw_table AS (
      WHERE rn = 1
 )
 
-SELECT * 
-FROM data_raw_table_with_new_and_updated_records
-ORDER BY stop_id, source_data_updated
+SELECT *
+FROM distinct_records_for_data_raw_table
+ORDER BY pin, tax_year, source_data_updated

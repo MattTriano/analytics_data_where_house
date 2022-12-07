@@ -1,52 +1,61 @@
 {{ config(materialized='table') }}
+{% set source_cols = [
+    "triad_name", "town_nbhd", "township_code", "triad_code", "township_name", "nbhd", "geometry"
+] %}
+{% set metadata_cols = ["source_data_updated", "ingestion_check_time"] %}
 
-WITH current_pull_with_distinct_combos_numbered AS (
-  SELECT *, row_number() over(
-    partition by triad_name, town_nbhd, township_code, triad_code, township_name, nbhd, geometry,
-                 source_data_updated, ingestion_check_time
-    ) as rn
-  FROM {{ source('staging', 'temp_cook_county_neighborhood_boundaries') }}
+
+-- selecting all records already in the full data_raw table
+WITH records_in_data_raw_table AS (
+     SELECT *, 1 AS retention_priority
+     FROM {{ source('staging', 'cook_county_neighborhood_boundaries') }}
+),
+
+-- selecting all distinct records from the latest data pull (in the "temp" table)
+current_pull_with_distinct_combos_numbered AS (
+     SELECT *,
+          row_number() over(partition by
+               {% for sc in source_cols %}{{ sc }},{% endfor %}
+               {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
+          ) as rn
+     FROM {{ source('staging', 'temp_cook_county_neighborhood_boundaries') }}
 ),
 distinct_records_in_current_pull AS (
-  SELECT *
-  FROM current_pull_with_distinct_combos_numbered
-  WHERE rn = 1
+     SELECT
+          {% for sc in source_cols %}{{ sc }},{% endfor %}
+          {% for mc in metadata_cols %}{{ mc }},{% endfor %}
+          2 AS retention_priority
+     FROM current_pull_with_distinct_combos_numbered
+     WHERE rn = 1
 ),
-records_in_data_raw_table AS (
-  SELECT *
-  FROM {{ source('staging', 'cook_county_neighborhood_boundaries') }}
+
+-- stacking the existing data with all distinct records from the latest pull
+data_raw_table_with_all_new_and_updated_records AS (
+     SELECT *
+     FROM records_in_data_raw_table
+          UNION ALL
+     SELECT *
+     FROM distinct_records_in_current_pull
 ),
-new_or_updated_records_in_current_pull AS (
-  SELECT triad_name, town_nbhd, township_code, triad_code, township_name, nbhd, geometry,
-         source_data_updated, ingestion_check_time
-  FROM distinct_records_in_current_pull new
-  WHERE NOT EXISTS (
-    SELECT
-    FROM records_in_data_raw_table old
-    WHERE ((new.triad_name = old.triad_name) OR
-           (new.triad_name IS NULL AND old.triad_name IS NULL))
-      AND ((new.town_nbhd = old.town_nbhd) OR
-           (new.town_nbhd IS NULL AND old.town_nbhd IS NULL))
-      AND ((new.township_code = old.township_code) OR
-           (new.township_code IS NULL AND old.township_code IS NULL))
-      AND ((new.triad_code = old.triad_code) OR
-           (new.triad_code IS NULL AND old.triad_code IS NULL))
-      AND ((new.township_name = old.township_name) OR
-           (new.township_name IS NULL AND old.township_name IS NULL))
-      AND ((new.nbhd = old.nbhd) OR
-           (new.nbhd IS NULL AND old.nbhd IS NULL))
-      AND ((new.geometry = old.geometry) OR
-           (new.geometry IS NULL AND old.geometry IS NULL))
-  )
-),
+
+-- selecting records that where source columns are distinct (keeping the earlier recovery
+--  when there are duplicates to chose from)
 data_raw_table_with_new_and_updated_records AS (
-  SELECT * 
-  FROM records_in_data_raw_table
-    UNION ALL
-  SELECT *
-  FROM new_or_updated_records_in_current_pull
+     SELECT *,
+      row_number() over(partition by
+          {% for sc in source_cols %}{{ sc }}{{ "," if not loop.last }}{% endfor %}
+          ORDER BY retention_priority
+          ) as rn
+     FROM data_raw_table_with_all_new_and_updated_records
+),
+distinct_records_for_data_raw_table AS (
+     SELECT
+          {% for sc in source_cols %}{{ sc }},{% endfor %}
+          {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
+     FROM data_raw_table_with_new_and_updated_records
+     WHERE rn = 1
 )
 
-SELECT * 
-FROM data_raw_table_with_new_and_updated_records
-ORDER BY town_nbhd, triad_code
+SELECT *
+FROM distinct_records_for_data_raw_table
+ORDER BY town_nbhd, triad_code, source_data_updated

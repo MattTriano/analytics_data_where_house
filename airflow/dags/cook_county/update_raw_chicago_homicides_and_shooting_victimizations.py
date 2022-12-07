@@ -1,11 +1,8 @@
 import datetime as dt
 import logging
-from logging import Logger
 
-from airflow.decorators import task, task_group
 from airflow.models.baseoperator import chain
 from airflow.decorators import dag
-from airflow.operators.empty import EmptyOperator
 from airflow.utils.edgemodifier import Label
 
 from cc_utils.socrata import SocrataTable
@@ -15,6 +12,7 @@ from tasks.socrata_tasks import (
     check_table_metadata,
     load_data_tg,
     update_result_of_check_in_metadata_table,
+    short_circuit_downstream,
 )
 
 task_logger = logging.getLogger("airflow.task")
@@ -49,6 +47,7 @@ def update_data_raw_chicago_homicide_and_shooting_victimizations():
     update_metadata_false_1 = update_result_of_check_in_metadata_table(
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger, data_updated=False
     )
+    short_circuit_update_1 = short_circuit_downstream()
 
     chain(
         metadata_1,
@@ -62,6 +61,7 @@ def update_data_raw_chicago_homicide_and_shooting_victimizations():
         fresh_source_data_available_1,
         Label("Local data is fresh"),
         update_metadata_false_1,
+        short_circuit_update_1,
     )
 
 
