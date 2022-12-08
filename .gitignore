@@ -5,5 +5,4 @@
 .venv
 
 sandbox/
-*profiles.yml
 **/logs

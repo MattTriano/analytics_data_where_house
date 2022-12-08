@@ -3,70 +3,28 @@
 
 ### Starting up the system
 
+Preprequisites:
+To use this system, Docker is the only absolutely necessary prerequisite.
+
+Having `GNU make` and/or core python on your host system will enable you to use included `makefile` recipes and scripts to streamline setup and common operations, but you could get by without them (although you'll have to figure more out).
+
 #### Set up credentials
-After cloning this repo and `cd`ing into your local, run this command
+After cloning this repo and `cd`ing into your local, run this `make` command and respond to prompts the the requested values,
 
 ```bash
-echo -e "AIRFLOW_UID=$(id -u)" > .env
+make make_credentials
 ```
-
-to create, then add the lines below to that file and replace the fake parameter values with real ones.
-
-```
-POSTGRES_USER=replace_me_with_airflow_metadata_db_username
-POSTGRES_PASSWORD=replace_me_with_airflow_metadata_db_password
-POSTGRES_DB=replace_me_with_airflow_metadata_db_name
-PGADMIN_DEFAULT_EMAIL=yours@email.com
-PGADMIN_DEFAULT_PASSWORD=replace_me_pgAdmin_pw
-DBT_USER=replace_me_dbt_username
-DBT_PASSWORD=replace_me_dbt_pw
-
-# fill in the actual values 
-AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@<name_of_db_service_in_compose-yml>/{POSTGRES_DB}
-AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@<name_of_db_service_in_compose-yml>/{POSTGRES_DB}
-_AIRFLOW_WWW_USER_USERNAME=replace_me_with_a_username_for_Airflow_WebUI
-_AIRFLOW_WWW_USER_PASSWORD=replace_me_with_password_for_Airflow_WebUI
-AIRFLOW__CORE__FERNET_KEY=replace_me_with_a_frenet_key_you_generate_with_the_snippet_below
-
-DWH_POSTGRES_USER=replace_me_with_data_warehouse_username
-DWH_POSTGRES_PASSWORD=replace_me_with_data_warehouse_password
-DWH_POSTGRES_DB=replace_me_with_data_warehouse_db_name
-```
-
-And we'll also want to create a `.env` file for a separate database to actually use as our data warehouse, which we'll name `.dwh.env` and give it the env-vars:
-
-```bash
-POSTGRES_USER=DWH_POSTGRES_USER (from the .env file above)
-POSTGRES_PASSWORD=DWH_POSTGRES_USER (from the .env file above)
-POSTGRES_DB=DWH_POSTGRES_DB (from the .env file above)
-```
-
-And make a file named `profiles.yml`
-
-```yml
-cc_where_house:
-  target: dev
-  outputs:
-    dev:
-      type: postgres
-      host: dwh_db  # or whatever name you gave the warehouse-database-service in the docker-compose file
-      user: user: "{{ env_var('DWH_POSTGRES_USER') }}"
-      password: "{{ env_var('DWH_POSTGRES_PASSWORD') }}"
-      port: 5432 # or whatever port your database is listening to
-      dbname: "{{ env_var('DWH_POSTGRES_DB') }}"
-      schema: data_raw
-      threads: 4
-```
-
-Note: if `dbt debug` indicates your `profiles.yml` file was found and is valid but failed to connect to the database, you'll have to at least cycle `docker-compose down` and `docker-compose up` if you change the `profiles.yml` file (and you might also have to `docker-compose up --build`).
 
 ##### Generating a Frenet Key to use as env var AIRFLOW__CORE__FERNET_KEY
+To get a proper frenet key for the `AIRFLOW__CORE__FERNET_KEY` environment variable, the best way I know of involves the `cryptography` module, which isn't a built-in python module, but it is pretty common and it's easy enough to `pip install` or `conda install` into a `venv` or `conda env` if it hasn't already been installed as a dependency for something else.
+
 ```python
 from cryptography.fernet import Fernet
 
 fernet_key = Fernet.generate_key()
 print(fernet_key.decode()) # your fernet_key
 ```
+then copy that value and paste it into the appropriate field in the `.env` file in the same directory as this README.md file.
 
 
 #### Spinning up the system
