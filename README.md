@@ -1,3 +1,22 @@
+# Analytics Data Where House
+
+This platform is built to automate the collection and ingestion of data into a data warehouse, and to track information gained from periodic checks (both to avoid unnecessarily downloading data and to have confidence that freshness checks are frequent enough to detect the source update cadence). 
+
+At present, utilities built to to make the ELT pipelines for the current set of tables make it easy to add an ELT pipeline for [any other table hosted by Socrata](http://www.opendatanetwork.com/).
+
+![Data update scheme](imgs/Count_of_records_after_update.PNG)
+
+![Freshness check metadata](imgs/metadata_table_query_view.PNG)
+
+## Ingestion Flow
+
+![](imgs/Socrata_ELT_DAG_tgs_condensed_small.PNG)
+
+![](imgs/Socrata_ELT_DAG_metadata_check_taskgroup_expanded.PNG)
+
+![](imgs/Socrata_ELT_DAG_load_data_taskgroup_expanded_ingestions_condensed.PNG.PNG)
+
+![](imgs/Socrata_ELT_DAG_load_data_taskgroup_and_ingestion_task_groups_expanded.PNG)
 
 ## Usage
 

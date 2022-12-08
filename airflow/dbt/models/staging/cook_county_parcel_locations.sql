@@ -1,13 +1,13 @@
 {{ config(materialized='table') }}
-{% set source_columns = [
+{% set source_cols = [
      "pin", "property_address", "property_apt_no", "property_city", "property_zip",
      "mailing_address", "mailing_state", "mailing_city", "mailing_zip", "longitude", "latitude",
      "township", "township_name", "nbhd", "tract_geoid", "tract_pop", "tract_white_perc",
      "tract_black_perc", "tract_asian_perc", "tract_his_perc", "tract_other_perc",
      "tract_midincome", "puma", "municipality_fips", "municipality", "commissioner_dist",
      "reps_dist", "senate_dist", "ward", "ssa_name", "ssa_no", "tif_agencynum", "ohare_noise",
-      "floodplain", "fs_flood_factor", "fs_flood_risk_direction", "withinmr100", "withinmr101300",
-      "school_elem_district", "school_hs_district", "indicator_has_address", "indicator_has_latlon"
+     "floodplain", "fs_flood_factor", "fs_flood_risk_direction", "withinmr100", "withinmr101300",
+     "school_elem_district", "school_hs_district", "indicator_has_address", "indicator_has_latlon"
 ] %}
 {% set metadata_cols = ["source_data_updated", "ingestion_check_time"] %}
 
@@ -64,4 +64,4 @@ distinct_records_for_data_raw_table AS (
 
 SELECT *
 FROM distinct_records_for_data_raw_table
-ORDER BY pin, year, sale_document_num, source_data_updated
+ORDER BY pin, source_data_updated
