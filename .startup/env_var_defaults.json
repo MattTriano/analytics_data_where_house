@@ -59,9 +59,9 @@
     "invalid_substrings": "[\\s]",
     "dependant_on_other_env_vars": false
   },
-  ".env::AIRFLOW__CORE__SQL_ALCHEMY_CONN": {
+  ".env::AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": {
     "file": ".env",
-    "name": "AIRFLOW__CORE__SQL_ALCHEMY_CONN",
+    "name": "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN",
     "group": "Airflow",
     "default_value": "postgresql+psycopg2://<POSTGRES_USER>:<POSTGRES_PASSWORD>@airflow_db/<POSTGRES_DB>",
     "user_input": false,

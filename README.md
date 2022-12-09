@@ -12,15 +12,16 @@ At present, it uses docker to provision and run:
 ## Motivation
 I like to do my research before I buy anything, especially if it's a big ticket item. I've been considering buying a house for a while, but the methods I use for answering questions like "what phone should I buy?" or "how can I make my apartment less drafty in winter" haven't been adequate to answer the questions I have about real estate. Fortunately, the real estate market I've grown fond of has the richest public data culture in the US (that I, a data scientist focused on Chicago-related issues, am aware of), and this market's Assessor's Office regularly [publishes data](https://datacatalog.cookcountyil.gov/browse?tags=cook%20county%20assessor) I can mine for answers to some of my biggest questions.
 
-![Data update scheme](imgs/Count_of_records_after_update.PNG)
-
-![Freshness check metadata](imgs/metadata_table_query_view.PNG)
-
 ## Ingestion Flow
 
 
 
 ![](imgs/Socrata_ELT_DAG_tgs_condensed_small.PNG)
+
+
+![Data update scheme](imgs/Count_of_records_after_update.PNG)
+
+![Freshness check metadata](imgs/metadata_table_query_view.PNG)
 
 ![](imgs/Socrata_ELT_DAG_metadata_check_taskgroup_expanded.PNG)
 
@@ -30,21 +31,19 @@ I like to do my research before I buy anything, especially if it's a big ticket 
 
 ## Usage
 
-### Starting up the system
-
 Preprequisites:
 To use this system, Docker is the only absolutely necessary prerequisite.
 
 Having `GNU make` and/or core python on your host system will enable you to use included `makefile` recipes and scripts to streamline setup and common operations, but you could get by without them (although you'll have to figure more out).
 
-#### Set up credentials
+### Setting up credentials
 After cloning this repo and `cd`ing into your local, run this `make` command and respond to prompts the the requested values,
 
 ```bash
 make make_credentials
 ```
 
-##### Generating a Frenet Key to use as env var AIRFLOW__CORE__FERNET_KEY
+#### Generating a Frenet Key to use as env var AIRFLOW__CORE__FERNET_KEY
 To get a proper frenet key for the `AIRFLOW__CORE__FERNET_KEY` environment variable, the best way I know of involves the `cryptography` module, which isn't a built-in python module, but it is pretty common and it's easy enough to `pip install` or `conda install` into a `venv` or `conda env` if it hasn't already been installed as a dependency for something else.
 
 ```python
@@ -56,48 +55,30 @@ print(fernet_key.decode()) # your fernet_key
 then copy that value and paste it into the appropriate field in the `.env` file in the same directory as this README.md file.
 
 
-#### Spinning up the system
+### Initializing the system
 
-Build the docker images used by your docker-compose application and then run the `airflow-init` service to run an initial database migration that creates tables Airflow needs to run, and to create the system's first Airflow user account (which will use the `_AIRFLOW_WWW_USER_USERNAME` and `_AIRFLOW_WWW_USER_PASSWORD` values you set in the `.env` file as the username and user-password; if you didn't set those, the username and password will both be "airflow"). 
-
-```bash
-user@host:.../your_local_repo$ docker-compose build
-user@host:.../your_local_repo$ docker-compose up airflow-init
-```
-
-With images built and `airflow-init`ialized, you can start up your docker-compose app via
+On the first startup of the system (and after setting your credentials), run the commands below to 1) build the platform's docker images, and 2) initialize the airflow metadata database. 
 
 ```bash
-user@host:.../your_local_repo$ docker-compose up
+user@host:.../your_local_repo$ make build
+user@host:.../your_local_repo$ make init_airflow
 ```
 
-And to shut it down, at a terminal in the repo directory (press `ctrl+c` if you want to use the terminal serving the app)
+These commands only need to be run on first startup (although you will need to rebuild if you make any changes to a `Dockerfile` or a `requirements.txt` file). 
+
+### Starting up the system
+
+Run this command to startup the platform
 
 ```bash
-user@host:.../your_local_repo$ docker-compose down
+user@host:.../your_local_repo$ make startup
 ```
 
-Any time a package is added to a requirements.txt file or any Dockerfile changes at all, images will have to be rebuilt before you'll be able to see the effect. Do this via 
-
-```bash
-user@host:.../your_local_repo$ docker-compose build
-```
-
-Or if you want to build and start it up in one command
-
-```bash
-user@host:.../your_local_repo$ docker-compose up --build
-```
-
-If something goes wrong during initialization or something's wrong with the build and deleting the database isn't an issue (i.e. if you haven't put anything into prod yet and you've only been experimenting), run this command to tear down the docker-compose app (which will delete named volumns, which includes both the database and the admin database).
-
-```bash
-user@host:.../your_local_repo$ docker-compose down -v
-```
-
-#### Accessing the Airflow Web UI
-
-When the airflow system has been initialized and is running, the web ui can be accessed at http://localhost:8080/, and you'll log in with username ${_AIRFLOW_WWW_USER_USERNAME} and password ${_AIRFLOW_WWW_USER_PASSWORD}.
+After systems have started up, you can access:
+* The pgAdmin4 database administration UI at [http://localhost:5678](http://localhost:5678)
+  * Log in using the `PGADMIN_DEFAULT_EMAIL` and `PGADMIN_DEFAULT_PASSWORD` credentials from your `.env` file. 
+* The Airflow UI at [http://localhost:8080](http://localhost:8080)
+  * Log in using the `_AIRFLOW_WWW_USER_USERNAME` and `_AIRFLOW_WWW_USER_PASSWORD` credentials from your `.env` file.
 
 ### Setting up Airflow Connections to Data Sources
 
@@ -126,7 +107,7 @@ You can also create a connection through the admin interface of the web UI by lo
 
 DAGs put or developed in the `/<repo>/airflow/dags/` directory will quickly be available through the web UI and can be manually triggered or run there.
 
-At present, a local mount is created at `/<repo>/data_raw` (host-side) to `/opt/airflow/data_raw` (container-side).
+At present, a local mount is created at `/<repo>/data_raw` (host-side) to `/opt/airflow/data_raw` (container-side), so changes you make to a DAG from your host machine will be (nearly immediately) available you can develop.
 
 
 
