@@ -33,18 +33,9 @@ Before downloading potentially gigabytes of data, we check the data source's met
  <img src="imgs/Socrata_ELT_DAG_metadata_check_taskgroup_expanded.PNG" width="80%" alt="check_table_metadata TaskGroup"/>
 </p>
 
-
-<!-- ![Data update scheme](imgs/Count_of_records_after_update.PNG) -->
-
 <p align="center" width="100%">
  <img src="imgs/metadata_table_query_view.PNG" width="80%" alt="Freshness check metadata Table in pgAdmin4"/>
 </p>
-
-<!-- ![Freshness check metadata](imgs/metadata_table_query_view.PNG) -->
-
-<!-- ![](imgs/Socrata_ELT_DAG_metadata_check_taskgroup_expanded.PNG) -->
-
-<!-- ![](imgs/Socrata_ELT_DAG_load_data_taskgroup_expanded_ingestions_condensed.PNG) -->
 
 If the data source's data is fresher than the data in the local data warehouse, the system downloads the full table from the data source (to a file in the Airflow-scheduler container) and then runs the `load_data_tg` TaskGroup, which:
 1. loads it into a "temp" table (via the appropriate data-loader TaskGroup),
