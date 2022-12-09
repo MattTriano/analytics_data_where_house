@@ -1,0 +1,12 @@
+cc_where_house:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: dwh_db
+      user: "{{ env_var('DWH_POSTGRES_USER') }}"
+      password: "{{ env_var('DWH_POSTGRES_PASSWORD') }}"
+      port: 5432
+      dbname: "{{ env_var('DWH_POSTGRES_DB') }}"
+      schema: data_raw
+      threads: 4

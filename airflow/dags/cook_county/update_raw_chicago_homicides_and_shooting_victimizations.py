@@ -23,7 +23,7 @@ SOCRATA_TABLE = SocrataTable(
 
 
 @dag(
-    schedule="0 7 * * *",
+    schedule="0 18 * * *",
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
     tags=["chicago", "violent_crime", "fact_table", "data_raw"],

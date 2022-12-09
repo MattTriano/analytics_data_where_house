@@ -15,12 +15,9 @@ from tasks.socrata_tasks import (
     short_circuit_downstream,
 )
 
-
 task_logger = logging.getLogger("airflow.task")
 
-SOCRATA_TABLE = SocrataTable(
-    table_id="c49d-89sn", table_name="cook_county_parcel_locations"
-)
+SOCRATA_TABLE = SocrataTable(table_id="c49d-89sn", table_name="cook_county_parcel_locations")
 
 
 @dag(
