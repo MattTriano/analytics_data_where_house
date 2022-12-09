@@ -83,15 +83,18 @@ After systems have started up, you can access:
 The pgAdmin4 UI makes it very easy to explore your data, inspect database internals, and make manual changes while developing features, but before you can make use of this excellent interface, you have to set a connection to a database. This platform uses two separate databases: one as a backend for Airflow, and the other as the data warehouse database.
 
 To create a new connection, start by clicking the "Add New Server" button (you might have to click the "Servers" line in the lefthand tray first). On the **Connection** page, enter the appropriate credential values from your `.env` file,
+
 ![Airflow metadata db connection](imgs/Setting_up_pgAdmin4_connection_to_airflow_metadata_pg2.PNG)
 
 and on the **General** tab, enter a display name for that connection (**airflow_metadata_db** shown)
-![Data update scheme](imgs/Setting_up_pgAdmin4_connection_to_airflow_metadata_pg1.PNG)
+
+![Airflow metadata db general](imgs/Setting_up_pgAdmin4_connection_to_airflow_metadata_pg1.PNG)
 
 Repeat the process to connect to the data warehouse database, using the appropriate (and different from above) credential values from your `.env` file,
-![Data update scheme](imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg2.PNG)
 
-![Data update scheme](imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg1.PNG) 
+![Data Warehouse Connection](imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg2.PNG)
+
+![Data Warehouse General](imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg1.PNG) 
 
 ### Setting up Airflow Connections to Data Sources
 
