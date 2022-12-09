@@ -122,7 +122,15 @@ After systems have started up, you can access:
 * The Airflow UI at [http://localhost:8080](http://localhost:8080)
   * Log in using the `_AIRFLOW_WWW_USER_USERNAME` and `_AIRFLOW_WWW_USER_PASSWORD` credentials from your `.env` file.
 
-#### First DAGs to run
+#### First DAGs to run on initial start
+
+Before the data-update DAGs can be run and start populating your local data warehouse, the data warehouse database will need both a `data_raw` schema and a `metadata` schema, as well as a `metadata.table_metadata` table. You can create all of these by runing the `ensure_metadata_table_exists` and `ensure_data_raw_schema_exists` DAGs once on your initial startup or whenever you create or connect a new data warehouse database. 
+
+<p align="center" width="100%">
+ <img src="imgs/Ensure_metadata_table_exists.PNG" width="65%" alt="Creates metadata schema and table_metadata table if they don't exist"/>
+ <img src="imgs/Ensure_data_raw_schema_exists.PNG" width="32%" alt="Creates the data_raw schema if it doesn't exist"/>
+</p>
+
 
 ### Setting up database connections in pgAdmin4
 
@@ -130,17 +138,23 @@ The pgAdmin4 UI makes it very easy to explore your data, inspect database intern
 
 To create a new connection, start by clicking the "Add New Server" button (you might have to click the "Servers" line in the lefthand tray first). On the **Connection** page, enter the appropriate credential values from your `.env` file,
 
-![Airflow metadata db connection](imgs/Setting_up_pgAdmin4_connection_to_airflow_metadata_pg2.PNG)
+<p align="center" width="100%">
+  <img src="imgs/Setting_up_pgAdmin4_connection_to_airflow_metadata_pg2.PNG" width="90%" alt="Airflow metadata db connection"/>
+</p>
+
 
 and on the **General** tab, enter a display name for that connection (**airflow_metadata_db** shown)
 
-![Airflow metadata db general](imgs/Setting_up_pgAdmin4_connection_to_airflow_metadata_pg1.PNG)
+<p align="center" width="100%">
+  <img src="imgs/Setting_up_pgAdmin4_connection_to_airflow_metadata_pg1.PNG" width="60%" alt="Airflow metadata db general"/>
+</p>
 
 Repeat the process to connect to the data warehouse database, using the appropriate (and different from above) credential values from your `.env` file,
 
-![Data Warehouse Connection](imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg2.PNG)
-
-![Data Warehouse General](imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg1.PNG) 
+<p align="center" width="100%">
+  <img src="imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg1.PNG" width="45%" alt="Data Warehouse General"/>
+ <img src="imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg2.PNG" width="45%" alt="Data Warehouse Connection"/>
+</p>
 
 ### Setting up Airflow Connections to Data Sources
 
@@ -173,9 +187,15 @@ At present, a local mount is created at `/<repo>/data_raw` (host-side) to `/opt/
 
 To generate and serve documentation for the data transformations executed by dbt, run the command below, and after the doc server has started up, go to [http://localhost:18080](http://localhost:18080) to explore the documentation UI.
 
+The documentation will be mainly based on the sources, column names, and descriptions recorded in the `.yml` file in the `.../dbt/models/...` directories with table-or-view-producing dbt scripts.
+
 ```bash
 user@host:.../your_local_repo$ make serve_dbt_docs
+
 ```
+<p align="center" width="100%">
+  <img src="imgs/dbt_doc_sample_page_w_lineage_graph.PNG" width="90%" alt="dbt documentation page with table lineage graph"/>
+</p>
 
 ### Specifying, installing, and updating dbt packages
  
@@ -197,9 +217,15 @@ user@host:.../your_local_repo$ make update_dbt_packages
 01:33:05    Up to date!
 ```
 
+## Developing queries and exploring data in pgAdmin4
 
+pgAdmin4 is a very feature-rich environment and makes it very convenient to test out queries or syntax and see the result.
 
-Notes:
+<p align="center" width="100%">
+  <img src="imgs/Geospatial_query_and_data_in_pgAdmin4.PNG" width="90%" alt="pgAdmin4's geospatial query viewer"/>
+</p>
+
+## Notes:
 * In the docker-compose.yml file from Airflow's docker quick start guide, the system uses the CeleryExecutor rather than the LocalExecutor. If you regularly need to run so many concurrent tasks that all allocated CPU cores are in use and waiting tasks must be queued until hardware is free, then the CeleryExecutor is a necessary complexity (as it allows you to split up execution over multiple servers). But if your workflows don't simultaneously consume all CPU cores, then the LocalExecutor is probably adequate.
   * If you switch to using the LocalExecutor, you can also remove the Redis bits from the docker-compose, as the Redis service is just the task queue.
   * You can also remove the `airflow-worker` and `flower` services, which are also only used for managing `celery`.
