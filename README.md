@@ -1,8 +1,16 @@
 # Analytics Data Where House
 
-This platform is built to automate the collection and ingestion of data into a data warehouse, and to track information gained from periodic checks (both to avoid unnecessarily downloading data and to have confidence that freshness checks are frequent enough to detect the source update cadence). 
+This platform automates curation of a local data warehouse of interesting up-to-date public data sets and enables me to ask and answer deeper questions.
 
-At present, utilities built to to make the ELT pipelines for the current set of tables make it easy to add an ELT pipeline for [any other table hosted by Socrata](http://www.opendatanetwork.com/).
+At present, it uses docker to provision and run:
+* a PostgreSQL + PostGIS database as the data warehouse,
+* a pgAdmin4 database administration interface,
+* Airflow components to orchestrate tasks (note: uses a LocalExecutor),
+* dbt to manage data transformation and cleaning tasks, and
+* custom python code that makes it easy to implement an ELT pipeline for [any other table hosted by Socrata](http://www.opendatanetwork.com/).
+
+## Motivation
+I like to do my research before I buy anything, especially if it's a big ticket item. I've been considering buying a house for a while, but the methods I use for answering questions like "what phone should I buy?" or "how can I make my apartment less drafty in winter" haven't been adequate to answer the questions I have about real estate. Fortunately, the real estate market I've grown fond of has the richest public data culture in the US (that I, a data scientist focused on Chicago-related issues, am aware of), and this market's Assessor's Office regularly [publishes data](https://datacatalog.cookcountyil.gov/browse?tags=cook%20county%20assessor) I can mine for answers to some of my biggest questions.
 
 ![Data update scheme](imgs/Count_of_records_after_update.PNG)
 
@@ -10,11 +18,13 @@ At present, utilities built to to make the ELT pipelines for the current set of 
 
 ## Ingestion Flow
 
+
+
 ![](imgs/Socrata_ELT_DAG_tgs_condensed_small.PNG)
 
 ![](imgs/Socrata_ELT_DAG_metadata_check_taskgroup_expanded.PNG)
 
-![](imgs/Socrata_ELT_DAG_load_data_taskgroup_expanded_ingestions_condensed.PNG.PNG)
+![](imgs/Socrata_ELT_DAG_load_data_taskgroup_expanded_ingestions_condensed.PNG)
 
 ![](imgs/Socrata_ELT_DAG_load_data_taskgroup_and_ingestion_task_groups_expanded.PNG)
 
@@ -174,8 +184,6 @@ Notes:
   * You can also remove the `airflow-worker` and `flower` services, which are also only used for managing `celery`.
 
 
-Notes- organization:
-Airflow dynamically adds the `/plugins`, `/dags`, and `/config` folders to `PYTHONPATH` (per the documentation), and non-DAG code should be kept out of `/dags`, but `/plugins` isn't checked constantly for changes like `/dags` is, so you'll have to change some configs in `airflow.cfg` (ctrl+f for plugin and change the ones that seem like they should be changed; I think I changed `[core] lazy_load_plugins` to `False` and `[webserver] reload_on_plugin_change` to `True`)
 
 
 
