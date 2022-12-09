@@ -14,8 +14,6 @@ I like to do my research before I buy anything, especially if it's a big ticket 
 
 ## Ingestion Flow
 
-
-
 ![](imgs/Socrata_ELT_DAG_tgs_condensed_small.PNG)
 
 
@@ -80,6 +78,21 @@ After systems have started up, you can access:
 * The Airflow UI at [http://localhost:8080](http://localhost:8080)
   * Log in using the `_AIRFLOW_WWW_USER_USERNAME` and `_AIRFLOW_WWW_USER_PASSWORD` credentials from your `.env` file.
 
+### Setting up database connections in pgAdmin4
+
+The pgAdmin4 UI makes it very easy to explore your data, inspect database internals, and make manual changes while developing features, but before you can make use of this excellent interface, you have to set a connection to a database. This platform uses two separate databases: one as a backend for Airflow, and the other as the data warehouse database.
+
+To create a new connection, start by clicking the "Add New Server" button (you might have to click the "Servers" line in the lefthand tray first). On the **Connection** page, enter the appropriate credential values from your `.env` file,
+![Airflow metadata db connection](imgs/Setting_up_pgAdmin4_connection_to_airflow_metadata_pg2.PNG)
+
+and on the **General** tab, enter a display name for that connection (**airflow_metadata_db** shown)
+![Data update scheme](imgs/Setting_up_pgAdmin4_connection_to_airflow_metadata_pg1.PNG)
+
+Repeat the process to connect to the data warehouse database, using the appropriate (and different from above) credential values from your `.env` file,
+![Data update scheme](imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg2.PNG)
+
+![Data update scheme](imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg1.PNG) 
+
 ### Setting up Airflow Connections to Data Sources
 
 There are several method you can use to set up connections to data sources that the Airflow executor can use to extract, load, or transform data.
@@ -99,8 +112,6 @@ You can also create a connection through the admin interface of the web UI by lo
 * Password: the `POSTGRES_PASSWORD` env-var set in `.dwh.env`,
 * Port: the internal port number that the data warehouse database is using (as defined in `docker-compose.yml`, most likly 5432)
 
-
-
 [Further information on connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html).
 
 ### Developing DAGs
@@ -109,29 +120,17 @@ DAGs put or developed in the `/<repo>/airflow/dags/` directory will quickly be a
 
 At present, a local mount is created at `/<repo>/data_raw` (host-side) to `/opt/airflow/data_raw` (container-side), so changes you make to a DAG from your host machine will be (nearly immediately) available you can develop.
 
+### Serving dbt Data Documentation and Discovery UI 
 
-
-#### Get a shell in the dbt-service container
-
-Check `docker ps` for the name of the container for the dbt service (it should contain the name you gave that service in the `docker-compose.yml` file near the end of the name). Then use the command below to get an interactive shell inside that container where you can execute `dbt` commands.
+To generate and serve documentation for the data transformations executed by dbt, run the command below, and after the doc server has started up, go to [http://localhost:18080](http://localhost:18080) to explore the documentation UI.
 
 ```bash
-user@host:.../your_local_repo$ docker exec -it <project_name>_dbt_proj_1 /bin/bash
+user@host:.../your_local_repo$ make serve_dbt_docs
 ```
 
-#### Initialize your dbt project (if you don't already have an existing dbt project)
-
-To initialize the dbt project (assuming you don't already have one, like this repo does), enter the command below at an interactive terminal inside the dbt container
-
-```bash
-root@bbcffc30e656:/usr/app# dbt init
-```
-
-and respond to the prompts.
-
-### Specifying and installing dbt packages
-
-Create a file named `packages.yml` in your dbt project directory and specify any packages you want to use in your project in the format shown below
+### Specifying, installing, and updating dbt packages
+ 
+Create a file named `packages.yml` in your dbt project directory and specify any packages you want to use in your project in the format shown below (or as shown in the [documentation](https://docs.getdbt.com/docs/build/packages))
 
 ```yml
 packages:
@@ -142,20 +141,12 @@ packages:
 Then, after specifying packages and versions to use, run this command to install packages.
 
 ```bash
-root@bbcffc30e656:/usr/app# dbt deps
+user@host:.../your_local_repo$ make update_dbt_packages
 01:33:04  Running with dbt=1.3.0
 01:33:05  Installing dbt-labs/dbt_utils
 01:33:05    Installed from version 0.9.2
 01:33:05    Up to date!
 ```
-
- 
-
-
-
-
-
-
 
 
 
