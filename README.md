@@ -12,20 +12,64 @@ At present, it uses docker to provision and run:
 ## Motivation
 I like to do my research before I buy anything, especially if it's a big ticket item. I've been considering buying a house for a while, but the methods I use for answering questions like "what phone should I buy?" or "how can I make my apartment less drafty in winter" haven't been adequate to answer the questions I have about real estate. Fortunately, the real estate market I've grown fond of has the richest public data culture in the US (that I, a data scientist focused on Chicago-related issues, am aware of), and this market's Assessor's Office regularly [publishes data](https://datacatalog.cookcountyil.gov/browse?tags=cook%20county%20assessor) I can mine for answers to some of my biggest questions.
 
-## Ingestion Flow
+## Socrata Table Ingestion Flow
 
-![](imgs/Socrata_ELT_DAG_tgs_condensed_small.PNG)
+The Update-data DAGs for (at least) Socrata tables follow the pattern below:
+* Check the metadata of the table's data source (via [api](https://socratametadataapi.docs.apiary.io/) if available, or if not, by [scraping](https://www2.census.gov/) where possible)
+  * If the local data warehouse's data is stale:
+    * download and ingest all new records into a temporary table,
+    * identify which records are new or are updates to prior records, and
+    * add any new or updated records to a running table of all distinct records
+  * If the local data warehouse's data is as fresh as the source:
+    * update the freshness-check-metadata table and end
+
+<p align="center" width="100%">
+ <img src="imgs/Socrata_ELT_DAG_tgs_condensed_w_statuses.PNG" width="80%" alt="Simple Update DAG Flow"/>
+</p>
+
+Before downloading potentially gigabytes of data, we check the data source's metadata to determine if the source data has been updated since the most recent successful update of that data in the local data warehouse. Whether there is fresh data or not, we'll log the results of that check in the data_warehouse's `metadata.table_metadata` table. 
+
+<p align="center" width="100%">
+ <img src="imgs/Socrata_ELT_DAG_metadata_check_taskgroup_expanded.PNG" width="80%" alt="check_table_metadata TaskGroup"/>
+</p>
 
 
-![Data update scheme](imgs/Count_of_records_after_update.PNG)
+<!-- ![Data update scheme](imgs/Count_of_records_after_update.PNG) -->
 
-![Freshness check metadata](imgs/metadata_table_query_view.PNG)
+<p align="center" width="100%">
+ <img src="imgs/metadata_table_query_view.PNG" width="80%" alt="Freshness check metadata Table in pgAdmin4"/>
+</p>
 
-![](imgs/Socrata_ELT_DAG_metadata_check_taskgroup_expanded.PNG)
+<!-- ![Freshness check metadata](imgs/metadata_table_query_view.PNG) -->
 
-![](imgs/Socrata_ELT_DAG_load_data_taskgroup_expanded_ingestions_condensed.PNG)
+<!-- ![](imgs/Socrata_ELT_DAG_metadata_check_taskgroup_expanded.PNG) -->
 
-![](imgs/Socrata_ELT_DAG_load_data_taskgroup_and_ingestion_task_groups_expanded.PNG)
+<!-- ![](imgs/Socrata_ELT_DAG_load_data_taskgroup_expanded_ingestions_condensed.PNG) -->
+
+If the data source's data is fresher than the data in the local data warehouse, the system downloads the full table from the data source (to a file in the Airflow-scheduler container) and then runs the `load_data_tg` TaskGroup, which:
+1. loads it into a "temp" table (via the appropriate data-loader TaskGroup),
+2. creates a persisting table for this data set in the `data_raw` schema if the data set is a new addition to the warehouse,
+3. compares all records from the latest data set (in the "temp" table) against all records previously added to the persisting `data_raw` table for all original columns, selects records that are completely new or are updated versions of prior records, and appends those new or updated records to the persisting `data_raw` table.
+  * Note: updated records do not replace the prior records here. All distinct versions are kept so that it's possible to examine changes to a record over time.
+4. The `metadata.table_metadata` table is updated to indicate the table in the local data warehouse was successfully updated on this freshness check.
+
+<p align="center" width="100%">
+ <img src="imgs/Socrata_ELT_DAG_load_data_taskgroup_expanded_ingestions_condensed.PNG" width="80%" alt="load_data_tg TaskGroup loaders minimized"/>
+</p>
+
+Tables with geospatial features/columns will be downloaded in the .geojson format (which has a much more flexible structure than .csv files), while tables without geospatial features (ie flat tabular data) will be downloaded as .csv files. Different code is needed to correctly and efficiently read and ingest these different formats. So far, this platform has implemented data-loader TaskGroups to handle .geojson and .csv file formats, but this pattern is easy to extend if other data sources only offer other file formats.
+
+<p align="center" width="100%">
+ <img src="imgs/Socrata_ELT_DAG_load_data_taskgroup_and_ingestion_task_groups_expanded.PNG" width="80%" alt="data-loading TaskGroups in load_data_tg TaskGroup"/>
+</p>
+
+Many public data tables are exported from production systems, where records represent something that can change over time. For example, in this [building permit table](https://data.cityofchicago.org/Buildings/Building-Permits/ydr8-5enu), each record represents an application for a building permit, and rather than adding a new record any time the process moved forward (e.g. a fee was paid, or a contact was added, or the permit gets issued), the original record gets updated. After this data is updated, the prior state of the table is gone (or at least no longer publicly available), which is ideal for people involved in the process who have to look up the current status of a permit request, but for someone seeking to learn about the process, it's useful to keep the original record as well as all distinct updates to the record.
+
+This system is built to have this updating strategy for tables in the `data_raw` schema, and this query shows the count of new or updated records grouped by the data-publication datetime when the record was new to the local data warehouse.
+
+<p align="center" width="100%">
+ <img src="imgs/Count_of_records_after_update.PNG" width="80%" alt="Counts of distinct records in data_raw table by when the source published that data set version"/>
+</p>
 
 ## Usage
 
@@ -77,6 +121,8 @@ After systems have started up, you can access:
   * Log in using the `PGADMIN_DEFAULT_EMAIL` and `PGADMIN_DEFAULT_PASSWORD` credentials from your `.env` file. 
 * The Airflow UI at [http://localhost:8080](http://localhost:8080)
   * Log in using the `_AIRFLOW_WWW_USER_USERNAME` and `_AIRFLOW_WWW_USER_PASSWORD` credentials from your `.env` file.
+
+#### First DAGs to run
 
 ### Setting up database connections in pgAdmin4
 
