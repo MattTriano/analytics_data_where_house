@@ -164,7 +164,7 @@ def update_table_metadata_in_db(conn_id: str, **kwargs) -> SocrataTableMetadata:
     schedule=None,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["metadata"],
+    tags=["dev_experiment"],
 )
 def update_socrata_data_table():
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
@@ -192,4 +192,4 @@ def update_socrata_data_table():
     fresh_source_data_available_1 >> end_1
 
 
-check_table_freshness_dag = update_socrata_data_table()
+# check_table_freshness_dag = update_socrata_data_table()

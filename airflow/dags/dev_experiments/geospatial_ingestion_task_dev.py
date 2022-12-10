@@ -203,4 +203,4 @@ def an_ingest_dag():
     ingest_indexes_1 >> test_2
 
 
-an_ingest_dag_instance = an_ingest_dag()
+# an_ingest_dag_instance = an_ingest_dag()
