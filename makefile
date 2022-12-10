@@ -1,5 +1,6 @@
 .phony: startup shutdown quiet_startup restart make_credentials serve_dbt_docs \
-	 build_images init_airflow initialize_system create_warehouse_infra update_dbt_packages \
+	build_images init_airflow initialize_system create_warehouse_infra update_dbt_packages \
+	dbt_generate_docs
 	
 .DEFAULT_GOAL: startup
 
@@ -37,9 +38,11 @@ restart:
 	docker-compose down;
 	docker-compose up;
 
-serve_dbt_docs:
+dbt_generate_docs:
 	docker exec $(DBT_CONTAINER_ID) /bin/bash -c "dbt docs generate";
-	docker exec $(DBT_CONTAINER_ID) /bin/bash -c "dbt docs serve --port 18080";
+
+serve_dbt_docs: dbt_generate_docs
+	docker exec -it $(DBT_CONTAINER_ID) /bin/bash -c "dbt docs serve --port 18080";
 
 update_dbt_packages: quiet_startup
 	docker exec $(DBT_CONTAINER_ID) /bin/bash -c "dbt deps";
