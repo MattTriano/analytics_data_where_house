@@ -63,30 +63,27 @@ models:
       - name: ingested_on
 
   - name: cook_county_parcel_sales
-    description: '{{ doc("parcels_cc_sales") }}'      
+    description: '{{ doc("parcels_cc_sales") }}'
     columns:
       - name: pin
-        description: Property Index Number (uniquely defines a parcel of property).
+        description: '{{ doc("parcels_cc_sales__pin") }}'
       - name: year
       - name: township_code
       - name: class
-        description: Property class of the parcel.
+        description: '{{ doc("parcels_cc_sales__class") }}'
       - name: sale_date
-        description: Date the sale was recorded (not executed).
+        description: '{{ doc("parcels_cc_sales__sale_date") }}'
       - name: is_mydec_date
-        description: >
-          Indicates whether the sale date has been overwritten with a more precise value from IDOR (Illinois Department of Revenue).
-          Prior Assessor ingest process truncated sale dates to the first of the month.
-          Not all sales can be updated with dates from IDOR.
+        description: '{{ doc("parcels_cc_sales__is_mydec_date") }}'
       - name: sale_price
       - name: sale_document_num
-        description: "Sale document number. Corresponds to Clerk's document number"
+        description: '{{ doc("parcels_cc_sales__sale_document_num") }}'
       - name: sale_deed_type
       - name: sale_seller_name
       - name: is_multisale
-        description: Indicates whether a parcel was sold individually or as part of a larger group of PINs
+        description: '{{ doc("parcels_cc_sales__is_multisale") }}'
       - name: num_parcels_sale
       - name: sale_buyer_name
       - name: sale_type
-      - name: latest_date_in_data_pull
-      - name: ingested_on
+      - name: source_data_updated
+      - name: ingestion_check_time

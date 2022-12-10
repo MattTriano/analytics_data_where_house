@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: intermediate
+    database: re_dwh
+    schema: clean
+    tables:
+      - name: cook_county_parcel_sales_clean

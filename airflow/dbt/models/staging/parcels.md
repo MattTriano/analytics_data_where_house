@@ -24,8 +24,10 @@ These neighborhoods were reconstructed from individual parcels using spatial buf
 
 {% enddocs %}
 
+<!-- ***************************** -->
+<!-- Cook County Parcel_Sales Data -->
+<!-- ***************************** -->
 {% docs parcels_cc_sales %}
-
 Parcel sales for real property in Cook County, from 1999 to present. The Assessor's Office uses this data in its modeling to estimate the fair market value of unsold properties.
 
 When working with Parcel Index Numbers (PINs) make sure to zero-pad them to 14 digits.
@@ -36,5 +38,31 @@ Sale document numbers correspond to those of the Cook County Clerk, and can be u
 NOTE: These sales are unfiltered and include non-arms-length transactions. While the Data Department will upload what it has access to monthly, sales are reported on a lag, with many records not populating until months after their official recording date.
 
 Current property class codes, their levels of assessment, and descriptions can be found on the Assessor's website. Note that class codes details can change across time.
+{% enddocs %}
 
+
+{% docs parcels_cc_sales__pin %}
+    Property Index Number (uniquely defines a parcel of property).
+{% enddocs %}
+{% docs parcels_cc_sales__class %}
+    Property class of the parcel. [This document](https://web.archive.org/web/20221115030733/https://prodassets.cookcountyassessor.com/s3fs-public/form_documents/classcode.pdf) provides definitions for all property class codes.
+    Useful property class trends for this data set:
+    
+    * X-00 indicates the parcel is land,
+    * X-99 indicates the parcel is a condominium,
+    * 2-XX indicates the parcel is residential,
+    * 3-XX indicates the parcel is a multifamily building, etc
+{% enddocs %}
+{% docs parcels_cc_sales__sale_date %}
+    Date the sale was recorded (not executed).
+{% enddocs %}
+{% docs parcels_cc_sales__is_mydec_date %}
+    Indicates whether the sale date has been overwritten with a more precise value from IDOR (Illinois Department of Revenue).    
+    Prior Assessor ingest processes truncated sale dates to the first of the month. Not all sales can be updated with dates from IDOR.
+{% enddocs %}
+{% docs parcels_cc_sales__sale_document_num %}
+    Sale document number. Corresponds to Clerk's document number. Testing
+{% enddocs %}
+{% docs parcels_cc_sales__is_multisale %}
+    Indicates whether a parcel was sold individually or as part of a larger group of PINs
 {% enddocs %}
