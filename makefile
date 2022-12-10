@@ -27,7 +27,7 @@ all:
 
 make_credentials:
 	python $(STARTUP_DIR)make_env.py \
-		--project_dir=$(STARTUP_DIR)
+		--project_dir=$(MAKEFILE_DIR_PATH)
 
 serve_dbt_docs:
 	docker exec $(DBT_CONTAINER_ID) /bin/bash -c "dbt docs generate";

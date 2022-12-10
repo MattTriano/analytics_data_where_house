@@ -66,6 +66,7 @@
     "default_value": "postgresql+psycopg2://<POSTGRES_USER>:<POSTGRES_PASSWORD>@airflow_db/<POSTGRES_DB>",
     "user_input": false,
     "dependant_on_other_env_vars": true,
+    "is_uri": false,
     "env_var_mappings": {
       "<POSTGRES_USER>": ".env::POSTGRES_USER",
       "<POSTGRES_PASSWORD>": ".env::POSTGRES_PASSWORD",
@@ -148,6 +149,20 @@
     "user_input": false,
     "dependant_on_other_env_vars": false
   },
+  ".env::AIRFLOW_CONN_DWH_DB_CONN" : {
+    "file": ".env",
+    "name": "AIRFLOW_CONN_DWH_DB_CONN",
+    "group": "Airflow",
+    "default_value": "postgres://<DWH_POSTGRES_USER>:<DWH_POSTGRES_PASSWORD>@dwh_db:5432/<DWH_POSTGRES_DB>",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "is_uri": true,
+    "env_var_mappings": {
+      "<DWH_POSTGRES_USER>": ".env::DWH_POSTGRES_USER",
+      "<DWH_POSTGRES_PASSWORD>": ".env::DWH_POSTGRES_PASSWORD",
+      "<DWH_POSTGRES_DB>": ".env::DWH_POSTGRES_DB"
+    }
+  },
   ".dwh.env::POSTGRES_USER": {
     "file": ".dwh.env",
     "name": "POSTGRES_USER",
@@ -155,6 +170,7 @@
     "default_value": "DWH_POSTGRES_USER",
     "user_input": false,
     "dependant_on_other_env_vars": true,
+    "is_uri": false,
     "env_var_mappings": {
       "DWH_POSTGRES_USER": ".env::DWH_POSTGRES_USER"
     }
@@ -166,6 +182,7 @@
     "default_value": "DWH_POSTGRES_PASSWORD",
     "user_input": false,
     "dependant_on_other_env_vars": true,
+    "is_uri": false,
     "env_var_mappings": {
       "DWH_POSTGRES_PASSWORD": ".env::DWH_POSTGRES_PASSWORD"
     }
@@ -177,6 +194,7 @@
     "default_value": "DWH_POSTGRES_DB",
     "user_input": false,
     "dependant_on_other_env_vars": true,
+    "is_uri": false,
     "env_var_mappings": {
       "DWH_POSTGRES_DB": ".env::DWH_POSTGRES_DB"
     }

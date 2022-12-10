@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 import subprocess
 from typing import Dict, List, Optional
+import urllib
 
 MAX_TRIES = 3
 
@@ -19,7 +20,7 @@ def dot_env_file_already_exists(project_dir: Path, file_name: str = ".env") -> b
     project_dir = Path(project_dir)
 
     if any([p for p in project_dir.iterdir() if p.name == file_name]):
-        print(f"A dot-env file named {file_name} already exists in this project.")
+        print(f"A dot-env file named {file_name} already exists in this project_dir {project_dir}.")
         print("To create new dot-env files via this makefile recipe, delete or move that file")
         print(f"and rerun this makefile recipe.")
         return True
@@ -89,6 +90,8 @@ def orchestrate_user_input_prompts(env_var_dict: Dict) -> Dict:
             set_value = env_var_payload["default_value"]
             for other_env_var_name, other_env_var_id in env_var_mapper.items():
                 replace_to = env_var_dict[other_env_var_id]["set_value"]
+                if env_var_payload["is_uri"]:
+                    replace_to = urllib.parse.quote(replace_to)
                 set_value = set_value.replace(f"{other_env_var_name}", replace_to)
                 env_var_dict[env_var_id]["set_value"] = set_value
         elif env_var_payload["dependant_on_other_env_vars"] == False:
