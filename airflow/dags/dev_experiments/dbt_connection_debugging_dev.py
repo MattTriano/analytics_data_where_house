@@ -47,4 +47,4 @@ def a_dbt_test():
     # dbt_create_proj_1 >>
 
 
-a_dbt_test()
+# a_dbt_test()

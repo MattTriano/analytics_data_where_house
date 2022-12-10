@@ -139,4 +139,4 @@ def extract_load_update_cc_parcel_sales_table():
     chain(metadata_1, fresh_source_data_available_1, end_1)
 
 
-extract_load_update_cc_parcel_sales_table()
+# extract_load_update_cc_parcel_sales_table()

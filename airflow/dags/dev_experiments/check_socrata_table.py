@@ -26,7 +26,7 @@ def dump_socrata_metadata_to_json(table_metadata: Dict, file_path: Path) -> None
     schedule=None,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=['example'],
+    tags=['dev_experiment'],
 )
 def get_socrata_table():
 
@@ -38,4 +38,4 @@ def get_socrata_table():
     
     check_table_metadata()
     
-get_socrata_table()
+# get_socrata_table()
