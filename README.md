@@ -90,14 +90,18 @@ then copy that value and paste it into the appropriate field in the `.env` file 
 
 ### Initializing the system
 
-On the first startup of the system (and after setting your credentials), run the commands below to 1) build the platform's docker images, and 2) initialize the airflow metadata database. 
+On the first startup of the system (and after setting your credentials), run the commands below to
+1. build the platform's docker images, and initialize the airflow metadata database,
+2. start up the system in detached mode (so that you don't have to open another terminal), and
+3. create the `metadata` and `data_raw` schemas and the `metadata.table_metadata` table in your data warehouse database.
 
 ```bash
-user@host:.../your_local_repo$ make build
-user@host:.../your_local_repo$ make init_airflow
+user@host:.../your_local_repo$ make initialize_system
+user@host:.../your_local_repo$ make quiet_startup
+user@host:.../your_local_repo$ make create_warehouse_infra
 ```
 
-These commands only need to be run on first startup (although you will need to rebuild if you make any changes to a `Dockerfile` or a `requirements.txt` file). 
+These commands only need to be run on first startup (although you will need to run `make build_images` to rebuild images if you make any changes to any of the `Dockerfile`s or add/remove packages from a `requirements.txt` file).
 
 ### Starting up the system
 
@@ -112,16 +116,6 @@ After systems have started up, you can access:
   * Log in using the `PGADMIN_DEFAULT_EMAIL` and `PGADMIN_DEFAULT_PASSWORD` credentials from your `.env` file. 
 * The Airflow UI at [http://localhost:8080](http://localhost:8080)
   * Log in using the `_AIRFLOW_WWW_USER_USERNAME` and `_AIRFLOW_WWW_USER_PASSWORD` credentials from your `.env` file.
-
-#### First DAGs to run on initial start
-
-Before the data-update DAGs can be run and start populating your local data warehouse, the data warehouse database will need both a `data_raw` schema and a `metadata` schema, as well as a `metadata.table_metadata` table. You can create all of these by runing the `ensure_metadata_table_exists` and `ensure_data_raw_schema_exists` DAGs once on your initial startup or whenever you create or connect a new data warehouse database. 
-
-<p align="center" width="100%">
- <img src="imgs/Ensure_metadata_table_exists.PNG" width="65%" alt="Creates metadata schema and table_metadata table if they don't exist"/>
- <img src="imgs/Ensure_data_raw_schema_exists.PNG" width="32%" alt="Creates the data_raw schema if it doesn't exist"/>
-</p>
-
 
 ### Setting up database connections in pgAdmin4
 
@@ -146,27 +140,6 @@ Repeat the process to connect to the data warehouse database, using the appropri
   <img src="imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg1.PNG" width="45%" alt="Data Warehouse General"/>
  <img src="imgs/Setting_up_pgAdmin4_connection_to_data_warehouse_db_pg2.PNG" width="45%" alt="Data Warehouse Connection"/>
 </p>
-
-### Setting up Airflow Connections to Data Sources
-
-There are several method you can use to set up connections to data sources that the Airflow executor can use to extract, load, or transform data.
-
-* Environment variables:
-  * The naming convention is AIRFLOW_CONN_{CONN_ID}, (all uppercase; single underscores surrounding CONN). 
-  * Example: The env-var name of AIRFLOW_CONN_MY_PROD_DB will have the connection_id `my_prod_db`.
-  * The value for this env-var will have the form '<conn-type>://<login>:<password>@<host>:<port>/<schema>?param1=val1&param2=val2&...'
-
-You can also create a connection through the admin interface of the web UI by logging in, going to **Admin > Connections** then click the **Plus** sign to add a new connection.
-* Connection Id (conn_id): your choice; you'll use this when referencing this connection in DAGs,
-* Connection Type: Postgres,
-* Host: be the name of the `docker-compose.yml` service for your data warehouse database,
-* Schema: this will be the name of the database as set in `.dwh.env` as `POSTGRES_DB`
-    * Note: this "schema" field has nothing to do with postgres schemas; the word "schema" was foolishly overloaded with several different database-related meanings),
-* Login: the `POSTGRES_USER` env-var set in `.dwh.env`,
-* Password: the `POSTGRES_PASSWORD` env-var set in `.dwh.env`,
-* Port: the internal port number that the data warehouse database is using (as defined in `docker-compose.yml`, most likly 5432)
-
-[Further information on connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html).
 
 ### Developing DAGs
 
@@ -215,23 +188,4 @@ pgAdmin4 is a very feature-rich environment and makes it very convenient to test
 <p align="center" width="100%">
   <img src="imgs/Geospatial_query_and_data_in_pgAdmin4.PNG" width="90%" alt="pgAdmin4's geospatial query viewer"/>
 </p>
-
-## Notes:
-* In the docker-compose.yml file from Airflow's docker quick start guide, the system uses the CeleryExecutor rather than the LocalExecutor. If you regularly need to run so many concurrent tasks that all allocated CPU cores are in use and waiting tasks must be queued until hardware is free, then the CeleryExecutor is a necessary complexity (as it allows you to split up execution over multiple servers). But if your workflows don't simultaneously consume all CPU cores, then the LocalExecutor is probably adequate.
-  * If you switch to using the LocalExecutor, you can also remove the Redis bits from the docker-compose, as the Redis service is just the task queue.
-  * You can also remove the `airflow-worker` and `flower` services, which are also only used for managing `celery`.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
