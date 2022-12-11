@@ -1,0 +1,5 @@
+cryptography
+GeoAlchemy2==0.12.5
+pytest
+requests==2.28.1
+SQLAlchemy==1.4.27
