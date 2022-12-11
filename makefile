@@ -1,6 +1,6 @@
 .phony: startup shutdown quiet_startup restart make_credentials serve_dbt_docs \
 	build_images init_airflow initialize_system create_warehouse_infra update_dbt_packages \
-	dbt_generate_docs build_python_img get_py_utils_shell
+	dbt_generate_docs build_python_img get_py_utils_shell make_fernet_key
 	
 .DEFAULT_GOAL: startup
 
@@ -63,3 +63,6 @@ start_python_container:
 
 get_py_utils_shell: start_python_container
 	docker-compose exec py-utils /bin/bash
+
+make_fernet_key: start_python_container
+	docker-compose exec py-utils /bin/bash -c "python make_fernet_key.py"
