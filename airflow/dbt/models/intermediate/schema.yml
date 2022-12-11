@@ -1,10 +1,52 @@
 version: 2
 
 models:
-  - name: cook_county_parcel_sales_clean
+  - name: cook_county_parcel_sales_standardized
+    config:
+      schema: clean
     description: '{{ doc("parcels_cc_sales") }}'
     columns:
       - name: parcel_sale_id        
+      - name: pin
+        description: '{{ doc("parcels_cc_sales__pin") }}'
+        tests:
+          - not_null
+      - name: year
+      - name: township_code
+      - name: class
+        description: '{{ doc("parcels_cc_sales__class") }}'
+      - name: sale_date
+        tests:
+          - not_null
+        description: '{{ doc("parcels_cc_sales__sale_date") }}'
+      - name: is_mydec_date
+        description: '{{ doc("parcels_cc_sales__is_mydec_date") }}'
+      - name: sale_price
+        tests:
+          - not_null
+      - name: sale_document_num
+        tests:
+        - not_null
+        description: '{{ doc("parcels_cc_sales__sale_document_num") }}'
+      - name: sale_deed_type
+      - name: sale_seller_name
+      - name: is_multisale
+        description: '{{ doc("parcels_cc_sales__is_multisale") }}'
+      - name: num_parcels_sale
+      - name: sale_buyer_name
+      - name: sale_type
+      - name: source_data_updated
+      - name: ingestion_check_time
+
+  - name: cook_county_parcel_sales_clean
+    config:
+      schema: clean
+    description: '{{ doc("parcels_cc_sales") }}'
+    columns:
+      - name: parcel_sale_id
+        tests:
+          - unique
+          - not_null
       - name: pin
         description: '{{ doc("parcels_cc_sales__pin") }}'
         tests:
