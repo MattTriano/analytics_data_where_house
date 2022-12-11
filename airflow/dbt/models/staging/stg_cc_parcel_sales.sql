@@ -7,7 +7,7 @@ WITH parcel_sales_data AS
 )
 
 SELECT
-    {{ dbt_utils.surrogate_key(['pin', 'sale_document_num', 'sale_date', 'sale_price']) }} AS parcel_sale_id,
+    {{ dbt_utils.generate_surrogate_key(['pin', 'sale_document_num', 'sale_date', 'sale_price']) }} AS parcel_sale_id,
     pin::bigint AS pin,
     year::int AS year,
     township_code::bigint AS township_code,

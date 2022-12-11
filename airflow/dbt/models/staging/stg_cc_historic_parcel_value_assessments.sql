@@ -7,7 +7,7 @@ WITH assessment_data AS
 )
 
 SELECT
-    {{ dbt_utils.surrogate_key(['pin', 'tax_year']) }} as assessment_id,
+    {{ dbt_utils.generate_surrogate_key(['pin', 'tax_year']) }} as assessment_id,
     pin::bigint AS pin,
     tax_year::int AS tax_year,
     upper(class::varchar(6)) AS class,

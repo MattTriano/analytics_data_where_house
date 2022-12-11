@@ -7,7 +7,7 @@ WITH parcel_location_data AS
 )
 
 SELECT
-    {{ dbt_utils.surrogate_key(['pin']) }} AS parcel_loc_id,
+    {{ dbt_utils.generate_surrogate_key(['pin']) }} AS parcel_loc_id,
     pin::bigint AS pin,
     upper(property_address::text) AS property_address,
     upper(property_apt_no::text) AS property_apt_no,
