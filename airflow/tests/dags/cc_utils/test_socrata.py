@@ -1,15 +1,18 @@
 import json
+import logging
 from pathlib import Path
-import unittest
-import pytest
 import sys
 from typing import Dict
+import unittest
 from unittest.mock import Mock, patch
+
+import pytest
 
 sys.path.append("../../airflow")
 
-
 from dags.cc_utils import socrata
+
+LOGGER = logging.getLogger("SocrataTesting")
 
 
 def load_table_metadata_json(table_id: str) -> Dict:
@@ -49,14 +52,31 @@ class TestCSVSocrataTableMetadata:
     @pytest.fixture(scope="class")
     def socrata_metadata(self, mock_SocrataTableMetadata):
         socrata_table = socrata.SocrataTable(
-            table_id="gumc-mgzr", table_name="chicago_homicide_and_shooting_victimizations"
+            table_id="wvhk-k5uv", table_name="cook_county_parcel_sales"
         )
         mock_socrata_metadata = socrata.SocrataTableMetadata(socrata_table=socrata_table)
         yield mock_socrata_metadata
 
-    def test_time_of_collection_again(self, socrata_metadata):
-        print(f"socrata_metadata: {socrata_metadata}")
-        assert socrata_metadata.metadata["time_of_collection"] == "2022-12-11T21:11:43.525120Z"
+    def test_time_of_collection(self, socrata_metadata):
+        assert socrata_metadata.metadata["time_of_collection"] == "2022-12-13T04:44:51.717900Z"
+
+    def test_is_geospatial(self, socrata_metadata):
+        LOGGER.info(f"socrata_metadata.table_name: {socrata_metadata.table_name}")
+        LOGGER.info(f"socrata_metadata.data_domain: {socrata_metadata.data_domain}")
+        LOGGER.info(f"socrata_metadata.get_column_details: {socrata_metadata.get_column_details()}")
+        assert socrata_metadata.is_geospatial == False
+
+    def test_has_a_geospatial_feature(self, socrata_metadata):
+        assert socrata_metadata.table_has_geospatial_feature() == False
+
+    def test_has_geo_type_view(self, socrata_metadata):
+        assert socrata_metadata.table_has_geo_type_view() == False
+
+    def test_has_map_type_display(self, socrata_metadata):
+        assert socrata_metadata.table_has_map_type_display() == False
+
+    def test_has_data_columns(self, socrata_metadata):
+        assert socrata_metadata.table_has_data_columns() == True
 
 
 class TestGeojsonSocrataTableMetadata:
@@ -68,6 +88,23 @@ class TestGeojsonSocrataTableMetadata:
         mock_socrata_metadata = socrata.SocrataTableMetadata(socrata_table=socrata_table)
         yield mock_socrata_metadata
 
-    def test_time_of_collection_again(self, socrata_metadata):
-        print(f"socrata_metadata: {socrata_metadata}")
+    def test_time_of_collection(self, socrata_metadata):
         assert socrata_metadata.metadata["time_of_collection"] == "2022-12-12T15:47:47.359187Z"
+
+    def test_is_geospatial(self, socrata_metadata):
+        LOGGER.info(f"socrata_metadata.table_name: {socrata_metadata.table_name}")
+        LOGGER.info(f"socrata_metadata.data_domain: {socrata_metadata.data_domain}")
+        LOGGER.info(f"socrata_metadata.get_column_details: {socrata_metadata.get_column_details()}")
+        assert socrata_metadata.is_geospatial == True
+
+    def test_has_a_geospatial_feature(self, socrata_metadata):
+        assert socrata_metadata.table_has_geospatial_feature() == True
+
+    def test_has_geo_type_view(self, socrata_metadata):
+        assert socrata_metadata.table_has_geo_type_view() == False
+
+    def test_has_map_type_display(self, socrata_metadata):
+        assert socrata_metadata.table_has_map_type_display() == False
+
+    def test_has_data_columns(self, socrata_metadata):
+        assert socrata_metadata.table_has_data_columns() == True
