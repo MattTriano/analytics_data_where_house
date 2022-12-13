@@ -1,0 +1,136 @@
+{
+    "_id": "wyzt-dzf8",
+    "time_of_collection": "2022-12-12T15:47:47.359187Z",
+    "resource": {
+        "name": "Assessor [Archived 05-11-2022] - Residential Neighborhood Boundaries",
+        "id": "wyzt-dzf8",
+        "parent_fxf": [],
+        "description": "Neighborhoods play an important role in residential property assessment. Single-family and residential multi-family property assessments are sensitive to neighborhood boundaries. Neighborhoods are nearly always used in statistical regression models to produce initial assessed values, and comparable properties are nearly always selected from within neighborhoods for the purposes of appeal. See data notes for additional information.",
+        "attribution": "Cook County Assessor's Office",
+        "attribution_link": "https://www.cookcountyassessor.com/",
+        "contact_email": null,
+        "type": "dataset",
+        "updatedAt": "2022-05-11T15:59:20.000Z",
+        "createdAt": "2020-05-21T15:27:49.000Z",
+        "metadata_updated_at": "2022-05-11T15:59:20.000Z",
+        "data_updated_at": "2020-05-21T15:38:11.000Z",
+        "page_views": {
+            "page_views_last_week": 9,
+            "page_views_last_month": 30,
+            "page_views_total": 1603,
+            "page_views_last_week_log": 3.3219280948873626,
+            "page_views_last_month_log": 4.954196310386876,
+            "page_views_total_log": 10.647458426454921
+        },
+        "columns_name": [
+            "triad_name",
+            "triad_code",
+            "nbhd",
+            "multipolygon",
+            "town_nbhd",
+            "township_code",
+            "township_name"
+        ],
+        "columns_field_name": [
+            "triad_name",
+            "triad_code",
+            "nbhd",
+            "multipolygon",
+            "town_nbhd",
+            "township_code",
+            "township_name"
+        ],
+        "columns_datatype": [
+            "Text",
+            "Text",
+            "Text",
+            "MultiPolygon",
+            "Text",
+            "Text",
+            "Text"
+        ],
+        "columns_description": [
+            "Triad name",
+            "Triad code",
+            "Neighborhood code, not unique",
+            "Neighborhood Shape",
+            "Town code + neighborhood code, unique identifier",
+            "Town code",
+            "Town name"
+        ],
+        "columns_format": [
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {}
+        ],
+        "download_count": 384,
+        "provenance": "official",
+        "lens_view_type": "tabular",
+        "lens_display_type": "table",
+        "blob_mime_type": null,
+        "hide_from_data_json": false,
+        "publication_date": "2020-05-21T15:38:11.000Z"
+    },
+    "classification": {
+        "categories": [
+            "infrastructure"
+        ],
+        "tags": [],
+        "domain_category": "Finance & Administration",
+        "domain_tags": [
+            "archive",
+            "cook county assessor",
+            "property tax"
+        ],
+        "domain_metadata": [
+            {
+                "key": "Metadata_Update-Frequency",
+                "value": "As Needed"
+            },
+            {
+                "key": "Department_Publishing-Department",
+                "value": "Data Science"
+            },
+            {
+                "key": "Publishing-Details_Publishing-frequency",
+                "value": "Not updated (historical only)"
+            },
+            {
+                "key": "Publishing-Details_Data-change-frequency",
+                "value": "Not updated (historical only)"
+            },
+            {
+                "key": "Detailed-Descriptive_Data-notes",
+                "value": "These boundaries were created by extracting layer data from CCAO historical maps. In cases where maps were unavailable, boundaries were imputed from Cook County GIS records by drawing concave hulls around neighborhood multipolygons. These boundaries have been simplified and should only be used for thematic mapping."
+            },
+            {
+                "key": "Detailed-Descriptive_Geographic-unit",
+                "value": "Other"
+            },
+            {
+                "key": "Detailed-Descriptive_Geographic-coverage",
+                "value": "Countywide"
+            }
+        ]
+    },
+    "metadata": {
+        "domain": "datacatalog.cookcountyil.gov",
+        "license": "Creative Commons 1.0 Universal (Public Domain Dedication)"
+    },
+    "permalink": "https://datacatalog.cookcountyil.gov/d/wyzt-dzf8",
+    "link": "https://datacatalog.cookcountyil.gov/Finance-Administration/Assessor-Archived-05-11-2022-Residential-Neighborh/wyzt-dzf8",
+    "owner": {
+        "id": "s6b5-uz7b",
+        "user_type": "interactive",
+        "display_name": "Cook County Assessor's Office Data Department"
+    },
+    "creator": {
+        "id": "s6b5-uz7b",
+        "user_type": "interactive",
+        "display_name": "Cook County Assessor's Office Data Department"
+    }
+}

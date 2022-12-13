@@ -184,6 +184,16 @@ services:
       - -c
       - airflow
 
+  py-utils:
+    build:
+      context: ./
+      dockerfile: ./Dockerfiles/python.Dockerfile
+    profiles: ["testing", "startup"]
+    stdin_open: true
+    tty: true
+    entrypoint: ["/bin/bash"]
+    volumes:
+      - ./airflow:/home
 
 networks:
   re_etl_net:

@@ -1,0 +1,171 @@
+{
+    "_id": "wvhk-k5uv",
+    "time_of_collection": "2022-12-13T04:44:51.717900Z",
+    "resource": {
+        "name": "Assessor - Parcel Sales",
+        "id": "wvhk-k5uv",
+        "parent_fxf": [],
+        "description": "Parcel sales for real property in Cook County, from 1999 to present. The Assessor's Office uses this data in its modeling to estimate the fair market value of unsold properties.\n\nWhen working with Parcel Index Numbers (PINs) make sure to zero-pad them to 14 digits. Some datasets may lose leading zeros for PINs when downloaded.\n\nSale document numbers correspond to those of the Cook County Clerk, and can be used on the <a href=\"https://ccrd.cookcountyclerkil.gov/i2/default.aspx\">Clerk's website</a> to find more information about each sale.\n\nNOTE: These sales are unfiltered and include non-arms-length transactions.  While the Data Department will upload what it has access to monthly, sales are reported on a lag, with many records not populating until months after their official recording date.\n\nCurrent property class codes, their levels of assessment, and descriptions can be found <a href=\"https://prodassets.cookcountyassessor.com/s3fs-public/form_documents/classcode.pdf\">on the Assessor's website</a>. Note that class codes details can change across time.\n\n<a href=\"https://datacatalog.cookcountyil.gov/stories/s/i22y-9sd2\">Read about the Assessor's 2022 Open Data Refresh.</a>",
+        "attribution": "Cook County Assessor's Office",
+        "attribution_link": null,
+        "contact_email": null,
+        "type": "dataset",
+        "updatedAt": "2022-12-01T06:16:57.000Z",
+        "createdAt": "2022-04-18T13:37:35.000Z",
+        "metadata_updated_at": "2022-12-01T06:11:38.000Z",
+        "data_updated_at": "2022-12-01T06:16:57.000Z",
+        "page_views": {
+            "page_views_last_week": 29,
+            "page_views_last_month": 155,
+            "page_views_total": 1251,
+            "page_views_last_week_log": 4.906890595608519,
+            "page_views_last_month_log": 7.285402218862249,
+            "page_views_total_log": 10.290018846932618
+        },
+        "columns_name": [
+            "num_parcels_sale",
+            "sale_deed_type",
+            "sale_seller_name",
+            "sale_buyer_name",
+            "township_code",
+            "class",
+            "sale_date",
+            "pin",
+            "sale_price",
+            "sale_document_num",
+            "is_mydec_date",
+            "sale_type",
+            "year",
+            "is_multisale"
+        ],
+        "columns_field_name": [
+            "num_parcels_sale",
+            "deed_type",
+            "seller_name",
+            "buyer_name",
+            "township_code",
+            "class",
+            "sale_date",
+            "pin",
+            "sale_price",
+            "doc_no",
+            "is_mydec_date",
+            "sale_type",
+            "year",
+            "is_multisale"
+        ],
+        "columns_datatype": [
+            "Number",
+            "Text",
+            "Text",
+            "Text",
+            "Text",
+            "Text",
+            "Calendar date",
+            "Text",
+            "Number",
+            "Text",
+            "Checkbox",
+            "Text",
+            "Number",
+            "Checkbox"
+        ],
+        "columns_description": [
+            "The number of parcels that were part of the sale",
+            "Sale deed type",
+            "Sale seller name",
+            "Sale buyer name",
+            "Township code",
+            "Property class",
+            "Sale date (recorded, not executed)",
+            "Parcel Identification Number (PIN)",
+            "Sale price",
+            "Sale document number. Corresponds to Clerk's document number",
+            "Indicates whether the sale date has been overwritten with a more precise value from IDOR (Illinois Department of Revenue). In the past the Assessor's ingest process truncated sale dates to the first of the month. Not all sales can be updated with dates from IDOR.",
+            "Sale type",
+            "Year",
+            "Indicates whether a parcel was sold individually or as part of a larger group of PINs"
+        ],
+        "columns_format": [
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {
+                "view": "date_monthdy"
+            },
+            {},
+            {},
+            {},
+            {},
+            {},
+            {
+                "noCommas": "true"
+            },
+            {}
+        ],
+        "download_count": 304,
+        "provenance": "official",
+        "lens_view_type": "tabular",
+        "lens_display_type": "table",
+        "blob_mime_type": null,
+        "hide_from_data_json": false,
+        "publication_date": "2022-05-31T22:45:38.000Z"
+    },
+    "classification": {
+        "categories": [],
+        "tags": [],
+        "domain_category": "Property & Taxation",
+        "domain_tags": [
+            "cook county assessor",
+            "property tax"
+        ],
+        "domain_metadata": [
+            {
+                "key": "Department_Publishing-Department",
+                "value": "Data Department"
+            },
+            {
+                "key": "Source-Details_Source-System",
+                "value": "iasWorld"
+            },
+            {
+                "key": "Publishing-Details_Publishing-frequency",
+                "value": "Monthly"
+            },
+            {
+                "key": "Publishing-Details_Data-change-frequency",
+                "value": "Monthly"
+            },
+            {
+                "key": "Detailed-Descriptive_Geographic-unit",
+                "value": "Parcel"
+            },
+            {
+                "key": "Detailed-Descriptive_Temporal-coverage",
+                "value": "1999-Present"
+            },
+            {
+                "key": "Detailed-Descriptive_Geographic-coverage",
+                "value": "Countywide"
+            }
+        ]
+    },
+    "metadata": {
+        "domain": "datacatalog.cookcountyil.gov"
+    },
+    "permalink": "https://datacatalog.cookcountyil.gov/d/wvhk-k5uv",
+    "link": "https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Parcel-Sales/wvhk-k5uv",
+    "owner": {
+        "id": "s6b5-uz7b",
+        "user_type": "interactive",
+        "display_name": "Cook County Assessor's Office Data Department"
+    },
+    "creator": {
+        "id": "s6b5-uz7b",
+        "user_type": "interactive",
+        "display_name": "Cook County Assessor's Office Data Department"
+    }
+}
