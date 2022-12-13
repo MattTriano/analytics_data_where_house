@@ -3,6 +3,9 @@
 .env
 .dwh.env
 .venv
+.vscode
 
+notes/
 sandbox/
 **/logs
+airflow/data_raw
