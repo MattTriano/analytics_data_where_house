@@ -7,8 +7,8 @@
     "ward", "puma", "tract_geoid", "tract_pop", "tract_white_perc", "tract_black_perc",
     "tract_asian_perc", "tract_his_perc", "tract_other_perc", "tract_midincome",
     "commissioner_dist", "reps_dist", "senate_dist", "ssa_name", "ssa_no", "tif_agencynum",
-    "school_elem_district", "school_hs_district", "mailing_address", "mailing_state",
-    "mailing_city", "mailing_zip", "ohare_noise", "floodplain", "fs_flood_factor",
+    "school_elem_district", "school_hs_district", "mailing_address", "mailing_city",
+    "mailing_zip",  "mailing_state", "ohare_noise", "floodplain", "fs_flood_factor",
     "fs_flood_risk_direction", "withinmr100", "withinmr101300", "indicator_has_address",
     "indicator_has_latlon", "longitude", "latitude", "geometry", "source_data_updated",
     "ingestion_check_time"

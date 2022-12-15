@@ -7,3 +7,5 @@ sources:
     tables:
       - name: cook_county_parcel_sales_standardized
       - name: cook_county_parcel_sales_clean
+      - name: cook_county_parcel_locations_standardized
+      - name: cook_county_parcel_locations_clean
