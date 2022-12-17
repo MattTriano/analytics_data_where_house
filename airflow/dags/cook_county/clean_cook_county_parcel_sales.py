@@ -40,7 +40,7 @@ def clean_cook_county_parcel_sales():
     full_parcel_sales_table_1 = BashOperator(
         task_id="full_parcel_sales_table",
         bash_command=f"""cd /opt/airflow/dbt && \
-            dbt run --select +models/marts/{SOCRATA_TABLE.table_name}_fact.sql""",
+            dbt run --select +models/dwh/{SOCRATA_TABLE.table_name}_fact.sql""",
         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
     # standardize_raw_data_1 >> clean_standardized_data_1 >>
