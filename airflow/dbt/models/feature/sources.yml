@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: feature
+    database: re_dwh
+    schema: feature
+    tables:
+      - name: cook_county_parcel_sales_clean
