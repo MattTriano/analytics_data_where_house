@@ -3,7 +3,7 @@ version: 2
 models:
   - name: cook_county_parcel_sales_fact
     config:
-      schema: marts
+      schema: dwh
     description: '{{ doc("parcels_cc_sales") }}'
     columns:
       - name: parcel_sale_id
@@ -43,7 +43,7 @@ models:
 
   - name: cook_county_parcel_locations_dim
     config:
-      schema: marts
+      schema: dwh
     description: '{{ doc("parcels_cc_locations") }}'
     columns:        
       - name: pin
