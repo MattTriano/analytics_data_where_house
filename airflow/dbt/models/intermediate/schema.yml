@@ -180,3 +180,11 @@ models:
         description: '{{ doc("parcels_cc_locations__longitude") }}'
       - name: latitude
         description: '{{ doc("parcels_cc_locations__latitude") }}'
+
+  - name: cook_county_parcel_value_assessments_standardized
+    config:
+      schema: clean
+
+  - name: cook_county_parcel_value_assessments_clean
+    config:
+      schema: clean
