@@ -1,9 +1,0 @@
-version: 2
-
-sources:
-  - name: marts
-    database: re_dwh
-    schema: dwh
-    tables:
-      - name: cook_county_parcel_sales_fact
-      - name: cook_county_parcel_locations_dim

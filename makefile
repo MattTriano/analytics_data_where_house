@@ -45,6 +45,10 @@ serve_dbt_docs: dbt_generate_docs
 update_dbt_packages: quiet_startup
 	docker-compose exec dbt_proj /bin/bash -c "dbt deps";
 
+clean_dbt:
+	docker-compose exec dbt_proj /bin/bash -c "dbt clean";
+	docker-compose exec dbt_proj /bin/bash -c "dbt deps";
+
 create_warehouse_infra:
 	docker-compose exec airflow-scheduler /bin/bash -c \
 		"airflow dags trigger ensure_metadata_table_exists";

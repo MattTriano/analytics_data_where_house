@@ -17,27 +17,14 @@ SOCRATA_TABLE = SocrataTable(table_id="c49d-89sn", table_name="cook_county_parce
     tags=["cook_county", "parcels", "dimension_table", "geospatial"],
 )
 def clean_cook_county_parcel_locations():
-    POSTGRES_CONN_ID = "dwh_db_conn"
 
-    standardize_raw_data_1 = BashOperator(
-        task_id="standardize_raw_data",
+    transform_raw_data_1 = BashOperator(
+        task_id="transform_raw_data",
         bash_command=f"""cd /opt/airflow/dbt && \
-            dbt run --select models/intermediate/{SOCRATA_TABLE.table_name}_standardized.sql""",
+            dbt run --select models/intermediate/{SOCRATA_TABLE.table_name}_standardized.sql+""",
         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
-    clean_standardized_data_1 = BashOperator(
-        task_id="clean_standardized_data",
-        bash_command=f"""cd /opt/airflow/dbt && \
-            dbt run --select models/intermediate/{SOCRATA_TABLE.table_name}_clean.sql""",
-        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
-    )
-    produce_point_locations_1 = BashOperator(
-        task_id="produce_point_locations",
-        bash_command=f"""cd /opt/airflow/dbt && \
-            dbt run --select models/dwh/{SOCRATA_TABLE.table_name}_dim.sql""",
-        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
-    )
-    standardize_raw_data_1 >> clean_standardized_data_1 >> produce_point_locations_1
+    transform_raw_data_1
 
 
 clean_cook_county_parcel_locations()
