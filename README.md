@@ -189,3 +189,17 @@ pgAdmin4 is a very feature-rich environment and makes it very convenient to test
   <img src="imgs/Geospatial_query_and_data_in_pgAdmin4.PNG" width="90%" alt="pgAdmin4's geospatial query viewer"/>
 </p>
 
+
+## Troubleshooting Notes
+
+While developing workflows, occassionally I'll run into permissions issues where Airflow tries to create things in a location that was created automatically outside of the specified volume locations or something and I've had to change (take) ownership of the location (from outside of the container) via a `chown` command like the one below (where I'm `-R`ecursively taking ownership of the `dbt/` directory).
+
+```bash
+sudo chown -R $USER:$USER dbt/
+```
+
+Additionally, if you run into issues while debugging a dbt model where you're making changes to the model but getting the same error every time, try running the command below (to clean out the previously compiled dbt models and installed packages, then reinstall packages) and run the relevant DAG again to see if things update.
+
+```bash
+make clean_dbt
+```

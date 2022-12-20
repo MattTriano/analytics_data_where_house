@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: cook_county_parcel_price_change_between_sales
+    config:
+      schema: feature
+    description: '{{ doc("parcels_cc_sales") }}'
+    columns:
+      - name: parcel_sale_id
+        tests:
+          - unique
+          - not_null
+      - name: pin
+        description: '{{ doc("parcels_cc_sales__pin") }}'
+        tests:
+          - not_null
+      - name: sale_price
+        tests:
+          - not_null
+      - name: sale_date
+        tests:
+          - not_null
+        description: '{{ doc("parcels_cc_sales__sale_date") }}'
+      - name: last_sale_price
+      - name: last_sale_date
+      - name: price_change_since_last_sale,
+      - name: years_since_last_sale

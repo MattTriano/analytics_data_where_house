@@ -1,0 +1,89 @@
+version: 2
+
+models:
+  - name: cook_county_parcel_locations
+    description: '{{ doc("parcels_cc_locations") }}'
+    columns:
+      - name: pin
+        description: Property Index Number (uniquely defines a parcel of property).
+        tests:
+          # - unique
+          - not_null
+
+  - name: cook_county_parcel_value_assessments
+    description: '{{ doc("parcels_cc_value_assessments") }}'
+    columns:
+      - name: assessment_id
+        description: Uniquely defines the assessments for a parcel for one tax-year.
+        tests:
+          # - unique
+          - not_null
+      - name: pin
+      - name: tax_year
+      - name: class
+      - name: township_code
+      - name: township_name
+      - name: mailed_bldg
+        description: Mailed building value
+      - name: mailed_land
+        description: Mailed land value
+      - name: mailed_tot
+        description: Mailed total value
+      - name: certified_bldg
+        description: Certified building value
+      - name: certified_land
+        description: Certified land value
+      - name: certified_tot
+        description: Certified total value
+      - name: board_bldg
+        description: Board of Review certified building value
+      - name: board_land
+        description: Board of Review certified land value
+      - name: board_tot
+        description: Board of Review certified total value
+
+  - name: cook_county_neighborhood_boundaries
+    description: '{{ doc("parcels_cc_nbhd_boundaries") }}'
+    columns:
+      - name: nbhd_id
+        description: Uniquely identifies a neighborhood boundary.
+        tests:
+          - unique
+          - not_null
+      - name: triad_name
+        description: >
+          Reassessment of property in Cook County is done within a triennial cycle, meaning it occurs every three years. The Cook County Assessor's Office alternates reassessments between triads: the north and west suburbs, the south and west suburbs and the City of Chicago.
+      - name: town_nbhd
+        description: Township and neighborhood number. First 2 digits are town, last 3 are neighborhood
+      - name: township_code
+      - name: triad_code
+      - name: township_name
+      - name: nbhd
+      - name: geometry
+      - name: ingested_on
+
+  - name: cook_county_parcel_sales
+    description: '{{ doc("parcels_cc_sales") }}'
+    columns:
+      - name: pin
+        description: '{{ doc("parcels_cc_sales__pin") }}'
+      - name: year
+      - name: township_code
+      - name: class
+        description: '{{ doc("parcels_cc_sales__class") }}'
+      - name: sale_date
+        description: '{{ doc("parcels_cc_sales__sale_date") }}'
+      - name: is_mydec_date
+        description: '{{ doc("parcels_cc_sales__is_mydec_date") }}'
+      - name: sale_price
+      - name: sale_document_num
+        description: '{{ doc("parcels_cc_sales__sale_document_num") }}'
+      - name: sale_deed_type
+      - name: sale_seller_name
+      - name: is_multisale
+        description: '{{ doc("parcels_cc_sales__is_multisale") }}'
+      - name: num_parcels_sale
+      - name: sale_buyer_name
+      - name: sale_type
+      - name: source_data_updated
+      - name: ingestion_check_time

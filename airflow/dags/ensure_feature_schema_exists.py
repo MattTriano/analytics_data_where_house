@@ -16,11 +16,11 @@ task_logger = logging.getLogger("airflow.task")
     catchup=False,
     tags=["ddl"],
 )
-def ensure_data_raw_schema_exists():
+def ensure_feature_schema_exists():
     ensure_schema_exists_1 = ensure_schema_exists(
-        schema_name="data_raw", conn_id="dwh_db_conn", task_logger=task_logger
+        schema_name="feature", conn_id="dwh_db_conn", task_logger=task_logger
     )
     ensure_schema_exists_1
 
 
-ensure_data_raw_schema_exists()
+ensure_feature_schema_exists()

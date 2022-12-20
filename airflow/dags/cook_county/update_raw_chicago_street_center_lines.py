@@ -27,7 +27,7 @@ SOCRATA_TABLE = SocrataTable(table_id="6imu-meau", table_name="chicago_street_ce
     tags=["transit", "chicago", "cook_county", "geospatial", "data_raw", "infrastructure"],
 )
 def update_data_raw_chicago_street_center_lines():
-    POSTGRES_CONN_ID = "dwh_db_reconn"
+    POSTGRES_CONN_ID = "dwh_db_conn"
 
     metadata_1 = check_table_metadata(
         socrata_table=SOCRATA_TABLE, conn_id=POSTGRES_CONN_ID, task_logger=task_logger

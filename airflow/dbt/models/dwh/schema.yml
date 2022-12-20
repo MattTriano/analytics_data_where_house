@@ -1,0 +1,135 @@
+version: 2
+
+models:
+  - name: cook_county_parcel_sales_fact
+    config:
+      schema: dwh
+    description: '{{ doc("parcels_cc_sales") }}'
+    columns:
+      - name: parcel_sale_id
+        tests:
+          - unique
+          - not_null
+      - name: pin
+        description: '{{ doc("parcels_cc_sales__pin") }}'
+        tests:
+          - not_null
+      - name: year
+      - name: township_code
+      - name: class
+        description: '{{ doc("parcels_cc_sales__class") }}'
+      - name: sale_date
+        tests:
+          - not_null
+        description: '{{ doc("parcels_cc_sales__sale_date") }}'
+      - name: is_mydec_date
+        description: '{{ doc("parcels_cc_sales__is_mydec_date") }}'
+      - name: sale_price
+        tests:
+          - not_null
+      - name: sale_document_num
+        tests:
+        - not_null
+        description: '{{ doc("parcels_cc_sales__sale_document_num") }}'
+      - name: sale_deed_type
+      - name: sale_seller_name
+      - name: is_multisale
+        description: '{{ doc("parcels_cc_sales__is_multisale") }}'
+      - name: num_parcels_sale
+      - name: sale_buyer_name
+      - name: sale_type
+      - name: source_data_updated
+      - name: ingestion_check_time
+
+  - name: cook_county_parcel_locations_dim
+    config:
+      schema: dwh
+    description: '{{ doc("parcels_cc_locations") }}'
+    columns:        
+      - name: pin
+        description: '{{ doc("parcels_cc_locations__pin") }}'
+        tests:
+          - unique
+          - not_null
+      - name: property_address
+        description: '{{ doc("parcels_cc_locations__property_address") }}'
+      - name: property_apt_no
+        description: '{{ doc("parcels_cc_locations__property_apt_no") }}'
+      - name: property_city
+        description: '{{ doc("parcels_cc_locations__property_city") }}'
+      - name: property_zip
+        description: '{{ doc("parcels_cc_locations__property_zip") }}'
+      - name: nbhd
+        description: '{{ doc("parcels_cc_locations__nbhd") }}'
+      - name: township
+        description: '{{ doc("parcels_cc_locations__township") }}'
+      - name: township_name
+        description: '{{ doc("parcels_cc_locations__township_name") }}'
+      - name: municipality
+        description: '{{ doc("parcels_cc_locations__municipality") }}'
+      - name: municipality_fips
+        description: '{{ doc("parcels_cc_locations__municipality_fips") }}'
+      - name: ward
+        description: '{{ doc("parcels_cc_locations__ward") }}'
+      - name: puma
+        description: '{{ doc("parcels_cc_locations__puma") }}'
+      - name: tract_geoid
+        description: '{{ doc("parcels_cc_locations__tract_geoid") }}'
+      - name: tract_pop
+        description: '{{ doc("parcels_cc_locations__tract_pop") }}'
+      - name: tract_white_perc
+        description: '{{ doc("parcels_cc_locations__tract_white_perc") }}'
+      - name: tract_black_perc
+        description: '{{ doc("parcels_cc_locations__tract_black_perc") }}'
+      - name: tract_asian_perc
+        description: '{{ doc("parcels_cc_locations__tract_asian_perc") }}'
+      - name: tract_his_perc
+        description: '{{ doc("parcels_cc_locations__tract_his_perc") }}'
+      - name: tract_other_perc
+        description: '{{ doc("parcels_cc_locations__tract_other_perc") }}'
+      - name: tract_midincome
+        description: '{{ doc("parcels_cc_locations__tract_midincome") }}'
+      - name: commissioner_dist
+        description: '{{ doc("parcels_cc_locations__commissioner_dist") }}'
+      - name: reps_dist
+        description: '{{ doc("parcels_cc_locations__reps_dist") }}'
+      - name: senate_dist
+        description: '{{ doc("parcels_cc_locations__senate_dist") }}'
+      - name: ssa_name
+        description: '{{ doc("parcels_cc_locations__ssa_name") }}'
+      - name: ssa_no
+        description: '{{ doc("parcels_cc_locations__ssa_no") }}'
+      - name: tif_agencynum
+        description: '{{ doc("parcels_cc_locations__tif_agencynum") }}'
+      - name: school_elem_district
+        description: '{{ doc("parcels_cc_locations__school_elem_district") }}'
+      - name: school_hs_district
+        description: '{{ doc("parcels_cc_locations__school_hs_district") }}'
+      - name: mailing_address
+        description: '{{ doc("parcels_cc_locations__mailing_address") }}'
+      - name: mailing_city
+        description: '{{ doc("parcels_cc_locations__mailing_city") }}'
+      - name: mailing_zip
+        description: '{{ doc("parcels_cc_locations__mailing_zip") }}'
+      - name: mailing_state
+        description: '{{ doc("parcels_cc_locations__mailing_state") }}'
+      - name: ohare_noise
+        description: '{{ doc("parcels_cc_locations__ohare_noise") }}'
+      - name: floodplain
+        description: '{{ doc("parcels_cc_locations__floodplain") }}'
+      - name: fs_flood_factor
+        description: '{{ doc("parcels_cc_locations__fs_flood_factor") }}'
+      - name: fs_flood_risk_direction
+        description: '{{ doc("parcels_cc_locations__fs_flood_risk_direction") }}'
+      - name: withinmr100
+        description: '{{ doc("parcels_cc_locations__withinmr100") }}'
+      - name: withinmr101300
+        description: '{{ doc("parcels_cc_locations__withinmr101300") }}'
+      - name: indicator_has_address
+        description: '{{ doc("parcels_cc_locations__indicator_has_address") }}'
+      - name: indicator_has_latlon
+        description: '{{ doc("parcels_cc_locations__indicator_has_latlon") }}'
+      - name: longitude
+        description: '{{ doc("parcels_cc_locations__longitude") }}'
+      - name: latitude
+        description: '{{ doc("parcels_cc_locations__latitude") }}'
