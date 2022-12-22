@@ -48,6 +48,7 @@ update_dbt_packages: quiet_startup
 clean_dbt:
 	docker-compose exec dbt_proj /bin/bash -c "dbt clean";
 	docker-compose exec dbt_proj /bin/bash -c "dbt deps";
+	mkdir -p airflow/dbt/target;
 
 create_warehouse_infra:
 	docker-compose exec airflow-scheduler /bin/bash -c \
