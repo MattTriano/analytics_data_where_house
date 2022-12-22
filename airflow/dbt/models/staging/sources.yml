@@ -1,29 +1,28 @@
 version: 2
-
 sources:
   - name: staging
     database: re_dwh
     schema: data_raw
-    tags: ["raw"]
-
+    tags:
+      - raw
     tables:
-      - name: cook_county_parcel_sales      
-      - name: cook_county_parcel_locations      
-      - name: cook_county_neighborhood_boundaries
-      - name: cook_county_parcel_value_assessments
-      - name: chicago_homicide_and_shooting_victimizations
-      - name: chicago_cta_train_stations      
       - name: chicago_cta_bus_stops
+      - name: chicago_cta_train_stations
+      - name: chicago_homicide_and_shooting_victimizations
       - name: chicago_shotspotter_alerts
       - name: chicago_street_center_lines
-
-      - name: temp_cook_county_parcel_sales
-      - name: temp_cook_county_parcel_locations
-      - name: temp_cook_county_neighborhood_boundaries
-      - name: temp_cook_county_parcel_value_assessments
-      - name: temp_chicago_homicide_and_shooting_victimizations
-      - name: temp_chicago_cta_train_stations
+      - name: chicago_traffic_crashes
+      - name: cook_county_neighborhood_boundaries
+      - name: cook_county_parcel_locations
+      - name: cook_county_parcel_sales
+      - name: cook_county_parcel_value_assessments
       - name: temp_chicago_cta_bus_stops
+      - name: temp_chicago_cta_train_stations
+      - name: temp_chicago_homicide_and_shooting_victimizations
       - name: temp_chicago_shotspotter_alerts
       - name: temp_chicago_street_center_lines
-      
+      - name: temp_chicago_traffic_crashes
+      - name: temp_cook_county_neighborhood_boundaries
+      - name: temp_cook_county_parcel_locations
+      - name: temp_cook_county_parcel_sales
+      - name: temp_cook_county_parcel_value_assessments

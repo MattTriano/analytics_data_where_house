@@ -1,5 +1,19 @@
 from cc_utils.socrata import SocrataTable
 
+CHICAGO_CTA_TRAIN_STATIONS = SocrataTable(
+    table_id="8pix-ypme",
+    table_name="chicago_cta_train_stations",
+    schedule="0 5 5 * *",
+    clean_schedule="10 5 5 * *",
+)
+
+CHICAGO_CTA_BUS_STOPS = SocrataTable(
+    table_id="hvnx-qtky",
+    table_name="chicago_cta_bus_stops",
+    schedule="30 5 5 * *",
+    clean_schedule="45 5 5 * *",
+)
+
 CHICAGO_HOMICIDES_AND_SHOOTING_VICTIMIZATIONS = SocrataTable(
     table_id="gumc-mgzr",
     table_name="chicago_homicide_and_shooting_victimizations",
@@ -21,18 +35,11 @@ CHICAGO_STREET_CENTER_LINES = SocrataTable(
     clean_schedule="40 0 2 2 *",
 )
 
-CHICAGO_CTA_TRAIN_STATIONS = SocrataTable(
-    table_id="8pix-ypme",
-    table_name="chicago_cta_train_stations",
-    schedule="0 5 5 * *",
-    clean_schedule="10 5 5 * *",
-)
-
-CHICAGO_CTA_BUS_STOPS = SocrataTable(
-    table_id="hvnx-qtky",
-    table_name="chicago_cta_bus_stops",
-    schedule="30 5 5 * *",
-    clean_schedule="45 5 5 * *",
+CHICAGO_TRAFFIC_CRASHES_LINES = SocrataTable(
+    table_id="85ca-t3if",
+    table_name="chicago_traffic_crashes",
+    schedule="20 3,15 * * *",
+    clean_schedule="40 3,15 * * *",
 )
 
 COOK_COUNTY_NEIGHBORHOOD_BOUNDARIES = SocrataTable(
