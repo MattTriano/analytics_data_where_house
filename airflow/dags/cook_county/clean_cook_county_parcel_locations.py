@@ -5,23 +5,21 @@ from airflow.decorators import dag
 from airflow.operators.bash import BashOperator
 from airflow.utils.trigger_rule import TriggerRule
 
-from cc_utils.socrata import SocrataTable
-
-SOCRATA_TABLE = SocrataTable(table_id="c49d-89sn", table_name="cook_county_parcel_locations")
+from sources.tables import COOK_COUNTY_PARCEL_LOCATIONS as SOCRATA_TABLE
 
 
 @dag(
-    schedule="0 6 4 * *",
+    schedule=SOCRATA_TABLE.clean_schedule,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
     tags=["cook_county", "parcels", "dimension_table", "geospatial"],
 )
 def clean_cook_county_parcel_locations():
-
     transform_raw_data_1 = BashOperator(
         task_id="transform_raw_data",
         bash_command=f"""cd /opt/airflow/dbt && \
-            dbt run --select models/intermediate/{SOCRATA_TABLE.table_name}_standardized.sql+""",
+            dbt --warn-error run --select \
+                re_dbt.intermediate.{SOCRATA_TABLE.table_name}_standardized+""",
         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
     transform_raw_data_1
