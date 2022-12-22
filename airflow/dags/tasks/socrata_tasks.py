@@ -6,7 +6,6 @@ from urllib.request import urlretrieve
 from airflow.decorators import task, task_group
 from airflow.models.baseoperator import chain
 from airflow.operators.bash import BashOperator
-from airflow.operators.empty import EmptyOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
@@ -127,9 +126,9 @@ def fresher_source_data_available(
     task_logger.info(f"In fresher_source_data_available, here's what kwargs looks like {kwargs}")
     if socrata_metadata.data_freshness_check["updated_data_available"]:
         task_logger.info(f"Fresh data available, entering extract-load branch")
-        return "extract_load_task_group.download_fresh_data"
+        return "update_socrata_table.extract_load_task_group.download_fresh_data"
     else:
-        return "end"
+        return "update_socrata_table.update_result_of_check_in_metadata_table"
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -138,9 +137,9 @@ def table_exists_in_warehouse(socrata_metadata: SocrataTableMetadata, conn_id: s
         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
     )
     if socrata_metadata.table_name not in tables_in_data_raw_schema:
-        return "extract_load_task_group.ingest_into_new_table_in_data_raw"
+        return "update_socrata_table.extract_load_task_group.ingest_into_new_table_in_data_raw"
     else:
-        return "extract_load_task_group.ingest_into_temporary_table"
+        return "update_socrata_table.extract_load_task_group.ingest_into_temporary_table"
 
 
 @task
@@ -148,7 +147,9 @@ def ingest_into_new_table_in_data_raw(
     conn_id: str, task_logger: Logger, **kwargs
 ) -> SocrataTableMetadata:
     ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(task_ids="extract_load_task_group.download_fresh_data")
+    socrata_metadata = ti.xcom_pull(
+        task_ids="update_socrata_table.extract_load_task_group.download_fresh_data"
+    )
     ingest_into_table(
         socrata_metadata=socrata_metadata,
         conn_id=conn_id,
@@ -163,7 +164,9 @@ def ingest_into_temporary_table(
     conn_id: str, task_logger: Logger, **kwargs
 ) -> SocrataTableMetadata:
     ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(task_ids="extract_load_task_group.download_fresh_data")
+    socrata_metadata = ti.xcom_pull(
+        task_ids="update_socrata_table.extract_load_task_group.download_fresh_data"
+    )
     ingest_into_table(
         socrata_metadata=socrata_metadata,
         conn_id=conn_id,
@@ -178,7 +181,9 @@ def update_table_metadata_in_db(
     conn_id: str, task_logger: Logger, **kwargs
 ) -> SocrataTableMetadata:
     ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(task_ids="extract_load_task_group.download_fresh_data")
+    socrata_metadata = ti.xcom_pull(
+        task_ids="update_socrata_table.extract_load_task_group.download_fresh_data"
+    )
     task_logger.info(f"Updating table_metadata record id #{socrata_metadata.freshness_check_id}.")
     socrata_metadata.update_current_freshness_check_in_db(
         engine=get_pg_engine(conn_id=conn_id),
@@ -206,7 +211,7 @@ def check_table_metadata(
 def download_fresh_data(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(
-        task_ids="check_table_metadata.ingest_table_freshness_check_metadata"
+        task_ids="update_socrata_table.check_table_metadata.ingest_table_freshness_check_metadata"
     )
     output_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
     task_logger.info(f"Started downloading data at {dt.datetime.utcnow()} UTC")
@@ -220,7 +225,7 @@ def drop_temp_table(
     route_str: str, conn_id: str, task_logger: Logger, **kwargs
 ) -> SocrataTableMetadata:
     ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
 
     task_logger.info(f"inside drop_temp_table, from {route_str}")
     engine = get_pg_engine(conn_id=conn_id)
@@ -317,7 +322,9 @@ def ingest_geojson_data(
 ) -> None:
     try:
         ti = kwargs["ti"]
-        socrata_metadata = ti.xcom_pull(task_ids="load_data_tg.load_geojson_data.drop_temp_table")
+        socrata_metadata = ti.xcom_pull(
+            task_ids="update_socrata_table.load_data_tg.load_geojson_data.drop_temp_table"
+        )
 
         engine = get_pg_engine(conn_id=conn_id)
         temp_table_name = f"temp_{socrata_metadata.table_name}"
@@ -372,9 +379,9 @@ def load_geojson_data(route_str: str, conn_id: str, task_logger: Logger) -> Socr
 def file_ext_branch_router(socrata_metadata: SocrataTableMetadata) -> str:
     dl_format = socrata_metadata.download_format
     if dl_format.lower() == "geojson":
-        return "load_data_tg.load_geojson_data.drop_temp_table"
+        return "update_socrata_table.load_data_tg.load_geojson_data.drop_temp_table"
     elif dl_format.lower() == "csv":
-        return "load_data_tg.load_csv_data.drop_temp_table"
+        return "update_socrata_table.load_data_tg.load_csv_data.drop_temp_table"
     else:
         raise Exception(f"Download format '{dl_format}' not supported yet. CSV or GeoJSON for now")
 
@@ -382,7 +389,7 @@ def file_ext_branch_router(socrata_metadata: SocrataTableMetadata) -> str:
 @task
 def create_temp_data_raw_table(conn_id: str, task_logger: Logger, **kwargs) -> None:
     ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     table_name = f"temp_{socrata_metadata.table_name}"
     local_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
     task_logger.info(
@@ -421,7 +428,7 @@ def create_table_in_data_raw(
     conn_id: str, task_logger: Logger, temp_table: bool, **kwargs
 ) -> SocrataTableMetadata:
     ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     try:
         table_name = socrata_metadata.table_name
         task_logger.info(f"Creating table data_raw.{table_name}")
@@ -445,7 +452,7 @@ def update_result_of_check_in_metadata_table(
 ) -> SocrataTableMetadata:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(
-        task_ids="check_table_metadata.ingest_table_freshness_check_metadata"
+        task_ids="update_socrata_table.check_table_metadata.ingest_table_freshness_check_metadata"
     )
     task_logger.info(f"Updating table_metadata record id #{socrata_metadata.freshness_check_id}.")
     task_logger.info(f"Data_pulled_this_check: {data_updated}.")
@@ -479,7 +486,7 @@ def load_data_tg(
     update_data_raw_table_1 = BashOperator(
         task_id="update_data_raw_table",
         bash_command=f"""cd /opt/airflow/dbt && \
-            dbt run --select models/staging/{socrata_table.table_name}.sql""",
+            dbt --warn-error run --select re_dbt.staging.{socrata_table.table_name}""",
         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
     update_metadata_true_1 = update_result_of_check_in_metadata_table(
@@ -520,25 +527,25 @@ def fresher_source_data_available(
     task_logger.info(f" --- table_does_not_exist: {table_does_not_exist}")
     task_logger.info(f" --- update_availble:      {update_availble}")
     if table_does_not_exist or update_availble:
-        return "download_fresh_data"
+        return "update_socrata_table.download_fresh_data"
     else:
-        return "update_result_of_check_in_metadata_table"
+        return "update_socrata_table.update_result_of_check_in_metadata_table"
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def table_exists_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(task_ids="download_fresh_data")
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     tables_in_data_raw_schema = get_data_table_names_in_schema(
         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
     )
     task_logger.info(f"tables_in_data_raw_schema: {tables_in_data_raw_schema}")
     if socrata_metadata.table_name not in tables_in_data_raw_schema:
         task_logger.info(f"Table {socrata_metadata.table_name} not in data_raw; creating.")
-        return "load_data_tg.create_table_in_data_raw"
+        return "update_socrata_table.load_data_tg.create_table_in_data_raw"
     else:
         task_logger.info(f"Table {socrata_metadata.table_name} in data_raw; skipping.")
-        return "load_data_tg.update_data_raw_table"
+        return "update_socrata_table.load_data_tg.update_data_raw_table"
 
 
 @task.short_circuit(ignore_downstream_trigger_rules=True)
@@ -546,3 +553,45 @@ def short_circuit_downstream():
     # airflow's short_circuit operator shorts downstream tasks by returning False
     # or proceeds if the short_circuit task returns True.
     return False
+
+
+@task_group
+def update_socrata_table(
+    socrata_table: SocrataTable,
+    conn_id: str,
+    task_logger: Logger,
+) -> SocrataTableMetadata:
+    task_logger.info(f"Updating Socrata table {socrata_table.table_name}")
+
+    metadata_1 = check_table_metadata(
+        socrata_table=socrata_table, conn_id=conn_id, task_logger=task_logger
+    )
+    fresh_source_data_available_1 = fresher_source_data_available(
+        socrata_metadata=metadata_1, conn_id=conn_id, task_logger=task_logger
+    )
+    extract_data_1 = download_fresh_data(task_logger=task_logger)
+    load_data_tg_1 = load_data_tg(
+        socrata_metadata=extract_data_1,
+        socrata_table=socrata_table,
+        conn_id=conn_id,
+        task_logger=task_logger,
+    )
+    update_metadata_false_1 = update_result_of_check_in_metadata_table(
+        conn_id=conn_id, task_logger=task_logger, data_updated=False
+    )
+    short_circuit_update_1 = short_circuit_downstream()
+
+    chain(
+        metadata_1,
+        fresh_source_data_available_1,
+        Label("Fresher data available"),
+        extract_data_1,
+        load_data_tg_1,
+    )
+    chain(
+        metadata_1,
+        fresh_source_data_available_1,
+        Label("Local data is fresh"),
+        update_metadata_false_1,
+        short_circuit_update_1,
+    )
