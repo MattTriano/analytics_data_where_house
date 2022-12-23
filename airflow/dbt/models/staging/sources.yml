@@ -8,6 +8,7 @@ sources:
     tables:
       - name: chicago_cta_bus_stops
       - name: chicago_cta_train_stations
+      - name: chicago_food_inspections
       - name: chicago_homicide_and_shooting_victimizations
       - name: chicago_shotspotter_alerts
       - name: chicago_street_center_lines
@@ -18,6 +19,7 @@ sources:
       - name: cook_county_parcel_value_assessments
       - name: temp_chicago_cta_bus_stops
       - name: temp_chicago_cta_train_stations
+      - name: temp_chicago_food_inspections
       - name: temp_chicago_homicide_and_shooting_victimizations
       - name: temp_chicago_shotspotter_alerts
       - name: temp_chicago_street_center_lines

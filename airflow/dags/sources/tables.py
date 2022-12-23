@@ -14,6 +14,13 @@ CHICAGO_CTA_BUS_STOPS = SocrataTable(
     clean_schedule="45 5 5 * *",
 )
 
+CHICAGO_FOOD_INSPECTIONS = SocrataTable(
+    table_id="4ijn-s7e5",
+    table_name="chicago_food_inspections",
+    schedule="30 8,20 * * *",
+    clean_schedule="45 8,20 * * *",
+)
+
 CHICAGO_HOMICIDES_AND_SHOOTING_VICTIMIZATIONS = SocrataTable(
     table_id="gumc-mgzr",
     table_name="chicago_homicide_and_shooting_victimizations",
