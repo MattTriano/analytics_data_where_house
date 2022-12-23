@@ -1,1 +1,1 @@
-FROM dpage/pgadmin4:6.17
+FROM dpage/pgadmin4:6.18

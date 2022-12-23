@@ -100,22 +100,10 @@ def col_type_cast_formatter(col_name: str, sqlalch_col_type) -> str:
         return f"        {col_name}::MANUALLY_REPLACE (was {str(sqlalch_col_type)} AS {col_name},"
 
 
-def format_dbt_stub_for_standardized_stage(
-    table_name: str, engine: Engine, schema_name: str = "data_raw"
-) -> List[str]:
-    insp = inspect(engine)
-    schema_tables = insp.get_table_names(schema=schema_name)
-    if f"temp_{table_name}" in schema_tables:
-        ref_table = get_reflected_db_table(
-            engine=engine, table_name=f"temp_{table_name}", schema_name=schema_name
-        )
-    elif table_name in schema_tables:
-        ref_table = get_reflected_db_table(
-            engine=engine, table_name=table_name, schema_name=schema_name
-        )
-    else:
-        raise Exception(f"Table {table_name} not present in schema {schema_name}. Can't mock up.")
-    table_cols = ref_table.columns.values()
+def format_dbt_stub_for_standardized_stage(table_name: str, engine: Engine) -> List[str]:
+    table_cols = get_table_sqlalchemy_col_objects(
+        table_name=table_name, schema_name="data_raw", engine=engine
+    )
     table_col_details = [{"name": col.name, "type": col.type} for col in table_cols]
     file_lines = [
         "{{ config(materialized='view') }}",
@@ -191,8 +179,7 @@ def format_jinja_variable_declaration_of_col_list(
     return lines
 
 
-def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine) -> List[str]:
-    schema_name = "data_raw"
+def get_table_sqlalchemy_col_objects(table_name: str, schema_name: str, engine: Engine) -> List:
     insp = inspect(engine)
     schema_tables = insp.get_table_names(schema=schema_name)
     if f"temp_{table_name}" in schema_tables:
@@ -206,6 +193,96 @@ def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine
     else:
         raise Exception(f"Table {table_name} not present in schema {schema_name}. Can't mock up.")
     table_cols = ref_table.columns.values()
+    return table_cols
+
+
+def format_dbt_stub_for_data_raw_stage(table_name: str, engine: Engine) -> List[str]:
+    table_cols = get_table_sqlalchemy_col_objects(
+        table_name=table_name, schema_name="data_raw", engine=engine
+    )
+    table_col_names = [col.name for col in table_cols]
+    metadata_cols = ["source_data_updated", "ingestion_check_time"]
+    source_cols = [col for col in table_col_names if col not in metadata_cols]
+    format_jinja_variable_declaration_of_col_list(
+        table_col_names=source_cols, var_name="source_cols"
+    )
+    if table_name.startswith("temp_"):
+        table_name = table_name[5:]
+    file_lines = [
+        f"-- Save to file in /airflow/dbt/models/staging/{table_name}.sql",
+        "{{ config(materialized='table') }}",
+    ]
+    file_lines.extend(
+        format_jinja_variable_declaration_of_col_list(
+            table_col_names=source_cols, var_name="source_cols"
+        )
+    )
+    file_lines.extend(
+        [
+            """{% set metadata_cols = ["source_data_updated", "ingestion_check_time"] %}""",
+            "",
+            "-- selecting all records already in the full data_raw table",
+            "WITH records_in_data_raw_table AS (",
+            "    SELECT *, 1 AS retention_priority",
+            f"""    FROM {{{{ source('staging', '{table_name}') }}}}""",
+            "),",
+            "",
+            """-- selecting all distinct records from the latest data pull (in the "temp" table)""",
+            "current_pull_with_distinct_combos_numbered AS (",
+            "    SELECT *,",
+            "        row_number() over(partition by",
+            "            {% for sc in source_cols %}{{ sc }},{% endfor %}",
+            """            {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}""",
+            "        ) as rn",
+            f"""    FROM {{{{ source('staging', 'temp_{table_name}') }}}}""",
+            "),",
+            "distinct_records_in_current_pull AS (",
+            "    SELECT",
+            "        {% for sc in source_cols %}{{ sc }},{% endfor %}",
+            "        {% for mc in metadata_cols %}{{ mc }},{% endfor %}",
+            "        2 AS retention_priority",
+            "    FROM current_pull_with_distinct_combos_numbered",
+            "    WHERE rn = 1",
+            "),",
+            "",
+            "-- stacking the existing data with all distinct records from the latest pull",
+            "data_raw_table_with_all_new_and_updated_records AS (",
+            "    SELECT *",
+            "    FROM records_in_data_raw_table",
+            "        UNION ALL",
+            "    SELECT *",
+            "    FROM distinct_records_in_current_pull",
+            "),",
+            "",
+            "-- selecting records that where source columns are distinct (keeping the earlier recovery",
+            "--  when there are duplicates to chose from)",
+            "data_raw_table_with_new_and_updated_records AS (",
+            "    SELECT *,",
+            "    row_number() over(partition by",
+            """        {% for sc in source_cols %}{{ sc }}{{ "," if not loop.last }}{% endfor %}""",
+            "        ORDER BY retention_priority",
+            "        ) as rn",
+            "    FROM data_raw_table_with_all_new_and_updated_records",
+            "),",
+            "distinct_records_for_data_raw_table AS (",
+            "    SELECT",
+            "        {% for sc in source_cols %}{{ sc }},{% endfor %}",
+            """        {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}""",
+            "    FROM data_raw_table_with_new_and_updated_records",
+            "    WHERE rn = 1",
+            ")",
+            "",
+            "SELECT *",
+            "FROM distinct_records_for_data_raw_table",
+        ]
+    )
+    return file_lines
+
+
+def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine) -> List[str]:
+    table_cols = get_table_sqlalchemy_col_objects(
+        table_name=table_name, schema_name="data_raw", engine=engine
+    )
     table_col_names = ["REPLACE_WITH_BETTER_id"]
     table_col_names.extend([col.name for col in table_cols])
     file_lines = [

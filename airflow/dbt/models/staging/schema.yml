@@ -87,3 +87,7 @@ models:
       - name: sale_type
       - name: source_data_updated
       - name: ingestion_check_time
+
+  - name: chicago_shotspotter_alerts
+    config:
+      schema: data_raw # Unclear if it's necessary to include this.

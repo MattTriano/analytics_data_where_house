@@ -1,4 +1,14 @@
 import datetime as dt
+import logging
+
+from airflow.decorators import dag
+
+# from tasks.socrata_tasks import update_socrata_table
+from sources.tables import CHICAGO_TRAFFIC_CRASHES_LINES as SOCRATA_TABLE
+
+task_logger = logging.getLogger("airflow.task")
+
+import datetime as dt
 from logging import Logger
 from pathlib import Path
 from urllib.request import urlretrieve
@@ -15,13 +25,13 @@ from cc_utils.db import (
     get_data_table_names_in_schema,
     execute_structural_command,
 )
-from cc_utils.file_factory import make_dbt_data_raw_table_staging_model
 from cc_utils.socrata import SocrataTable, SocrataTableMetadata
 from cc_utils.utils import (
     get_local_data_raw_dir,
     get_lines_in_geojson_file,
     produce_slice_indices_for_gpd_read_file,
 )
+from cc_utils.file_factory import make_dbt_data_raw_table_staging_model
 
 
 def get_local_file_path(socrata_metadata: SocrataTableMetadata) -> Path:
@@ -506,6 +516,17 @@ def load_data_tg(
         update_data_raw_table_1,
         update_metadata_true_1,
     )
+    # chain(
+    #     file_ext_route_1,
+    #     [geojson_route_1, csv_route_1],
+    #     table_exists_1,
+    #     Label("Creating Table"),
+    #     create_staging_table_1,
+    #     dbt_staging_model_exists_1,
+    #     make_dbt_staging_model_1
+    #     # update_data_raw_table_1,
+    #     # update_metadata_true_1,
+    # )
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
@@ -617,3 +638,21 @@ def update_socrata_table(
         update_metadata_false_1,
         short_circuit_update_1,
     )
+
+
+@dag(
+    schedule=SOCRATA_TABLE.schedule,
+    start_date=dt.datetime(2022, 11, 1),
+    catchup=False,
+    tags=["transit", "chicago", "cook_county", "geospatial", "data_raw"],
+)
+def update_data_raw_chicago_traffic_crashes():
+    update_1 = update_socrata_table(
+        socrata_table=SOCRATA_TABLE,
+        conn_id="dwh_db_conn",
+        task_logger=task_logger,
+    )
+    update_1
+
+
+update_data_raw_chicago_traffic_crashes()
