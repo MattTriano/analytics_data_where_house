@@ -558,7 +558,7 @@ def dbt_staging_model_exists(task_logger: Logger, **kwargs) -> str:
         return "update_socrata_table.load_data_tg.make_dbt_staging_model"
 
 
-@task
+@task(retries=1)
 def make_dbt_staging_model(conn_id: str, task_logger: Logger, **kwargs) -> SocrataTableMetadata:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")

@@ -31,8 +31,8 @@ CHICAGO_HOMICIDES_AND_SHOOTING_VICTIMIZATIONS = SocrataTable(
 CHICAGO_SHOTSPOTTER_ALERTS = SocrataTable(
     table_id="3h7q-7mdb",
     table_name="chicago_shotspotter_alerts",
-    schedule="20 7,19 * * *",
-    clean_schedule="30 7,19 * * *",
+    schedule="20 6,18 * * *",
+    clean_schedule="30 6,18 * * *",
 )
 
 CHICAGO_STREET_CENTER_LINES = SocrataTable(
