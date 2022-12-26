@@ -131,18 +131,21 @@ class SocrataTableMetadata:
                 return any([col_dtype in socrata_geo_datatypes for col_dtype in column_datatypes])
         return False
 
+    @property
     def table_has_geo_type_view(self) -> bool:
         table_view_type = self.get_table_metadata_attr(
             attr_dict=self.resource_metadata, attr_name="lens_view_type"
         )
         return table_view_type == "geo"
 
+    @property
     def table_has_map_type_display(self) -> bool:
         table_display_type = self.get_table_metadata_attr(
             attr_dict=self.resource_metadata, attr_name="lens_display_type"
         )
         return table_display_type == "map"
 
+    @property
     def table_has_data_columns(self) -> bool:
         table_data_cols = self.get_table_metadata_attr(
             attr_dict=self.resource_metadata, attr_name="columns_name"
@@ -152,8 +155,8 @@ class SocrataTableMetadata:
     @property
     def is_geospatial(self) -> bool:
         return (
-            (not self.table_has_data_columns())
-            and (self.table_has_geo_type_view() or self.table_has_map_type_display())
+            (not self.table_has_data_columns)
+            and (self.table_has_geo_type_view or self.table_has_map_type_display)
         ) or (self.has_geospatial_feature)
 
     def get_valid_download_formats(self) -> Dict:

@@ -63,22 +63,19 @@ class TestCSVSocrataTableMetadata:
         assert socrata_metadata.metadata["time_of_collection"] == "2022-12-13T04:44:51.717900Z"
 
     def test_is_geospatial(self, socrata_metadata):
-        LOGGER.info(f"socrata_metadata.table_name: {socrata_metadata.table_name}")
-        LOGGER.info(f"socrata_metadata.data_domain: {socrata_metadata.data_domain}")
-        LOGGER.info(f"socrata_metadata.column_details: {socrata_metadata.column_details}")
         assert socrata_metadata.is_geospatial == False
 
     def test_has_a_geospatial_feature(self, socrata_metadata):
         assert socrata_metadata.table_has_geospatial_feature() == False
 
     def test_has_geo_type_view(self, socrata_metadata):
-        assert socrata_metadata.table_has_geo_type_view() == False
+        assert socrata_metadata.table_has_geo_type_view == False
 
     def test_has_map_type_display(self, socrata_metadata):
-        assert socrata_metadata.table_has_map_type_display() == False
+        assert socrata_metadata.table_has_map_type_display == False
 
     def test_has_data_columns(self, socrata_metadata):
-        assert socrata_metadata.table_has_data_columns() == True
+        assert socrata_metadata.table_has_data_columns == True
 
     def test_data_domain(self, socrata_metadata):
         assert socrata_metadata.data_domain == "datacatalog.cookcountyil.gov"
@@ -112,22 +109,19 @@ class TestGeojsonSocrataTableMetadata:
         assert socrata_metadata.metadata["time_of_collection"] == "2022-12-12T15:47:47.359187Z"
 
     def test_is_geospatial(self, socrata_metadata):
-        LOGGER.info(f"socrata_metadata.table_name: {socrata_metadata.table_name}")
-        LOGGER.info(f"socrata_metadata.data_domain: {socrata_metadata.data_domain}")
-        LOGGER.info(f"socrata_metadata.column_details: {socrata_metadata.column_details}")
         assert socrata_metadata.is_geospatial == True
 
     def test_has_a_geospatial_feature(self, socrata_metadata):
         assert socrata_metadata.table_has_geospatial_feature() == True
 
     def test_has_geo_type_view(self, socrata_metadata):
-        assert socrata_metadata.table_has_geo_type_view() == False
+        assert socrata_metadata.table_has_geo_type_view == False
 
     def test_has_map_type_display(self, socrata_metadata):
-        assert socrata_metadata.table_has_map_type_display() == False
+        assert socrata_metadata.table_has_map_type_display == False
 
     def test_has_data_columns(self, socrata_metadata):
-        assert socrata_metadata.table_has_data_columns() == True
+        assert socrata_metadata.table_has_data_columns == True
 
     def test_data_domain(self, socrata_metadata):
         assert socrata_metadata.data_domain == "datacatalog.cookcountyil.gov"
