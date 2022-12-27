@@ -216,7 +216,7 @@ def download_fresh_data(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
     )
     output_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
     task_logger.info(f"Started downloading data at {dt.datetime.utcnow()} UTC")
-    urlretrieve(url=socrata_metadata.get_data_download_url(), filename=output_file_path)
+    urlretrieve(url=socrata_metadata.data_download_url, filename=output_file_path)
     task_logger.info(f"Finished downloading data at {dt.datetime.utcnow()} UTC")
     return socrata_metadata
 

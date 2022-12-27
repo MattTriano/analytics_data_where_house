@@ -38,7 +38,6 @@ class SocrataTableMetadata:
         self.socrata_table = socrata_table
         self.table_id = self.socrata_table.table_id
         self.metadata = self.get_table_metadata()
-        self.has_geospatial_feature = self.table_has_geospatial_feature()
         self.data_freshness_check = self.initialize_data_freshness_check_record()
         self.freshness_check_id = None
 
@@ -113,6 +112,7 @@ class SocrataTableMetadata:
                 }
         return {}
 
+    @property
     def table_has_geospatial_feature(self) -> bool:
         socrata_geo_datatypes = [
             "Line",
@@ -157,7 +157,7 @@ class SocrataTableMetadata:
         return (
             (not self.table_has_data_columns)
             and (self.table_has_geo_type_view or self.table_has_map_type_display)
-        ) or (self.has_geospatial_feature)
+        ) or (self.table_has_geospatial_feature)
 
     def get_valid_download_formats(self) -> Dict:
         valid_download_formats = {

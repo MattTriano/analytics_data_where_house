@@ -12,6 +12,7 @@ sys.path.append("../../airflow")
 
 from dags.cc_utils import socrata
 from dags.sources.tables import (
+    CHICAGO_CITY_BOUNDARY,
     COOK_COUNTY_PARCEL_SALES,
     COOK_COUNTY_NEIGHBORHOOD_BOUNDARIES,
 )
@@ -66,7 +67,7 @@ class TestCSVSocrataTableMetadata:
         assert socrata_metadata.is_geospatial == False
 
     def test_has_a_geospatial_feature(self, socrata_metadata):
-        assert socrata_metadata.table_has_geospatial_feature() == False
+        assert socrata_metadata.table_has_geospatial_feature == False
 
     def test_has_geo_type_view(self, socrata_metadata):
         assert socrata_metadata.table_has_geo_type_view == False
@@ -112,7 +113,7 @@ class TestGeojsonSocrataTableMetadata:
         assert socrata_metadata.is_geospatial == True
 
     def test_has_a_geospatial_feature(self, socrata_metadata):
-        assert socrata_metadata.table_has_geospatial_feature() == True
+        assert socrata_metadata.table_has_geospatial_feature == True
 
     def test_has_geo_type_view(self, socrata_metadata):
         assert socrata_metadata.table_has_geo_type_view == False
@@ -143,3 +144,50 @@ class TestGeojsonSocrataTableMetadata:
 
     def test_latest_metadata_update_datetime(self, socrata_metadata):
         assert socrata_metadata.latest_metadata_update_datetime == "2022-05-11T15:59:20Z"
+
+
+class TestGeojsonMapTypeSocrataTableMetadata:
+    @pytest.fixture(scope="class")
+    def socrata_metadata(self, mock_SocrataTableMetadata):
+        socrata_table = CHICAGO_CITY_BOUNDARY
+        mock_socrata_metadata = socrata.SocrataTableMetadata(socrata_table=socrata_table)
+        yield mock_socrata_metadata
+
+    def test_time_of_collection(self, socrata_metadata):
+        assert socrata_metadata.metadata["time_of_collection"] == "2022-12-27T03:35:06.025250Z"
+
+    def test_is_geospatial(self, socrata_metadata):
+        assert socrata_metadata.is_geospatial == True
+
+    def test_has_a_geospatial_feature(self, socrata_metadata):
+        assert socrata_metadata.table_has_geospatial_feature == False
+
+    def test_has_geo_type_view(self, socrata_metadata):
+        assert socrata_metadata.table_has_geo_type_view == True
+
+    def test_has_map_type_display(self, socrata_metadata):
+        assert socrata_metadata.table_has_map_type_display == True
+
+    def test_has_data_columns(self, socrata_metadata):
+        assert socrata_metadata.table_has_data_columns == False
+
+    def test_data_domain(self, socrata_metadata):
+        assert socrata_metadata.data_domain == "data.cityofchicago.org"
+
+    def test_table_name(self, socrata_metadata):
+        assert socrata_metadata.table_name == "chicago_city_boundary"
+
+    def test_data_download_url(self, socrata_metadata):
+        assert socrata_metadata.data_download_url == (
+            "https://data.cityofchicago.org/api/geospatial/ewy2-6yfk?method=export"
+            + "&format=GeoJSON"
+        )
+
+    def test_download_format(self, socrata_metadata):
+        assert socrata_metadata.download_format == "GeoJSON"
+
+    def test_latest_data_update_datetime(self, socrata_metadata):
+        assert socrata_metadata.latest_data_update_datetime == None
+
+    def test_latest_metadata_update_datetime(self, socrata_metadata):
+        assert socrata_metadata.latest_metadata_update_datetime == "2017-06-30T22:02:43Z"

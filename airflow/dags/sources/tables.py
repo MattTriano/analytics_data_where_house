@@ -1,5 +1,12 @@
 from cc_utils.socrata import SocrataTable
 
+CHICAGO_CITY_BOUNDARY = SocrataTable(
+    table_id="ewy2-6yfk",
+    table_name="chicago_city_boundary",
+    schedule="0 20 10 8 *",
+    clean_schedule="10 20 10 8 *",
+)
+
 CHICAGO_CTA_TRAIN_STATIONS = SocrataTable(
     table_id="8pix-ypme",
     table_name="chicago_cta_train_stations",

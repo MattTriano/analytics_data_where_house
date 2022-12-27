@@ -1,0 +1,73 @@
+{
+    "_id": "ewy2-6yfk",
+    "time_of_collection": "2022-12-27T03:35:06.025250Z",
+    "resource": {
+        "name": "Boundaries - City",
+        "id": "ewy2-6yfk",
+        "parent_fxf": [],
+        "description": "City boundary of Chicago. The data can be viewed on the Chicago Data Portal with a web browser. However, to view or use the files outside of a web browser, you will need to use compression software and special GIS software, such as ESRI ArcGIS (shapefile) or Google Earth (KML or KMZ).",
+        "attribution": "City of Chicago",
+        "attribution_link": "http://www.cityofchicago.org",
+        "contact_email": null,
+        "type": "map",
+        "updatedAt": "2017-06-30T22:02:43.000Z",
+        "createdAt": "2015-05-13T18:42:41.000Z",
+        "metadata_updated_at": "2017-06-30T22:02:43.000Z",
+        "data_updated_at": null,
+        "page_views": {
+            "page_views_last_week": 174,
+            "page_views_last_month": 1194,
+            "page_views_total": 58396,
+            "page_views_last_week_log": 7.45121111183233,
+            "page_views_last_month_log": 10.222794902868111,
+            "page_views_total_log": 15.83360663570452
+        },
+        "columns_name": [],
+        "columns_field_name": [],
+        "columns_datatype": [],
+        "columns_description": [],
+        "columns_format": [],
+        "download_count": 10451,
+        "provenance": "official",
+        "lens_view_type": "geo",
+        "lens_display_type": "map",
+        "blob_mime_type": "application/zip; charset=binary",
+        "hide_from_data_json": false,
+        "publication_date": "2015-05-13T18:42:47.000Z"
+    },
+    "classification": {
+        "categories": [],
+        "tags": [],
+        "domain_category": "Facilities & Geographic Boundaries",
+        "domain_tags": [
+            "boundaries",
+            "gis",
+            "kml",
+            "kmz",
+            "map_layer",
+            "shapefiles"
+        ],
+        "domain_metadata": [
+            {
+                "key": "Metadata_Time-Period",
+                "value": "Current as of June 2017"
+            }
+        ]
+    },
+    "metadata": {
+        "domain": "data.cityofchicago.org"
+    },
+    "permalink": "https://data.cityofchicago.org/d/ewy2-6yfk",
+    "link": "https://data.cityofchicago.org/Facilities-Geographic-Boundaries/Boundaries-City/ewy2-6yfk",
+    "preview_image_url": "https://data.cityofchicago.org/views/ewy2-6yfk/files/0c128d9e-2773-4a8c-88bb-1973ec74eaab",
+    "owner": {
+        "id": "vewm-vupz",
+        "user_type": "interactive",
+        "display_name": "Jonathan Levy"
+    },
+    "creator": {
+        "id": "vewm-vupz",
+        "user_type": "interactive",
+        "display_name": "Jonathan Levy"
+    }
+}
