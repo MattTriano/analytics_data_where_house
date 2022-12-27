@@ -1,5 +1,12 @@
 from cc_utils.socrata import SocrataTable
 
+CHICAGO_CITY_BOUNDARY = SocrataTable(
+    table_id="ewy2-6yfk",
+    table_name="chicago_city_boundary",
+    schedule="0 20 10 8 *",
+    clean_schedule="10 20 10 8 *",
+)
+
 CHICAGO_CTA_TRAIN_STATIONS = SocrataTable(
     table_id="8pix-ypme",
     table_name="chicago_cta_train_stations",
@@ -31,8 +38,8 @@ CHICAGO_HOMICIDES_AND_SHOOTING_VICTIMIZATIONS = SocrataTable(
 CHICAGO_SHOTSPOTTER_ALERTS = SocrataTable(
     table_id="3h7q-7mdb",
     table_name="chicago_shotspotter_alerts",
-    schedule="20 7,19 * * *",
-    clean_schedule="30 7,19 * * *",
+    schedule="20 6,18 * * *",
+    clean_schedule="30 6,18 * * *",
 )
 
 CHICAGO_STREET_CENTER_LINES = SocrataTable(

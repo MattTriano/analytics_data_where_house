@@ -35,17 +35,9 @@ class SocrataTableMetadata:
         self,
         socrata_table: SocrataTable,
     ):
-        self.table_id = socrata_table.table_id
+        self.socrata_table = socrata_table
+        self.table_id = self.socrata_table.table_id
         self.metadata = self.get_table_metadata()
-        self.table_name = self.validate_table_name(table_name=socrata_table.table_name)
-        self.resource_metadata = self.get_resource_metadata()
-        self.column_details = self.get_column_details()
-        self.has_geospatial_feature = self.table_has_geospatial_feature()
-        self.data_domain = self.get_data_domain()
-        self.is_geospatial = self.is_geospatial_table()
-        self.download_format = self.validate_download_format(
-            download_format=socrata_table.download_format
-        )
         self.data_freshness_check = self.initialize_data_freshness_check_record()
         self.freshness_check_id = None
 
@@ -76,19 +68,22 @@ class SocrataTableMetadata:
             print("Did you mean to enter attr_dict['resource']")
             raise
 
-    def get_resource_metadata(self):
+    @property
+    def resource_metadata(self):
         return self.get_table_metadata_attr(attr_dict=self.metadata, attr_name="resource")
 
-    def validate_table_name(self, table_name: Optional[str]) -> str:
-        if table_name is None:
+    @property
+    def table_name(self) -> str:
+        if self.socrata_table.table_name is None:
             table_name = self.get_table_metadata_attr(
                 a_dict=self.resource_metadata, attr_name="name"
             )
             return "_".join(re.sub("[^0-9a-zA-Z]+", "", table_name.lower()).split())
         else:
-            return table_name
+            return self.socrata_table.table_name
 
-    def get_data_domain(self) -> str:
+    @property
+    def data_domain(self) -> str:
         metadatas_metadata = self.get_table_metadata_attr(
             attr_dict=self.metadata, attr_name="metadata"
         )
@@ -98,7 +93,8 @@ class SocrataTableMetadata:
         with open(file_path, "w", encoding="utf-8") as json_file:
             json.dump(self.metadata, json_file, ensure_ascii=False, indent=4, default=str)
 
-    def get_column_details(self) -> Dict:
+    @property
+    def column_details(self) -> Dict:
         if self.resource_metadata is not None:
             column_metadata_fields = [
                 "columns_name",
@@ -116,6 +112,7 @@ class SocrataTableMetadata:
                 }
         return {}
 
+    @property
     def table_has_geospatial_feature(self) -> bool:
         socrata_geo_datatypes = [
             "Line",
@@ -134,29 +131,33 @@ class SocrataTableMetadata:
                 return any([col_dtype in socrata_geo_datatypes for col_dtype in column_datatypes])
         return False
 
+    @property
     def table_has_geo_type_view(self) -> bool:
         table_view_type = self.get_table_metadata_attr(
             attr_dict=self.resource_metadata, attr_name="lens_view_type"
         )
         return table_view_type == "geo"
 
+    @property
     def table_has_map_type_display(self) -> bool:
         table_display_type = self.get_table_metadata_attr(
             attr_dict=self.resource_metadata, attr_name="lens_display_type"
         )
         return table_display_type == "map"
 
+    @property
     def table_has_data_columns(self) -> bool:
         table_data_cols = self.get_table_metadata_attr(
             attr_dict=self.resource_metadata, attr_name="columns_name"
         )
         return len(table_data_cols) != 0
 
-    def is_geospatial_table(self) -> bool:
+    @property
+    def is_geospatial(self) -> bool:
         return (
-            (not self.table_has_data_columns())
-            and (self.table_has_geo_type_view() or self.table_has_map_type_display())
-        ) or (self.has_geospatial_feature)
+            (not self.table_has_data_columns)
+            and (self.table_has_geo_type_view or self.table_has_map_type_display)
+        ) or (self.table_has_geospatial_feature)
 
     def get_valid_download_formats(self) -> Dict:
         valid_download_formats = {
@@ -185,14 +186,15 @@ class SocrataTableMetadata:
                 f"Download format '{download_format}' isn't supported. Pick from {all_pairs}"
             )
 
-    def validate_download_format(self, download_format: str = None) -> str:
-        if download_format is None:
+    @property
+    def download_format(self) -> str:
+        if self.socrata_table.download_format is None:
             if self.is_geospatial:
                 return "GeoJSON"
             else:
                 return "csv"
         else:
-            download_format = download_format.lower()
+            download_format = self.socrata_table.download_format.lower()
             self.assert_download_format_is_supported(download_format=download_format)
             valid_download_formats = self.get_valid_download_formats()
             if download_format in valid_download_formats.values():
@@ -202,7 +204,8 @@ class SocrataTableMetadata:
             else:
                 raise Exception("Very invalid download format (should have already been caught)")
 
-    def get_data_download_url(self) -> str:
+    @property
+    def data_download_url(self) -> str:
         if self.is_geospatial:
             return f"https://{self.data_domain}/api/geospatial/{self.table_id}?method=export&format={self.download_format}"
         else:
@@ -229,7 +232,8 @@ class SocrataTableMetadata:
             datetime_obj = dt.datetime.strptime(datetime_obj, "%Y-%m-%dT%H:%M:%S.%fZ")
         return datetime_obj.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    def get_latest_data_update_datetime(self) -> str:
+    @property
+    def latest_data_update_datetime(self) -> str:
         data_updated_at = self.get_table_metadata_attr(
             attr_dict=self.resource_metadata, attr_name="data_updated_at"
         )
@@ -237,7 +241,8 @@ class SocrataTableMetadata:
             return self.standardize_datetime_str_repr(datetime_obj=data_updated_at)
         return None
 
-    def get_latest_metadata_update_datetime(self) -> str:
+    @property
+    def latest_metadata_update_datetime(self) -> str:
         metadata_updated_at = self.get_table_metadata_attr(
             attr_dict=self.resource_metadata, attr_name="metadata_updated_at"
         )
@@ -265,9 +270,9 @@ class SocrataTableMetadata:
             "table_name": self.table_name,
             "download_format": self.download_format,
             "is_geospatial": self.is_geospatial,
-            "data_download_url": self.get_data_download_url(),
-            "source_data_last_updated": self.get_latest_data_update_datetime(),
-            "source_metadata_last_updated": self.get_latest_metadata_update_datetime(),
+            "data_download_url": self.data_download_url,
+            "source_data_last_updated": self.latest_data_update_datetime,
+            "source_metadata_last_updated": self.latest_metadata_update_datetime,
             "updated_data_available": None,
             "updated_metadata_available": None,
             "data_pulled_this_check": None,
@@ -286,10 +291,10 @@ class SocrataTableMetadata:
         else:
             latest_pull = check_df.loc[data_pulled_previously_mask, "time_of_check"].max()
             latest_source_data_update = typeset_zulu_tz_datetime_str(
-                datetime_str=self.get_latest_data_update_datetime()
+                datetime_str=self.latest_data_update_datetime
             )
             latest_source_metadata_update = typeset_zulu_tz_datetime_str(
-                datetime_str=self.get_latest_metadata_update_datetime()
+                datetime_str=self.latest_metadata_update_datetime
             )
             if latest_source_data_update > latest_pull:
                 self.data_freshness_check["updated_data_available"] = True
