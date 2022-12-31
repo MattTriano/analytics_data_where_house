@@ -1,8 +1,13 @@
 .git
+.ipynb_checkpoints/*
+.pytest_cache/*
+
 .venv
 .vscode/
 airflow/data_raw*
 airflow/logs*
 notes/*
+imgs/*
 sandbox/*
-src/
+src/*
+dev_utils/*
