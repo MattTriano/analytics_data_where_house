@@ -10,8 +10,13 @@ MAX_TRIES = 3
 
 
 def get_user_uid() -> str:
-    result = subprocess.check_output('echo "$(id -u)"', shell=True)
     result = subprocess.check_output('echo "$(id -u)"', shell=True, encoding="utf-8")
+    result.strip()
+    return result
+
+
+def get_user_gid() -> str:
+    result = subprocess.check_output('echo "$(id -g)"', shell=True, encoding="utf-8")
     result.strip()
     return result
 

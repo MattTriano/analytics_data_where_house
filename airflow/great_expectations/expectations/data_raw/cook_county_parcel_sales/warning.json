@@ -5,20 +5,9 @@
     {
       "expectation_type": "expect_table_row_count_to_be_between",
       "kwargs": {
-        "max_value": 2140451,
         "min_value": 2140451
       },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {},
-            "metric_dependencies": null,
-            "metric_name": "table.row_count",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
+      "meta": {}
     },
     {
       "expectation_type": "expect_table_columns_to_match_set",
@@ -40,14 +29,9 @@
           "source_data_updated",
           "sale_seller_name",
           "is_multisale"
-        ],
-        "exact_match": null
+        ]
       },
-      "meta": {
-        "profiler_details": {
-          "success_ratio": 1.0
-        }
-      }
+      "meta": {}
     },
     {
       "expectation_type": "expect_column_values_to_not_be_null",
@@ -327,8 +311,8 @@
       "expectation_type": "expect_column_values_to_be_between",
       "kwargs": {
         "column": "pin",
-        "max_value": 33323020150000,
-        "min_value": 1011000020000,
+        "max_value": 99999999999999,
+        "min_value": 1000000000000,
         "mostly": 1.0,
         "strict_max": false,
         "strict_min": false
@@ -527,7 +511,7 @@
       "expectation_type": "expect_column_values_to_be_between",
       "kwargs": {
         "column": "year",
-        "max_value": 2022,
+        "max_value": 2030,
         "min_value": 1999,
         "mostly": 1.0,
         "strict_max": false,
@@ -727,7 +711,7 @@
       "expectation_type": "expect_column_values_to_be_between",
       "kwargs": {
         "column": "township_code",
-        "max_value": 77,
+        "max_value": 99,
         "min_value": 10,
         "mostly": 1.0,
         "strict_max": false,
@@ -927,8 +911,8 @@
       "expectation_type": "expect_column_values_to_be_between",
       "kwargs": {
         "column": "sale_price",
-        "max_value": 930000117,
-        "min_value": 10001,
+        "max_value": 10000000000,
+        "min_value": 1000,
         "mostly": 1.0,
         "strict_max": false,
         "strict_min": false
@@ -973,16 +957,16 @@
           ],
           "value_ranges": [
             [
-              137500,
-              137500
+              110000,
+              175000
             ],
             [
-              232000,
-              232000
+              200000,
+              300000
             ],
             [
-              383630,
-              383630
+              350000,
+              450000
             ]
           ]
         }
@@ -1012,8 +996,8 @@
       "expectation_type": "expect_column_median_to_be_between",
       "kwargs": {
         "column": "sale_price",
-        "max_value": 232000,
-        "min_value": 232000,
+        "max_value": 300000,
+        "min_value": 200000,
         "strict_max": false,
         "strict_min": false
       },
@@ -1035,8 +1019,8 @@
       "expectation_type": "expect_column_mean_to_be_between",
       "kwargs": {
         "column": "sale_price",
-        "max_value": 780735.3104000045,
-        "min_value": 780735.3104000045,
+        "max_value": 1000000,
+        "min_value": 700000,
         "strict_max": false,
         "strict_min": false
       },
@@ -1058,8 +1042,8 @@
       "expectation_type": "expect_column_stdev_to_be_between",
       "kwargs": {
         "column": "sale_price",
-        "max_value": 7593879.7912,
-        "min_value": 7593879.7912,
+        "max_value": 9000000,
+        "min_value": 7000000,
         "strict_max": false,
         "strict_min": false
       },
@@ -1127,7 +1111,7 @@
       "expectation_type": "expect_column_values_to_be_between",
       "kwargs": {
         "column": "num_parcels_sale",
-        "max_value": 564,
+        "max_value": 1000,
         "min_value": 1,
         "mostly": 1.0,
         "strict_max": false,
@@ -1235,8 +1219,8 @@
       "expectation_type": "expect_column_mean_to_be_between",
       "kwargs": {
         "column": "num_parcels_sale",
-        "max_value": 2.9485435546060152,
-        "min_value": 2.9485435546060152,
+        "max_value": 5,
+        "min_value": 1,
         "strict_max": false,
         "strict_min": false
       },
@@ -1258,8 +1242,8 @@
       "expectation_type": "expect_column_stdev_to_be_between",
       "kwargs": {
         "column": "num_parcels_sale",
-        "max_value": 21.863408391596856,
-        "min_value": 21.863408391596856,
+        "max_value": 25,
+        "min_value": 15,
         "strict_max": false,
         "strict_min": false
       },
@@ -1319,7 +1303,7 @@
       "kwargs": {
         "column": "class",
         "mostly": 1.0,
-        "regex": "[A-Za-z0-9\\.,;:!?()\\\"'%\\-]+"
+        "regex": "[A-Za-z0-9\\.,;:!?()\"'%\\-]+"
       },
       "meta": {
         "profiler_details": {
@@ -1467,7 +1451,7 @@
       "expectation_type": "expect_column_value_lengths_to_be_between",
       "kwargs": {
         "column": "sale_deed_type",
-        "max_value": 13,
+        "max_value": 20,
         "min_value": 5,
         "mostly": 1.0,
         "strict_max": false,
@@ -1505,7 +1489,7 @@
       "kwargs": {
         "column": "sale_deed_type",
         "mostly": 1.0,
-        "regex": "[A-Za-z0-9\\.,;:!?()\\\"'%\\-]+"
+        "regex": "[A-Za-z0-9\\.,;:!?()\"'%\\-]+"
       },
       "meta": {
         "profiler_details": {
@@ -1529,7 +1513,7 @@
       "expectation_type": "expect_column_value_lengths_to_be_between",
       "kwargs": {
         "column": "sale_seller_name",
-        "max_value": 150,
+        "max_value": 200,
         "min_value": 1,
         "mostly": 1.0,
         "strict_max": false,
@@ -1566,7 +1550,7 @@
       "expectation_type": "expect_column_value_lengths_to_be_between",
       "kwargs": {
         "column": "sale_buyer_name",
-        "max_value": 113,
+        "max_value": 200,
         "min_value": 1,
         "mostly": 1.0,
         "strict_max": false,
@@ -1641,7 +1625,7 @@
       "kwargs": {
         "column": "sale_type",
         "mostly": 1.0,
-        "regex": "[A-Za-z0-9\\.,;:!?()\\\"'%\\-]+"
+        "regex": "[A-Za-z0-9\\.,;:!?()\"'%\\-]+"
       },
       "meta": {
         "profiler_details": {
@@ -1814,7 +1798,14 @@
           2019,
           2020,
           2021,
-          2022
+          2022,
+          2023,
+          2024,
+          2025,
+          2026,
+          2027,
+          2028,
+          2029
         ]
       },
       "meta": {
@@ -1836,7 +1827,7 @@
       "expectation_type": "expect_column_unique_value_count_to_be_between",
       "kwargs": {
         "column": "year",
-        "max_value": 24,
+        "max_value": 50,
         "min_value": 24,
         "strict_max": false,
         "strict_min": false
@@ -1943,7 +1934,7 @@
       "expectation_type": "expect_column_unique_value_count_to_be_between",
       "kwargs": {
         "column": "township_code",
-        "max_value": 38,
+        "max_value": 100,
         "min_value": 38,
         "strict_max": false,
         "strict_min": false
@@ -2015,7 +2006,7 @@
       "expectation_type": "expect_column_unique_value_count_to_be_between",
       "kwargs": {
         "column": "sale_deed_type",
-        "max_value": 3,
+        "max_value": 6,
         "min_value": 3,
         "strict_max": false,
         "strict_min": false
@@ -2180,8 +2171,8 @@
       "expectation_type": "expect_column_proportion_of_unique_values_to_be_between",
       "kwargs": {
         "column": "source_data_updated",
-        "max_value": 9.343825203193159e-07,
-        "min_value": 9.343825203193159e-07,
+        "max_value": 0.0001,
+        "min_value": 1e-07,
         "strict_max": false,
         "strict_min": false
       },
@@ -2251,8 +2242,8 @@
       "expectation_type": "expect_column_proportion_of_unique_values_to_be_between",
       "kwargs": {
         "column": "ingestion_check_time",
-        "max_value": 9.343825203193159e-07,
-        "min_value": 9.343825203193159e-07,
+        "max_value": 0.0001,
+        "min_value": 1e-07,
         "strict_max": false,
         "strict_min": false
       },
@@ -2419,6 +2410,16 @@
       {
         "citation_date": "2022-12-31T20:03:37.739857Z",
         "comment": "Created by effective Rule-Based Profiler of OnboardingDataAssistant with the configuration included.\n"
+      },
+      {
+        "batch_request": {
+          "data_asset_name": "data_raw.cook_county_parcel_sales",
+          "data_connector_name": "default_inferred_data_connector_name",
+          "datasource_name": "where_house_source",
+          "limit": 1000
+        },
+        "citation_date": "2022-12-31T22:09:44.710274Z",
+        "comment": "Created suite added via CLI"
       }
     ],
     "great_expectations_version": "0.15.31"
