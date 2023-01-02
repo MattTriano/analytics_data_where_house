@@ -4,7 +4,7 @@ import logging
 from airflow.decorators import dag
 
 from tasks.socrata_tasks import update_socrata_table
-from sources.tables import CHICAGO_SHOTSPOTTER_ALERTS as SOCRATA_TABLE
+from sources.tables import CHICAGO_HOMICIDES_AND_SHOOTING_VICTIMIZATIONS as SOCRATA_TABLE
 
 task_logger = logging.getLogger("airflow.task")
 
