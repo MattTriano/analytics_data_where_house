@@ -39,6 +39,18 @@ datasources:
         module_name: great_expectations.datasource.data_connector
         introspection_directives:
           schema_name: data_raw
+      data_raw_inferred_data_connector_name:
+        class_name: InferredAssetSqlDataConnector
+        include_schema_name: true
+        module_name: great_expectations.datasource.data_connector
+        introspection_directives:
+          schema_name: data_raw
+      dwh_inferred_data_connector_name:
+        class_name: InferredAssetSqlDataConnector
+        include_schema_name: true
+        module_name: great_expectations.datasource.data_connector
+        introspection_directives:
+          schema_name: dwh
 
 # This config file supports variable substitution which enables: 1) keeping
 # secrets out of source control & 2) environment-based configuration changes
