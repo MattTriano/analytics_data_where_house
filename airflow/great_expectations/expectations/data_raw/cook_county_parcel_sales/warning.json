@@ -262,52 +262,6 @@
       }
     },
     {
-      "expectation_type": "expect_column_min_to_be_between",
-      "kwargs": {
-        "column": "pin",
-        "max_value": 1011000020000,
-        "min_value": 1011000020000,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "pin"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.min",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_max_to_be_between",
-      "kwargs": {
-        "column": "pin",
-        "max_value": 33323020150000,
-        "min_value": 33323020150000,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "pin"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.max",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
       "expectation_type": "expect_column_values_to_be_between",
       "kwargs": {
         "column": "pin",
@@ -341,169 +295,6 @@
             },
             "num_batches": 1
           }
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_quantile_values_to_be_between",
-      "kwargs": {
-        "allow_relative_error": false,
-        "column": "pin",
-        "quantile_ranges": {
-          "quantiles": [
-            0.25,
-            0.5,
-            0.75
-          ],
-          "value_ranges": [
-            [
-              12234040290000,
-              12234040290000
-            ],
-            [
-              16112040150000,
-              16112040150000
-            ],
-            [
-              20121140521062,
-              20121140521062
-            ]
-          ]
-        }
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "pin"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.quantile_values",
-            "metric_value_kwargs": {
-              "allow_relative_error": false,
-              "quantiles": [
-                0.25,
-                0.5,
-                0.75
-              ]
-            }
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_median_to_be_between",
-      "kwargs": {
-        "column": "pin",
-        "max_value": 16112040150000,
-        "min_value": 16112040150000,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "pin"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.median",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_mean_to_be_between",
-      "kwargs": {
-        "column": "pin",
-        "max_value": 16187103597570.613,
-        "min_value": 16187103597570.613,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "pin"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.mean",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_stdev_to_be_between",
-      "kwargs": {
-        "column": "pin",
-        "max_value": 7354676266996.0,
-        "min_value": 7354676266996.0,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "pin"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.standard_deviation",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_min_to_be_between",
-      "kwargs": {
-        "column": "year",
-        "max_value": 1999,
-        "min_value": 1999,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "year"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.min",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_max_to_be_between",
-      "kwargs": {
-        "column": "year",
-        "max_value": 2022,
-        "min_value": 2022,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "year"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.max",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
         }
       }
     },
@@ -545,169 +336,6 @@
       }
     },
     {
-      "expectation_type": "expect_column_quantile_values_to_be_between",
-      "kwargs": {
-        "allow_relative_error": false,
-        "column": "year",
-        "quantile_ranges": {
-          "quantiles": [
-            0.25,
-            0.5,
-            0.75
-          ],
-          "value_ranges": [
-            [
-              2004,
-              2004
-            ],
-            [
-              2010,
-              2010
-            ],
-            [
-              2017,
-              2017
-            ]
-          ]
-        }
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "year"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.quantile_values",
-            "metric_value_kwargs": {
-              "allow_relative_error": false,
-              "quantiles": [
-                0.25,
-                0.5,
-                0.75
-              ]
-            }
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_median_to_be_between",
-      "kwargs": {
-        "column": "year",
-        "max_value": 2010,
-        "min_value": 2010,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "year"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.median",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_mean_to_be_between",
-      "kwargs": {
-        "column": "year",
-        "max_value": 2010.5082176606707,
-        "min_value": 2010.5082176606707,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "year"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.mean",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_stdev_to_be_between",
-      "kwargs": {
-        "column": "year",
-        "max_value": 6.925785736888093,
-        "min_value": 6.925785736888093,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "year"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.standard_deviation",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_min_to_be_between",
-      "kwargs": {
-        "column": "township_code",
-        "max_value": 10,
-        "min_value": 10,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "township_code"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.min",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_max_to_be_between",
-      "kwargs": {
-        "column": "township_code",
-        "max_value": 77,
-        "min_value": 77,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "township_code"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.max",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
       "expectation_type": "expect_column_values_to_be_between",
       "kwargs": {
         "column": "township_code",
@@ -741,169 +369,6 @@
             },
             "num_batches": 1
           }
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_quantile_values_to_be_between",
-      "kwargs": {
-        "allow_relative_error": false,
-        "column": "township_code",
-        "quantile_ranges": {
-          "quantiles": [
-            0.25,
-            0.5,
-            0.75
-          ],
-          "value_ranges": [
-            [
-              27,
-              27
-            ],
-            [
-              70,
-              70
-            ],
-            [
-              73,
-              73
-            ]
-          ]
-        }
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "township_code"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.quantile_values",
-            "metric_value_kwargs": {
-              "allow_relative_error": false,
-              "quantiles": [
-                0.25,
-                0.5,
-                0.75
-              ]
-            }
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_median_to_be_between",
-      "kwargs": {
-        "column": "township_code",
-        "max_value": 70,
-        "min_value": 70,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "township_code"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.median",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_mean_to_be_between",
-      "kwargs": {
-        "column": "township_code",
-        "max_value": 49.979268387830416,
-        "min_value": 49.979268387830416,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "township_code"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.mean",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_stdev_to_be_between",
-      "kwargs": {
-        "column": "township_code",
-        "max_value": 24.376263638768755,
-        "min_value": 24.376263638768755,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "township_code"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.standard_deviation",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_min_to_be_between",
-      "kwargs": {
-        "column": "sale_price",
-        "max_value": 10001,
-        "min_value": 10001,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "sale_price"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.min",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_max_to_be_between",
-      "kwargs": {
-        "column": "sale_price",
-        "max_value": 930000117,
-        "min_value": 930000117,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "sale_price"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.max",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
         }
       }
     },
@@ -1055,52 +520,6 @@
             },
             "metric_dependencies": null,
             "metric_name": "column.standard_deviation",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_min_to_be_between",
-      "kwargs": {
-        "column": "num_parcels_sale",
-        "max_value": 1,
-        "min_value": 1,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "num_parcels_sale"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.min",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_max_to_be_between",
-      "kwargs": {
-        "column": "num_parcels_sale",
-        "max_value": 564,
-        "min_value": 564,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "num_parcels_sale"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.max",
             "metric_value_kwargs": null
           },
           "num_batches": 1
@@ -1847,29 +1266,6 @@
       }
     },
     {
-      "expectation_type": "expect_column_proportion_of_unique_values_to_be_between",
-      "kwargs": {
-        "column": "year",
-        "max_value": 1.1212590243831791e-05,
-        "min_value": 1.1212590243831791e-05,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "year"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.unique_proportion",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
       "expectation_type": "expect_column_values_to_be_in_set",
       "kwargs": {
         "column": "township_code",
@@ -1954,29 +1350,6 @@
       }
     },
     {
-      "expectation_type": "expect_column_proportion_of_unique_values_to_be_between",
-      "kwargs": {
-        "column": "township_code",
-        "max_value": 1.7753267886067e-05,
-        "min_value": 1.7753267886067e-05,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "township_code"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.unique_proportion",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
       "expectation_type": "expect_column_values_to_be_in_set",
       "kwargs": {
         "column": "sale_deed_type",
@@ -2026,29 +1399,6 @@
       }
     },
     {
-      "expectation_type": "expect_column_proportion_of_unique_values_to_be_between",
-      "kwargs": {
-        "column": "sale_deed_type",
-        "max_value": 1.4015868766617564e-06,
-        "min_value": 1.4015868766617564e-06,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "sale_deed_type"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.unique_proportion",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
       "expectation_type": "expect_column_values_to_be_in_set",
       "kwargs": {
         "column": "sale_type",
@@ -2070,52 +1420,6 @@
           },
           "num_batches": 1,
           "parse_strings_as_datetimes": false
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_unique_value_count_to_be_between",
-      "kwargs": {
-        "column": "sale_type",
-        "max_value": 2,
-        "min_value": 2,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "sale_type"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.distinct_values.count",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_proportion_of_unique_values_to_be_between",
-      "kwargs": {
-        "column": "sale_type",
-        "max_value": 1.04331151247305e-06,
-        "min_value": 1.04331151247305e-06,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "sale_type"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.unique_proportion",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
         }
       }
     },
@@ -2145,29 +1449,6 @@
       }
     },
     {
-      "expectation_type": "expect_column_unique_value_count_to_be_between",
-      "kwargs": {
-        "column": "source_data_updated",
-        "max_value": 2,
-        "min_value": 2,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "source_data_updated"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.distinct_values.count",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
       "expectation_type": "expect_column_proportion_of_unique_values_to_be_between",
       "kwargs": {
         "column": "source_data_updated",
@@ -2184,54 +1465,6 @@
             },
             "metric_dependencies": null,
             "metric_name": "column.unique_proportion",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_values_to_be_in_set",
-      "kwargs": {
-        "column": "ingestion_check_time",
-        "mostly": 1.0,
-        "value_set": [
-          "2022-12-06T18:04:28.167491Z",
-          "2022-11-29T18:53:35.046975Z"
-        ]
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "ingestion_check_time"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.distinct_values",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1,
-          "parse_strings_as_datetimes": false
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_unique_value_count_to_be_between",
-      "kwargs": {
-        "column": "ingestion_check_time",
-        "max_value": 2,
-        "min_value": 2,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "ingestion_check_time"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.distinct_values.count",
             "metric_value_kwargs": null
           },
           "num_batches": 1
@@ -2310,29 +1543,6 @@
       }
     },
     {
-      "expectation_type": "expect_column_proportion_of_unique_values_to_be_between",
-      "kwargs": {
-        "column": "is_mydec_date",
-        "max_value": 0,
-        "min_value": 0,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "is_mydec_date"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.unique_proportion",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
       "expectation_type": "expect_column_values_to_be_in_set",
       "kwargs": {
         "column": "is_multisale",
@@ -2374,29 +1584,6 @@
             },
             "metric_dependencies": null,
             "metric_name": "column.distinct_values.count",
-            "metric_value_kwargs": null
-          },
-          "num_batches": 1
-        }
-      }
-    },
-    {
-      "expectation_type": "expect_column_proportion_of_unique_values_to_be_between",
-      "kwargs": {
-        "column": "is_multisale",
-        "max_value": 0,
-        "min_value": 0,
-        "strict_max": false,
-        "strict_min": false
-      },
-      "meta": {
-        "profiler_details": {
-          "metric_configuration": {
-            "domain_kwargs": {
-              "column": "is_multisale"
-            },
-            "metric_dependencies": null,
-            "metric_name": "column.unique_proportion",
             "metric_value_kwargs": null
           },
           "num_batches": 1
