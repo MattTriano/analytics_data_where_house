@@ -22,6 +22,7 @@ from cc_utils.utils import (
     get_lines_in_geojson_file,
     produce_slice_indices_for_gpd_read_file,
 )
+from cc_utils.validation import run_checkpoint
 
 
 def get_local_file_path(socrata_metadata: SocrataTableMetadata) -> Path:
@@ -575,6 +576,18 @@ def short_circuit_downstream():
     # airflow's short_circuit operator shorts downstream tasks by returning False
     # or proceeds if the short_circuit task returns True.
     return False
+
+
+@task
+def run_ge_validation_checkpoint(
+    socrata_table: SocrataTable, schema_name: str, task_logger: Logger
+):
+    checkpoint_name = f"{schema_name}.{socrata_table.table_name}"
+    checkpoint_results = run_checkpoint(checkpoint_name=checkpoint_name, task_logger=task_logger)
+    if checkpoint_results.success:
+        task_logger.info("Validation successful!")
+    else:
+        task_logger.info("Validation Failed! Check data docs to find failed validations")
 
 
 @task_group
