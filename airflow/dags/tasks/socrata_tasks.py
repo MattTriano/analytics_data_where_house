@@ -22,7 +22,7 @@ from cc_utils.utils import (
     get_lines_in_geojson_file,
     produce_slice_indices_for_gpd_read_file,
 )
-from cc_utils.validation import run_checkpoint
+from cc_utils.validation import run_checkpoint, check_if_checkpoint_exists
 
 
 def get_local_file_path(socrata_metadata: SocrataTableMetadata) -> Path:
@@ -465,6 +465,33 @@ def update_result_of_check_in_metadata_table(
     return socrata_metadata
 
 
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED)
+def socrata_table_checkpoint_exists(task_logger: Logger, **kwargs) -> str:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
+    checkpoint_name = f"data_raw.temp_{socrata_metadata.socrata_table.table_name}"
+    if check_if_checkpoint_exists(checkpoint_name=checkpoint_name, task_logger=task_logger):
+        return "update_socrata_table.load_data_tg.run_socrata_checkpoint"
+    else:
+        return "update_socrata_table.load_data_tg.table_exists_in_data_raw"
+
+
+@task
+def run_socrata_checkpoint(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
+    checkpoint_name = f"data_raw.temp_{socrata_metadata.socrata_table.table_name}"
+    checkpoint_run_results = run_checkpoint(
+        checkpoint_name=checkpoint_name, task_logger=task_logger
+    )
+    task_logger.info(
+        f"list_validation_results:      {checkpoint_run_results.list_validation_results()}"
+    )
+    task_logger.info(f"validation success:      {checkpoint_run_results.success}")
+    task_logger.info(f"dir(checkpoint_run_results): {dir(checkpoint_run_results)}")
+    return socrata_metadata
+
+
 @task_group
 def load_data_tg(
     socrata_metadata: SocrataTableMetadata,
@@ -481,6 +508,8 @@ def load_data_tg(
     csv_route_1 = load_csv_data(
         route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
     )
+    checkpoint_exists_1 = socrata_table_checkpoint_exists(task_logger=task_logger)
+    checkpoint_1 = run_socrata_checkpoint(task_logger=task_logger)
     table_exists_1 = table_exists_in_data_raw(conn_id=conn_id, task_logger=task_logger)
     create_staging_table_1 = create_table_in_data_raw(
         conn_id=conn_id, task_logger=task_logger, temp_table=False
@@ -500,6 +529,8 @@ def load_data_tg(
     chain(
         file_ext_route_1,
         [geojson_route_1, csv_route_1],
+        checkpoint_exists_1,
+        [Label("Checkpoint Doesn't Exist"), checkpoint_1],
         table_exists_1,
         [Label("Table Exists"), create_staging_table_1],
         dbt_staging_model_exists_1,
