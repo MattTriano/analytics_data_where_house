@@ -20,10 +20,11 @@ x-airflow-common:
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/data_raw:/opt/airflow/data_raw
     - ./airflow/dbt:/opt/airflow/dbt
+    - ./airflow/great_expectations:/opt/airflow/great_expectations
     - ./profiles.yml:/home/airflow/.dbt/profiles.yml
   user: "${AIRFLOW_UID:-50000}:0"
   networks:
-      - re_etl_net
+    - re_etl_net
   depends_on:
     &airflow-common-depends-on
     airflow_db:
@@ -44,7 +45,15 @@ services:
     volumes:
       - re_airflow_db:/var/lib/postgresql/data/
     healthcheck:
-      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}"]
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-d",
+          "${POSTGRES_DB}",
+          "-U",
+          "${POSTGRES_USER}"
+        ]
       interval: 5s
       retries: 5
     restart: always
@@ -63,7 +72,17 @@ services:
     volumes:
       - re_dwh_db:/var/lib/postgresql/data/
     healthcheck:
-      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-p", "5431", "-U", "${POSTGRES_USER}"]
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-d",
+          "${POSTGRES_DB}",
+          "-p",
+          "5431",
+          "-U",
+          "${POSTGRES_USER}"
+        ]
       interval: 5s
       retries: 5
     restart: always
@@ -108,7 +127,13 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "http://localhost:8080/health"
+        ]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -122,7 +147,11 @@ services:
     <<: *airflow-common
     command: scheduler
     healthcheck:
-      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      test:
+        [
+          "CMD-SHELL",
+          'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"'
+        ]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -136,7 +165,11 @@ services:
     <<: *airflow-common
     command: triggerer
     healthcheck:
-      test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
+      test:
+        [
+          "CMD-SHELL",
+          'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"'
+        ]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -157,7 +190,8 @@ services:
           printf "%04d%04d%04d%04d" $${1//./ }
         }
         mkdir -p /sources/logs /sources/dags /sources/plugins /sources/data_raw /sources/dbt
-        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins,data_raw,dbt}
+        mkdir -p /sources/great_expectations
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins,data_raw,dbt,great_expectations}
         exec /entrypoint airflow version
     # yamllint enable rule:line-length
     environment:
@@ -188,15 +222,24 @@ services:
     build:
       context: ./
       dockerfile: ./Dockerfiles/python.Dockerfile
-    profiles: ["testing", "startup"]
+    profiles: [ "testing", "startup" ]
+    env_file:
+      - .env
+    environment:
+      GE_JUPYTER_CMD: "jupyter notebook --allow-root --ip 0.0.0.0 --port 18888"
     stdin_open: true
     tty: true
-    entrypoint: ["/bin/bash"]
+    networks:
+      - re_etl_net
+    ports:
+      - "18888:18888"
+    entrypoint: [ "/bin/bash" ]
     volumes:
       - ./airflow:/home
 
 networks:
   re_etl_net:
+
 
 volumes:
   re_airflow_db:

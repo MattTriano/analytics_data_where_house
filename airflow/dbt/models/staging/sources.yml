@@ -6,6 +6,7 @@ sources:
     tags:
       - raw
     tables:
+      - name: chicago_affordable_rental_housing
       - name: chicago_city_boundary
       - name: chicago_cta_bus_stops
       - name: chicago_cta_train_stations
@@ -18,6 +19,7 @@ sources:
       - name: cook_county_parcel_locations
       - name: cook_county_parcel_sales
       - name: cook_county_parcel_value_assessments
+      - name: temp_chicago_affordable_rental_housing
       - name: temp_chicago_city_boundary
       - name: temp_chicago_cta_bus_stops
       - name: temp_chicago_cta_train_stations

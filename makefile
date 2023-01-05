@@ -1,3 +1,4 @@
+SHELL = /bin/bash
 .phony: startup shutdown quiet_startup restart make_credentials serve_dbt_docs \
 	build_images init_airflow initialize_system create_warehouse_infra update_dbt_packages \
 	dbt_generate_docs build_python_img get_py_utils_shell make_fernet_key run_tests
@@ -16,7 +17,7 @@ make_credentials:
 		--project_dir=$(MAKEFILE_DIR_PATH)
 
 build_images:
-	docker-compose build
+	docker-compose build 2>&1 | tee logs/where_house_build_logs_$(run_time).txt
 
 init_airflow: build_images
 	docker-compose up airflow-init
@@ -64,7 +65,7 @@ create_warehouse_infra:
 	docker-compose exec dbt_proj /bin/bash -c "dbt deps";
 
 build_python_img:
-	docker-compose build py-utils
+	docker-compose build --no-cache py-utils 2>&1 | tee logs/python_build_logs_$(run_time).txt
 
 start_python_container:
 	docker-compose up -d py-utils

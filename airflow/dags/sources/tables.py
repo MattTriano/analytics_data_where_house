@@ -1,5 +1,12 @@
 from cc_utils.socrata import SocrataTable
 
+CHICAGO_AFFORDABLE_RENTAL_HOUSING = SocrataTable(
+    table_id="s6ha-ppgi",
+    table_name="chicago_affordable_rental_housing",
+    schedule="40 2 * * 1",
+    clean_schedule="50 2 * * 1",
+)
+
 CHICAGO_CITY_BOUNDARY = SocrataTable(
     table_id="ewy2-6yfk",
     table_name="chicago_city_boundary",
