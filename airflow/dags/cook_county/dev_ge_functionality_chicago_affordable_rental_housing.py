@@ -3,6 +3,8 @@ import logging
 from logging import Logger
 
 from airflow.decorators import dag, task
+from airflow.utils.trigger_rule import TriggerRule
+from airflow.operators.empty import EmptyOperator
 
 from cc_utils.socrata import SocrataTable
 
@@ -13,7 +15,7 @@ task_logger = logging.getLogger("airflow.task")
 
 
 import subprocess
-from cc_utils.validation import get_data_context, run_checkpoint
+from cc_utils.validation import get_data_context, run_checkpoint, check_if_checkpoint_exists
 
 
 @task
@@ -49,37 +51,65 @@ def run_ge_validation_checkpoint_pythonic(
         task_logger.info("Validation Failed! Check data docs to find failed validations.")
 
 
-@task
-def list_ge_validation_checkpoints(task_logger: Logger):
-    checkpoint_list = subprocess.run(
-        ["great_expectations", "checkpoint", "list"],
-        check=True,
-        capture_output=True,
-        universal_newlines=True,
-    )
-    task_logger.info(f"checkpoint_list:        {checkpoint_list}")
-    task_logger.info(f"checkpoint_list.stdout: {checkpoint_list.stdout}")
-    if checkpoint_list.returncode != 0:
-        task_logger.info(
-            f"Checkpoint list exited with a non-zero value: {checkpoint_list.returncode}"
-        )
-        task_logger.error(f"Checkpoint list output: {checkpoint_list}")
-        raise Exception("Checkpoint list failed. Check data docs to find failed validations.")
+# @task
+# def list_ge_validation_checkpoints(task_logger: Logger):
+#     checkpoint_list = subprocess.run(
+#         ["great_expectations", "checkpoint", "list"],
+#         check=True,
+#         capture_output=True,
+#         universal_newlines=True,
+#     )
+#     task_logger.info(f"checkpoint_list:        {checkpoint_list}")
+#     task_logger.info(f"checkpoint_list.stdout: {checkpoint_list.stdout}")
+#     if checkpoint_list.returncode != 0:
+#         task_logger.info(
+#             f"Checkpoint list exited with a non-zero value: {checkpoint_list.returncode}"
+#         )
+#         task_logger.error(f"Checkpoint list output: {checkpoint_list}")
+#         raise Exception("Checkpoint list failed. Check data docs to find failed validations.")
 
 
-@task
-def check_for_checkpoint(
+# @task
+# def check_for_checkpoint(
+#     socrata_table: SocrataTable, task_logger: Logger, schema_name: str = "data_raw"
+# ):
+#     data_context = get_data_context()
+#     checkpoint_name = f"{schema_name}.{socrata_table.table_name}"
+#     checkpoint_list = data_context.list_checkpoints()
+#     if checkpoint_name not in checkpoint_list:
+#         task_logger.info(f"checkpoint {checkpoint_name} doesn't appear to exist.")
+#         task_logger.info(f"Here are the available checkpoints: {checkpoint_list}.")
+#     else:
+#         task_logger.info(f"checkpoint {checkpoint_name} exists!")
+#         task_logger.info(f"Here are the available checkpoints: {checkpoint_list}.")
+
+
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED)
+def socrata_table_checkpoint_exists(
     socrata_table: SocrataTable, task_logger: Logger, schema_name: str = "data_raw"
-):
-    data_context = get_data_context()
+) -> str:
     checkpoint_name = f"{schema_name}.{socrata_table.table_name}"
-    checkpoint_list = data_context.list_checkpoints()
-    if checkpoint_name not in checkpoint_list:
-        task_logger.info(f"checkpoint {checkpoint_name} doesn't appear to exist.")
-        task_logger.info(f"Here are the available checkpoints: {checkpoint_list}.")
+    if check_if_checkpoint_exists(checkpoint_name=checkpoint_name, task_logger=task_logger):
+        return "run_socrata_checkpoint"
     else:
-        task_logger.info(f"checkpoint {checkpoint_name} exists!")
-        task_logger.info(f"Here are the available checkpoints: {checkpoint_list}.")
+        return "end"
+
+
+@task
+def run_socrata_checkpoint(
+    socrata_table: SocrataTable,
+    task_logger: Logger,
+    schema_name: str = "data_raw",
+) -> None:
+    checkpoint_name = f"{schema_name}.{socrata_table.table_name}"
+    checkpoint_run_results = run_checkpoint(
+        checkpoint_name=checkpoint_name, task_logger=task_logger
+    )
+    task_logger.info(
+        f"list_validation_results:      {checkpoint_run_results.list_validation_results()}"
+    )
+    task_logger.info(f"validation success:      {checkpoint_run_results.success}")
+    task_logger.info(f"dir(checkpoint_run_results): {dir(checkpoint_run_results)}")
 
 
 @dag(
@@ -100,13 +130,19 @@ def dev_ge_data_raw_chicago_affordable_rental_housing():
     #     task_logger=task_logger,
     # )
     # checkpoint_list_1 = list_ge_validation_checkpoints(task_logger=task_logger)
-    checkpoint_1 = run_ge_validation_checkpoint_pythonic(
+    checkpoint_exists_1 = socrata_table_checkpoint_exists(
         socrata_table=SOCRATA_TABLE,
-        schema_name="data_raw",
         task_logger=task_logger,
+        schema_name="data_raw",
     )
+    checkpoint_1 = run_socrata_checkpoint(
+        socrata_table=SOCRATA_TABLE,
+        task_logger=task_logger,
+        schema_name="data_raw",
+    )
+    end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
     # checkpoint_check_1 >> checkpoint_list_1 >>
-    checkpoint_1
+    checkpoint_exists_1 >> [checkpoint_1, end_1]
 
 
 dev_ge_data_raw_chicago_affordable_rental_housing()
