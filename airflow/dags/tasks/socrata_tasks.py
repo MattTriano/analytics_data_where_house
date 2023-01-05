@@ -465,14 +465,16 @@ def update_result_of_check_in_metadata_table(
     return socrata_metadata
 
 
-@task.branch(trigger_rule=TriggerRule.NONE_FAILED)
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def socrata_table_checkpoint_exists(task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     checkpoint_name = f"data_raw.temp_{socrata_metadata.socrata_table.table_name}"
     if check_if_checkpoint_exists(checkpoint_name=checkpoint_name, task_logger=task_logger):
+        task_logger.info(f"GE checkpoint for {checkpoint_name} exists")
         return "update_socrata_table.load_data_tg.run_socrata_checkpoint"
     else:
+        task_logger.info(f"GE checkpoint for {checkpoint_name} doesn't exist yet. Make it maybe?")
         return "update_socrata_table.load_data_tg.table_exists_in_data_raw"
 
 
