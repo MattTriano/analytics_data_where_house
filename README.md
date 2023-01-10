@@ -14,7 +14,7 @@ I like to research before I buy anything, especially if it's a big-ticket item. 
 
 # Documentation
 
-You can see documentation at [http://matttriano.org/analytics_data_where_house/](http://matttriano.org/analytics_data_where_house/) (note: this is as rough as it will be; I'll significantly clean it up by EOD 2023-01-11)
+You can see documentation at [https://docs.analytics-data-where-house.dev/](https://docs.analytics-data-where-house.dev/) (note: this is as rough as it will be; I'll significantly clean it up by EOD 2023-01-11)
 
 ## Socrata Table Ingestion Flow
 
