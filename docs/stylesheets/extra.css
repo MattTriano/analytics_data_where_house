@@ -3,3 +3,19 @@
     --md-primary-fg-color--light: #ECB700;
     --md-primary-fg-color--dark: #900300;
 }
+
+[data-md-color-scheme="night"] {
+    --md-primary-fg-color: #41B6E6;
+    --md-primary-fg-color--light: #E1F3F8;
+    --md-primary-fg-color--dark: #005899;
+    --md-primary-bg-color: #f1f1f1;
+    --md-primary-bg-color--light: #ffffffb3;
+    --md-accent-fg-color: #526cfe;
+    --md-accent-fg-color--transparent: #526cfe1a;
+    --md-accent-bg-color: #fff;
+    --md-accent-bg-color--light: #ffffffb3;
+}
+/* 
+Blues: #0071bc #205493 # #112e51 
+Greys: #212121 #323a45 
+*/

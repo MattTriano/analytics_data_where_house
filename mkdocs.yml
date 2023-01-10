@@ -5,7 +5,7 @@ theme:
 
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
-      scheme: default
+      scheme: night
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
@@ -16,6 +16,8 @@ theme:
       toggle:
         icon: material/brightness-3
         name: Switch to light mode
+  font:
+    text: Roboto
 nav:
   - Home: index.md
   - Setup:
@@ -27,6 +29,8 @@ plugins:
   - search
 
 markdown_extensions:
+  - attr_list
+  - md_in_html
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite

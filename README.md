@@ -12,6 +12,10 @@ At present, it uses docker to provision and run:
 ## Motivation
 I like to research before I buy anything, especially if it's a big-ticket item. I've been considering buying a house for a while, but the methods I use for answering questions like "what phone should I buy?" or "how can I make my apartment less drafty in winter" haven't been adequate to answer questions I have about real estate. Fortunately, the real estate market I've grown fond of has the richest public data culture in the US (that I, a data scientist focused on Chicago-related issues, am aware of). This market's Assessor's Office regularly [publishes data](https://datacatalog.cookcountyil.gov/browse?tags=cook%20county%20assessor) I can mine for answers to some of my biggest questions.
 
+# Documentation
+
+You can see documentation at [http://matttriano.org/analytics_data_where_house/](http://matttriano.org/analytics_data_where_house/) (note: this is as rough as it will be; I'll significantly clean it up by EOD 2023-01-11)
+
 ## Socrata Table Ingestion Flow
 
 The Update-data DAGs for (at least) Socrata tables follow the pattern below:
