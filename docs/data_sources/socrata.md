@@ -15,8 +15,12 @@ The Update-data DAGs for (at least) Socrata tables follow the pattern below:
 
 Before downloading potentially gigabytes of data, we check the data source's metadata to determine if the source data has been updated since the most recent successful update of that data in the local data warehouse. Whether there is new data or not, we'll log the results of that check in the data_warehouse's `metadata.table_metadata` table. 
 
+Testing markdown image format
+![check_table_metadata TaskGroup](/assets/imgs/Socrata_ELT_DAG/Check_table_metadata_tg.PNG)
+
+And testing with a URL in html
 <p align="center" width="100%">
- <img src="/assets/imgs/Socrata_ELT_DAG/Check_table_metadata_tg.PNG" width="80%" alt="check_table_metadata TaskGroup"/>
+ <img src="https://raw.githubusercontent.com/MattTriano/analytics_data_where_house/gh-pages/assets/imgs/Socrata_ELT_DAG/Check_table_metadata_tg.PNG" width="80%" alt="check_table_metadata TaskGroup"/>
 </p>
 
 <p align="center" width="100%">
