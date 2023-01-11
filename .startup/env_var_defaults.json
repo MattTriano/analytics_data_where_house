@@ -49,16 +49,6 @@
     "invalid_substrings": "[\\s]",
     "dependant_on_other_env_vars": false
   },
-  ".env::AIRFLOW__CORE__FERNET_KEY": {
-    "file": ".env",
-    "name": "AIRFLOW__CORE__FERNET_KEY",
-    "group": "Airflow",
-    "default_value": "44_chars_of_gibberish_to_keep_secret_asdfklj",
-    "user_input": true,
-    "valid_pattern": null,
-    "invalid_substrings": "[\\s]",
-    "dependant_on_other_env_vars": false
-  },
   ".env::AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": {
     "file": ".env",
     "name": "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN",
@@ -101,26 +91,6 @@
     "invalid_substrings": "[\\s]",
     "dependant_on_other_env_vars": false
   },
-  ".env::DBT_USER": {
-    "file": ".env",
-    "name": "DBT_USER",
-    "group": "dbt Credentials (maybe unnecessary, not currently used)",
-    "default_value": "dbt_some_username",
-    "user_input": true,
-    "valid_pattern": null,
-    "invalid_substrings": "[\\s]",
-    "dependant_on_other_env_vars": false
-  },
-  ".env::DBT_PASSWORD": {
-    "file": ".env",
-    "name": "DBT_PASSWORD",
-    "group": "dbt Credentials (maybe unnecessary, not currently used)",
-    "default_value": "dbt_some_password",
-    "user_input": true,
-    "valid_pattern": null,
-    "invalid_substrings": "[\\s]",
-    "dependant_on_other_env_vars": false
-  },
   ".env::DWH_POSTGRES_USER": {
     "file": ".env",
     "name": "DWH_POSTGRES_USER",
@@ -149,7 +119,7 @@
     "user_input": false,
     "dependant_on_other_env_vars": false
   },
-  ".env::AIRFLOW_CONN_DWH_DB_CONN" : {
+  ".env::AIRFLOW_CONN_DWH_DB_CONN": {
     "file": ".env",
     "name": "AIRFLOW_CONN_DWH_DB_CONN",
     "group": "Airflow",

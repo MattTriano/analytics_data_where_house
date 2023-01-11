@@ -6,6 +6,8 @@ import subprocess
 from typing import Dict, List, Optional
 import urllib
 
+from make_fernet_key import generate_fernet_key_value
+
 MAX_TRIES = 3
 
 
@@ -157,5 +159,11 @@ if __name__ == "__main__":
             "name": "AIRFLOW_UID",
             "group": "Airflow",
             "set_value": get_user_uid(),
+        }
+        env_var_dict[".env::AIRFLOW__CORE__FERNET_KEY"] = {
+            "file": ".env",
+            "name": "AIRFLOW__CORE__FERNET_KEY",
+            "group": "Airflow",
+            "set_value": generate_fernet_key_value(),
         }
         create_dot_env_files(project_dir=project_dir, env_var_dict=env_var_dict)

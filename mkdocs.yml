@@ -21,6 +21,7 @@ theme:
 # use_directory_urls: true
 nav:
   - Home: index.md
+  - getting_started.md
   - Setup:
     - 'Getting Started': setup/getting_started.md
   - 'Data Sources':
