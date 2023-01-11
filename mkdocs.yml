@@ -18,21 +18,38 @@ theme:
         name: Switch to light mode
   font:
     text: Roboto
-# use_directory_urls: true
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - search.highlight
+
+repo_url: https://github.com/MattTriano/analytics_data_where_house
+repo_name: MattTriano/analytics_data_where_house
+
 nav:
   - Home: index.md
-  - getting_started.md
   - Setup:
     - 'Getting Started': setup/getting_started.md
+    - 'Configure pgAdmin4': setup/pgAdmin4.md
   - 'Data Sources':
     - 'Socrata ELT': data_sources/socrata.md
+  - "User's Guide":
+    - "Overview": user_guide/index.md
+    - "Adding a Socrata Pipeline": user_guide/adding_a_socrata_pipeline.md
+    - "Setting (data) Expectations": user_guide/making_expectation_suites.md
 
 plugins:
   - search
+  - glightbox
 
 markdown_extensions:
   - attr_list
   - md_in_html
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
