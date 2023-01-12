@@ -31,14 +31,16 @@ repo_name: MattTriano/analytics_data_where_house
 nav:
   - Home: index.md
   - Setup:
+    - "Overview": setup/index.md
     - 'Getting Started': setup/getting_started.md
     - 'Configure pgAdmin4': setup/pgAdmin4.md
-  - 'Data Sources':
-    - 'Socrata ELT': data_sources/socrata.md
   - "User's Guide":
     - "Overview": user_guide/index.md
     - "Adding a Socrata Pipeline": user_guide/adding_a_socrata_pipeline.md
     - "Setting (data) Expectations": user_guide/making_expectation_suites.md
+    - "Accessing Systems": user_guide/accessing_resources.md
+  - 'Data Sources':
+    - 'Socrata ELT': data_sources/socrata.md
 
 plugins:
   - search

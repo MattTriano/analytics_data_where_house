@@ -61,7 +61,7 @@ clean_dbt:
 	docker-compose exec dbt_proj /bin/bash -c "dbt deps";
 	mkdir -p airflow/dbt/target;
 
-create_warehouse_infra:
+create_warehouse_infra: quiet_startup
 	docker-compose exec airflow-scheduler /bin/bash -c \
 		"airflow dags trigger ensure_metadata_table_exists";
 	docker-compose exec airflow-scheduler /bin/bash -c \
