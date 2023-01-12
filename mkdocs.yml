@@ -1,0 +1,62 @@
+site_name: Analytics Data Where House Docs
+theme:
+  name: material
+  palette:
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-3
+        name: Switch to light mode
+  font:
+    text: Roboto
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - search.highlight
+
+repo_url: https://github.com/MattTriano/analytics_data_where_house
+repo_name: MattTriano/analytics_data_where_house
+
+nav:
+  - Home: index.md
+  - Setup:
+    - "Overview": setup/index.md
+    - 'Getting Started': setup/getting_started.md
+    - 'Configure pgAdmin4': setup/pgAdmin4.md
+  - "User's Guide":
+    - "Overview": user_guide/index.md
+    - "Adding a Socrata Pipeline": user_guide/adding_a_socrata_pipeline.md
+    - "Setting (data) Expectations": user_guide/making_expectation_suites.md
+    - "Accessing Systems": user_guide/accessing_resources.md
+  - 'Data Sources':
+    - 'Socrata ELT': data_sources/socrata.md
+
+plugins:
+  - search
+  - glightbox
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+extra_css:
+  - stylesheets/extra.css

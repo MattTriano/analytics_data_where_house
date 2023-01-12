@@ -8,11 +8,21 @@ SHELL = /bin/bash
 MAKEFILE_FILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MAKEFILE_DIR_PATH := ${dir ${MAKEFILE_FILE_PATH}}
 STARTUP_DIR := ${MAKEFILE_DIR_PATH}.startup/
+VENV_PATH := $(MAKEFILE_DIR_PATH).venv
 run_time := "$(shell date '+%Y_%m_%d__%H_%M_%S')"
 
 PROJECT_NAME := $(shell basename $(MAKEFILE_DIR_PATH) | tr '[:upper:]' '[:lower:]')
 
-make_credentials:
+$(VENV_PATH):
+	python -m venv $(VENV_PATH); \
+	source $(VENV_PATH)/bin/activate; \
+	python -m pip install --upgrade pip; \
+	python -m pip install -Ur $(STARTUP_DIR)venv_reqs.txt
+
+make_venv: | $(VENV_PATH)
+
+make_credentials: | make_venv
+	source $(VENV_PATH)/bin/activate; \
 	python $(STARTUP_DIR)make_env.py \
 		--project_dir=$(MAKEFILE_DIR_PATH)
 
@@ -51,7 +61,7 @@ clean_dbt:
 	docker-compose exec dbt_proj /bin/bash -c "dbt deps";
 	mkdir -p airflow/dbt/target;
 
-create_warehouse_infra:
+create_warehouse_infra: quiet_startup
 	docker-compose exec airflow-scheduler /bin/bash -c \
 		"airflow dags trigger ensure_metadata_table_exists";
 	docker-compose exec airflow-scheduler /bin/bash -c \
@@ -75,6 +85,3 @@ get_py_utils_shell: start_python_container
 
 run_tests: start_python_container
 	docker-compose exec py-utils /bin/bash -c "python -m pytest"
-
-make_fernet_key: start_python_container
-	docker-compose exec py-utils /bin/bash -c "python make_fernet_key.py"
