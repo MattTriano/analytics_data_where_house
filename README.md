@@ -147,7 +147,7 @@ Many public data tables are exported from production systems, where records repr
 This query shows the count of new or updated records grouped by the data-publication DateTime when the record was new to the local data warehouse.
 
 <p align="center" width="100%">
- <img src="docs/assets/imgs/Count_of_records_after_update.PNG" width="80%" alt="Counts of distinct records in data_raw table by when the source published that data set version"/>
+ <img src="docs/assets/imgs/Socrata_ELT_DAG/Count_of_records_after_update.PNG" width="80%" alt="Counts of distinct records in data_raw table by when the source published that data set version"/>
 </p>
 
 
