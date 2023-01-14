@@ -17,6 +17,10 @@ Fiona==1.8.22
 GeoAlchemy2==0.12.5
 geopandas==0.12.1
 great-expectations==0.15.31
+jupyterlab==3.5.2
+jupyterlab-pygments==0.2.2
+jupyterlab-widgets==3.0.5
+jupyterlab_server==2.18.0
 networkx==2.8.8
 packaging==21.3
 pandas==1.5.2
