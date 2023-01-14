@@ -19,7 +19,11 @@ theme:
   font:
     text: Roboto
   features:
+    - navigation.expand
+    - navigation.footer
+    - navigation.indexes
     - navigation.instant
+    - navigation.sections
     - navigation.tracking
     - navigation.tabs
     - navigation.tabs.sticky
@@ -35,9 +39,15 @@ nav:
     - 'Getting Started': setup/getting_started.md
     - 'Configure pgAdmin4': setup/pgAdmin4.md
   - "User's Guide":
-    - "Overview": user_guide/index.md
+    - user_guide/index.md
     - "Adding a Socrata Pipeline": user_guide/adding_a_socrata_pipeline.md
-    - "Setting (data) Expectations": user_guide/making_expectation_suites.md
+    - "Validating Data":
+      - user_guide/validation/index.md
+      - "Defining a Datasource": user_guide/validation/data_source_setup.md
+      - "Setting (data) Expectations":
+        - "Manual Workflow": user_guide/validation/manually_setting_expectations.md
+        - "Data Assistant Workflow": user_guide/validation/data_assistant_workflow.md
+      - "Setting Checkpoints": user_guide/making_expectation_suites.md
     - "Accessing Systems": user_guide/accessing_resources.md
   - 'Data Sources':
     - 'Socrata ELT': data_sources/socrata.md
@@ -47,6 +57,11 @@ plugins:
   - glightbox
 
 markdown_extensions:
+  - toc:
+      permalink: true
+      separator: "_"
+      toc_depth: 4
+      title: On this page
   - attr_list
   - md_in_html
   - def_list

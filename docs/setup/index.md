@@ -1,3 +1,5 @@
+# Setup Overview
+
 This platform was designed to be easy to setup while still being secure enough that the code can be open source without compromising keys and credentials.
 
 To use the system, you will need to have [docker](https://docs.docker.com/get-docker/) installed on your host machine, and setup will be much easier if your system also has python (for making a `.venv` and running the setup script) and **GNU make** (for running recipes that set up infrastructure).

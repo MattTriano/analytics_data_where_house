@@ -1,4 +1,4 @@
-# pgAdmin4
+# Setting up pgAdmin4
 
 The pgAdmin4 UI makes it very easy to explore your data, inspect database internals, and make manual changes while developing features, but before you can make use of this excellent interface, you have to log in and set up database connection(s).
 
