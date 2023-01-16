@@ -179,8 +179,8 @@ There are far more `Column`-based `Expectations` (especially if you include user
 * [`expect_column_values_to_match_regex`](https://greatexpectations.io/expectations/expect_column_values_to_match_regex)
 
 #### For Date[Time]-valued columns:
-* [`expect_column_values_to_be_dateutil_parseable`](https://greatexpectations.io/expectations/expect_column_values_to_be_dateutil_parseable)
-* [`expect_column_values_to_match_strftime_format`](https://greatexpectations.io/expectations/expect_column_values_to_match_strftime_format)
+* [`expect_column_values_to_be_dateutil_parseable`](https://greatexpectations.io/expectations/expect_column_values_to_be_dateutil_parseable): Note: Only implemented for pandas DataFrames.
+* [`expect_column_values_to_match_strftime_format`](https://greatexpectations.io/expectations/expect_column_values_to_match_strftime_format): Note: Only implemented for pandas and spark DataFrames.
 
 #### Regarding columns properties:
 * [`expect_column_values_to_be_unique`](https://greatexpectations.io/expectations/expect_column_values_to_be_unique)
@@ -230,7 +230,7 @@ context.build_data_docs(resource_identifiers=[suite_identifier])
 context.open_data_docs(resource_identifier=suite_identifier)
 ```
 
-At this point, you're ready to set up a `Checkpoint` for your suite.
+At this point, you're ready to set up a [`Checkpoint`](../making_expectation_suites.md) for your suite.
 
 
 ## Resources

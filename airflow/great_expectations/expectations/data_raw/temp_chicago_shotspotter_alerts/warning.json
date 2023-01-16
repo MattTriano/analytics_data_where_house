@@ -5,7 +5,7 @@
     {
       "expectation_type": "expect_table_columns_to_match_set",
       "kwargs": {
-        "column_list": [
+        "column_set": [
           "zip_code",
           "area",
           "illinois_senate_district",
@@ -37,27 +37,6 @@
       "kwargs": {
         "max_value": 250000,
         "min_value": 150000
-      },
-      "meta": {}
-    },
-    {
-      "expectation_type": "expect_column_values_to_be_dateutil_parseable",
-      "kwargs": {
-        "column": "date"
-      },
-      "meta": {}
-    },
-    {
-      "expectation_type": "expect_column_values_to_be_dateutil_parseable",
-      "kwargs": {
-        "column": "source_data_updated"
-      },
-      "meta": {}
-    },
-    {
-      "expectation_type": "expect_column_values_to_be_dateutil_parseable",
-      "kwargs": {
-        "column": "ingestion_check_time"
       },
       "meta": {}
     },
@@ -263,7 +242,7 @@
     {
       "expectation_type": "expect_column_distinct_values_to_be_in_set",
       "kwargs": {
-        "column": "incident_type_description",
+        "column": "community_area",
         "value_set": [
           "ARCHER HEIGHTS",
           "ARMOUR SQUARE",
