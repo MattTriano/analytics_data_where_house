@@ -30,6 +30,9 @@ At present, it uses docker to provision and run:
     ![dbt Data Lineage Graph](/assets/imgs/systems/dbt_lineage_graph_of_parcel_sales.png)
 
 * great_expectations for anomaly detection and data monitoring, and
+
+    ![great_expectations Data Docs after checkpoint run](/assets/imgs/workflows/expectations/data_docs_after_a_successful_checkpoint_run.png)
+
 * custom python code that makes it easy to implement an ELT pipeline for [any other table hosted by Socrata](http://www.opendatanetwork.com/)
 
     ![load_data_tg TaskGroup High Level](/assets/imgs/Socrata_ELT_DAG/High_level_load_data_tg.PNG)

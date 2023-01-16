@@ -226,7 +226,7 @@ services:
     env_file:
       - .env
     environment:
-      GE_JUPYTER_CMD: "jupyter notebook --allow-root --ip 0.0.0.0 --port 18888"
+      GE_JUPYTER_CMD: "jupyter lab --allow-root --ip 0.0.0.0 --port 18888"
     stdin_open: true
     tty: true
     networks:

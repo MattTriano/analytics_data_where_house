@@ -1,0 +1,413 @@
+{
+  "data_asset_type": null,
+  "expectation_suite_name": "data_raw.temp_chicago_shotspotter_alerts.warning",
+  "expectations": [
+    {
+      "expectation_type": "expect_table_columns_to_match_set",
+      "kwargs": {
+        "column_set": [
+          "zip_code",
+          "area",
+          "illinois_senate_district",
+          "street_outreach_organization",
+          "latitude",
+          "day_of_week",
+          "unique_id",
+          "longitude",
+          "hour",
+          "rounds",
+          "block",
+          "ward",
+          "incident_type_description",
+          "date",
+          "beat",
+          "community_area",
+          "district",
+          "illinois_house_district",
+          "month",
+          "geometry",
+          "source_data_updated",
+          "ingestion_check_time"
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_table_row_count_to_be_between",
+      "kwargs": {
+        "max_value": 250000,
+        "min_value": 150000
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "unique_id"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "street_outreach_organization"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "latitude"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "longitude"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "geometry"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "ingestion_check_time"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "source_data_updated"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "date"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "month"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "hour"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "day_of_week"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "rounds"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "zip_code",
+        "max_value": 5,
+        "min_value": 5
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "area",
+        "max_value": 1,
+        "min_value": 1
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "illinois_senate_district",
+        "max_value": 2,
+        "min_value": 1
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "street_outreach_organization",
+        "max_value": 100,
+        "min_value": 2
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "latitude",
+        "max_value": 12,
+        "min_value": 8
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "longitude",
+        "max_value": 13,
+        "min_value": 7
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "unique_id",
+        "max_value": 10,
+        "min_value": 5
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "source_data_updated",
+        "max_value": 20,
+        "min_value": 20
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "ingestion_check_time",
+        "max_value": 27,
+        "min_value": 27
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "illinois_house_district",
+        "max_value": 2,
+        "min_value": 1
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "community_area",
+        "max_value": 30,
+        "min_value": 6
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "beat",
+        "max_value": 4,
+        "min_value": 4
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_unique",
+      "kwargs": {
+        "column": "unique_id"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_distinct_values_to_be_in_set",
+      "kwargs": {
+        "column": "community_area",
+        "value_set": [
+          "ARCHER HEIGHTS",
+          "ARMOUR SQUARE",
+          "ASHBURN",
+          "AUBURN GRESHAM",
+          "AUSTIN",
+          "AVALON PARK",
+          "AVONDALE",
+          "BELMONT CRAGIN",
+          "BEVERLY",
+          "BRIDGEPORT",
+          "BRIGHTON PARK",
+          "BURNSIDE",
+          "CALUMET HEIGHTS",
+          "CHATHAM",
+          "CHICAGO LAWN",
+          "CLEARING",
+          "DOUGLAS",
+          "DUNNING",
+          "EAST GARFIELD PARK",
+          "EAST SIDE",
+          "ENGLEWOOD",
+          "FULLER PARK",
+          "GAGE PARK",
+          "GARFIELD RIDGE",
+          "GRAND BOULEVARD",
+          "GREATER GRAND CROSSING",
+          "HEGEWISCH",
+          "HERMOSA",
+          "HUMBOLDT PARK",
+          "HYDE PARK",
+          "IRVING PARK",
+          "KENWOOD",
+          "LOGAN SQUARE",
+          "LOWER WEST SIDE",
+          "MCKINLEY PARK",
+          "MONTCLARE",
+          "MORGAN PARK",
+          "NEAR SOUTH SIDE",
+          "NEAR WEST SIDE",
+          "NEW CITY",
+          "NORTH LAWNDALE",
+          "OAKLAND",
+          "PORTAGE PARK",
+          "PULLMAN",
+          "RIVERDALE",
+          "ROSELAND",
+          "SOUTH CHICAGO",
+          "SOUTH DEERING",
+          "SOUTH LAWNDALE",
+          "SOUTH SHORE",
+          "WASHINGTON HEIGHTS",
+          "WASHINGTON PARK",
+          "WEST ELSDON",
+          "WEST ENGLEWOOD",
+          "WEST GARFIELD PARK",
+          "WEST LAWN",
+          "WEST PULLMAN",
+          "WEST TOWN",
+          "WOODLAWN"
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_distinct_values_to_be_in_set",
+      "kwargs": {
+        "column": "ward",
+        "value_set": [
+          "1",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20",
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26",
+          "27",
+          "28",
+          "29",
+          "3",
+          "30",
+          "31",
+          "34",
+          "35",
+          "36",
+          "37",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_distinct_values_to_be_in_set",
+      "kwargs": {
+        "column": "area",
+        "value_set": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_distinct_values_to_be_in_set",
+      "kwargs": {
+        "column": "zip_code",
+        "value_set": [
+          "60608",
+          "60609",
+          "60612",
+          "60615",
+          "60616",
+          "60617",
+          "60618",
+          "60619",
+          "60620",
+          "60621",
+          "60622",
+          "60623",
+          "60624",
+          "60628",
+          "60629",
+          "60632",
+          "60633",
+          "60634",
+          "60636",
+          "60637",
+          "60638",
+          "60639",
+          "60641",
+          "60643",
+          "60644",
+          "60647",
+          "60649",
+          "60651",
+          "60652",
+          "60653",
+          "60707",
+          "60827"
+        ]
+      },
+      "meta": {}
+    }
+  ],
+  "ge_cloud_id": null,
+  "meta": {
+    "great_expectations_version": "0.15.31"
+  }
+}
