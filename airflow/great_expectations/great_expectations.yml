@@ -33,12 +33,6 @@ datasources:
         module_name: great_expectations.datasource.data_connector
         batch_identifiers:
           - default_identifier_name
-      default_inferred_data_connector_name:
-        class_name: InferredAssetSqlDataConnector
-        include_schema_name: true
-        module_name: great_expectations.datasource.data_connector
-        introspection_directives:
-          schema_name: data_raw
       data_raw_inferred_data_connector_name:
         class_name: InferredAssetSqlDataConnector
         include_schema_name: true
