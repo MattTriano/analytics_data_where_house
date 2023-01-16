@@ -4,9 +4,9 @@ To manually develop your suite of expectations, get a shell in the `py-utils` co
 
 ```bash
 user@host:~/...$ make get_py_utils_shell 
-docker-compose up -d py-utils
+docker compose up -d py-utils
 cc_real_estate_dbt_airflow_ge_py-utils_1 is up-to-date
-docker-compose exec py-utils /bin/bash
+docker compose exec py-utils /bin/bash
 root@b5a3b6c2727f:/home# cd great_expectations/
 ```
 

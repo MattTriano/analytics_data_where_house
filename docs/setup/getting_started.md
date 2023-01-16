@@ -33,7 +33,7 @@ These commands only need to be run on first startup (although you will need to r
 Run this command
 
 ```bash
-user@host:.../your_local_repo$ docker-compose up
+user@host:.../your_local_repo$ docker compose up
 ```
 
 After a brief time, system services will be up and running, and you can either [set up pgAdmin4](/setup/pgAdmin4)
