@@ -17,6 +17,13 @@ I like to research before I buy anything, especially if it's a big-ticket item. 
 
 You can see documentation for this platform at [https://docs.analytics-data-where-house.dev/](https://docs.analytics-data-where-house.dev/). This project is still under active development and documentation will continue to evolve with the system.
 
+## System Requirements
+
+To use this system, Docker [Engine](https://docs.docker.com/engine/install/) and [Compose (v2.0.0 or higher)](https://docs.docker.com/compose/install/linux/#install-using-the-repository) are the only hard requirements. 
+
+Having python and GNU make on your host system will provide a lot of quality of life improvements (mainly a streamlined setup process and useful makefile recipes), but they're not strictly necessary.
+
+
 ## Usage
 
 After the [system is set up](https://docs.analytics-data-where-house.dev/setup/getting_started/), you can easily add a Socrata data set to the warehouse by
