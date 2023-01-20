@@ -1,0 +1,1 @@
+FROM openmetadata/postgresql:0.13.1

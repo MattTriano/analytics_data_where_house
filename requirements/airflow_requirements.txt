@@ -16,6 +16,8 @@ GeoAlchemy2==0.12.5
 geopandas==0.12.1
 great-expectations==0.15.31
 networkx==2.8.8
+openmetadata-ingestion==0.13.1
+openmetadata-managed-apis
 packaging==21.3
 pandas==1.5.2
 pyproj==3.4.0
