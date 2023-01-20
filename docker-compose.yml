@@ -310,7 +310,7 @@ services:
       AIRFLOW_HOST: ${AIRFLOW_HOST:-http://ingestion:8080}
       SERVER_HOST_API_URL: ${SERVER_HOST_API_URL:-http://openmetadata-server:8585/api}
       #Database configuration for postgresql
-      DB_DRIVER_CLASS: ${DB_DRIVER_CLASS:-org.postgresql.Driver}
+      DB_DRIVER_CLASS: org.postgresql.Driver
       DB_SCHEME: ${DB_SCHEME:-postgresql}
       DB_USE_SSL: false
       # DB_USER: ${DB_USER:-openmetadata_user}
@@ -358,6 +358,8 @@ services:
     build:
       context: ./
       dockerfile: Dockerfiles/openmetadata_ingestion.Dockerfile
+    env_file:
+      - .metadata.env
     depends_on:
       elasticsearch:
         condition: service_started
@@ -366,8 +368,8 @@ services:
       openmetadata-server:
         condition: service_healthy
     environment:
+      AIRFLOW__LINEAGE__AIRFLOW_SERVICE_NAME:
       AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session"
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__OPENMETADATA_AIRFLOW_APIS__DAG_GENERATED_CONFIGS: "/opt/airflow/dag_generated_configs"
       DB_HOST: ${AIRFLOW_DB_HOST:-postgresql}
       DB_PORT: ${AIRFLOW_DB_PORT:-5432}
