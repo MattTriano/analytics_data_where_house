@@ -1,7 +1,8 @@
 SHELL = /bin/bash
 .phony: startup shutdown quiet_startup restart make_credentials serve_dbt_docs \
 	build_images init_airflow initialize_system create_warehouse_infra update_dbt_packages \
-	dbt_generate_docs build_python_img get_py_utils_shell make_fernet_key run_tests
+	dbt_generate_docs build_python_img get_py_utils_shell make_fernet_key run_tests \
+	build_images_no_cache
 	
 .DEFAULT_GOAL: startup
 
@@ -28,6 +29,9 @@ make_credentials: | make_venv
 
 build_images:
 	docker compose build 2>&1 | tee logs/where_house_build_logs_$(run_time).txt
+
+build_images_no_cache:
+	docker compose build --no-cache 2>&1 | tee logs/where_house_build_logs_$(run_time).txt
 
 init_airflow: build_images
 	docker compose up airflow-init

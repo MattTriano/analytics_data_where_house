@@ -32,6 +32,7 @@ x-airflow-common:
 
 services:
   airflow_db:
+    image: adwh_airflow_pg_db:14.5
     build:
       context: ./
       dockerfile: Dockerfiles/airflow_db.Dockerfile
@@ -59,6 +60,7 @@ services:
     restart: always
 
   dwh_db:
+    image: adwh_dwh_postgis_db:15.3.3
     build:
       context: ./
       dockerfile: Dockerfiles/postgis.Dockerfile
@@ -88,6 +90,7 @@ services:
     restart: always
 
   db_admin:
+    image: adwh_pgadmin:6.19
     build:
       context: ./
       dockerfile: ./Dockerfiles/pgadmin4.Dockerfile
@@ -104,6 +107,7 @@ services:
       - re_etl_admin:/var/lib/pgadmin
 
   dbt_proj:
+    image: adwh_dbt:1.3.1
     build:
       context: ./
       dockerfile: ./Dockerfiles/dbt.Dockerfile
@@ -123,6 +127,7 @@ services:
 
   airflow-webserver:
     <<: *airflow-common
+    image: adwh_airflow_webserver:2.5.1
     command: webserver
     ports:
       - "8080:8080"
@@ -145,6 +150,7 @@ services:
 
   airflow-scheduler:
     <<: *airflow-common
+    image: adwh_airflow_scheduler:2.5.1
     command: scheduler
     healthcheck:
       test:
@@ -163,6 +169,7 @@ services:
 
   airflow-triggerer:
     <<: *airflow-common
+    image: adwh_airflow_triggerer:2.5.1
     command: triggerer
     healthcheck:
       test:
@@ -181,6 +188,7 @@ services:
 
   airflow-init:
     <<: *airflow-common
+    image: adwh_airflow_init:2.5.1
     entrypoint: /bin/bash
     # yamllint disable rule:line-length
     command:
@@ -207,6 +215,7 @@ services:
 
   airflow-cli:
     <<: *airflow-common
+    image: adwh_airflow_cli:2.5.1
     profiles:
       - debug
     environment:
@@ -219,6 +228,7 @@ services:
       - airflow
 
   py-utils:
+    image: adwh_py_utils:0.1
     build:
       context: ./
       dockerfile: ./Dockerfiles/python.Dockerfile
