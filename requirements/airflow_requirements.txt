@@ -18,6 +18,7 @@ great-expectations==0.15.31
 networkx==2.8.8
 packaging==21.3
 pandas==1.5.2
+psycopg2-binary==2.9.5
 pyproj==3.4.0
 PyYAML==6.0
 requests==2.28.1
