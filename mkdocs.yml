@@ -49,8 +49,10 @@ nav:
         - "Data Assistant Workflow": user_guide/validation/data_assistant_workflow.md
       - "Setting Checkpoints": user_guide/making_expectation_suites.md
     - "Accessing Systems": user_guide/accessing_resources.md
-  - 'Data Sources':
+  - "Data Sources":
     - 'Socrata ELT': data_sources/socrata.md
+  - "Overview":
+    - "Workflow Patterns": overview/pipeline_patterns.md
 
 plugins:
   - search
@@ -71,7 +73,14 @@ markdown_extensions:
       anchor_linenums: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 
 extra_css:
   - stylesheets/extra.css
