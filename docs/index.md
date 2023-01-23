@@ -1,6 +1,6 @@
 # Welcome to Analytics-Data-Where-House Docs!
 
-## ToC
+## Table of Contents
 
 1. [**System setup**](setup/getting_started.md)
 2. [**User's Guide**](user_guide/index.md)
