@@ -1,5 +1,6 @@
 *__pycache__
 *.ipynb_checkpoints
+*.bash_history
 .env
 .dwh.env
 .venv
