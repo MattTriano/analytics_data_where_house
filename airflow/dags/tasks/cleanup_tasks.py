@@ -1,6 +1,7 @@
 from logging import Logger
 from pathlib import Path
 import re
+import shutil
 from typing import List
 
 from airflow.decorators import task
@@ -55,3 +56,36 @@ def delete_files_identical_to_prior_files(dupe_file_paths: List, task_logger: Lo
             task_logger.info(f"Deleting file: {dupe_file_path}")
             dupe_file_path.unlink(missing_ok=False)
             task_logger.info(f"  - Successfully deleted? {not dupe_file_path.is_file()}")
+
+
+@task
+def get_paths_to_scheduler_logs_dirs_past_limit(
+    scheduler_logs_dir: Path, keep_n_dirs: int, task_logger: Logger
+) -> List:
+    if scheduler_logs_dir.is_dir():
+        scheduler_logs_dirs = [el.name for el in scheduler_logs_dir.iterdir() if el.is_dir()]
+        scheduler_logs_dirs.sort()
+        scheduler_logs_dirs_past_limit = [
+            scheduler_logs_dir.joinpath(dn) for dn in scheduler_logs_dirs[:-keep_n_dirs]
+        ]
+        task_logger.info(
+            f"\nscheduler_logs_dirs_past_limit:\n - "
+            + ",\n - ".join([str(dp) for dp in scheduler_logs_dirs_past_limit])
+        )
+        return scheduler_logs_dirs_past_limit
+    else:
+        raise Exception(
+            f"The given scheduler_logs_dir path,"
+            + f"\n {scheduler_logs_dir} \n"
+            + "doesn't resolve to a directory."
+        )
+
+
+@task
+def delete_directories(dirs_to_delete: List, task_logger: Logger) -> None:
+    for dir_to_delete in dirs_to_delete:
+        if dir_to_delete.is_dir():
+            task_logger.info(f"Removing directory {dir_to_delete}")
+            shutil.rmtree(dir_to_delete)
+        else:
+            task_logger.info(f"Path {dir_to_delete} isn't to a directory. Very curious...")
