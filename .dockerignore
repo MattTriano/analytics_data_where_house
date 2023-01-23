@@ -6,8 +6,10 @@
 .vscode/
 airflow/data_raw*
 airflow/logs*
+docs/
 notes/*
 imgs/*
 sandbox/*
 src/*
 dev_utils/*
+logs/

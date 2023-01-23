@@ -4,7 +4,7 @@ apache-airflow-providers-docker==3.3.0
 apache-airflow-providers-ftp==3.2.0
 apache-airflow-providers-http==4.1.0
 apache-airflow-providers-imap==3.1.0
-apache-airflow-providers-postgres==5.3.1
+apache-airflow-providers-postgres==5.4.0
 apache-airflow-providers-sqlite==3.3.1
 airflow-provider-great-expectations==0.1.5
 beautifulsoup4==4.11.1
@@ -18,6 +18,7 @@ great-expectations==0.15.31
 networkx==2.8.8
 packaging==21.3
 pandas==1.5.2
+psycopg2-binary==2.9.5
 pyproj==3.4.0
 PyYAML==6.0
 requests==2.28.1

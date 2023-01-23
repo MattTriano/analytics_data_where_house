@@ -1,0 +1,615 @@
+{
+  "data_asset_type": null,
+  "expectation_suite_name": "data_raw.temp_cook_county_parcel_value_assessments.warning",
+  "expectations": [
+    {
+      "expectation_type": "expect_table_row_count_to_be_between",
+      "kwargs": {
+        "max_value": 60000000,
+        "min_value": 40000000
+      },
+      "meta": {
+        "profiler_details": {
+          "metric_configuration": {
+            "domain_kwargs": {},
+            "metric_dependencies": null,
+            "metric_name": "table.row_count",
+            "metric_value_kwargs": null
+          },
+          "num_batches": 1
+        }
+      }
+    },
+    {
+      "expectation_type": "expect_table_columns_to_match_set",
+      "kwargs": {
+        "column_set": [
+          "certified_bldg",
+          "township_name",
+          "board_bldg",
+          "ingestion_check_time",
+          "mailed_bldg",
+          "class",
+          "mailed_land",
+          "certified_land",
+          "source_data_updated",
+          "tax_year",
+          "township_code",
+          "certified_tot",
+          "board_land",
+          "board_tot",
+          "mailed_tot",
+          "pin"
+        ],
+        "exact_match": null
+      },
+      "meta": {
+        "profiler_details": {
+          "success_ratio": 1.0
+        }
+      }
+    },
+
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "meta": {
+        "profiler_details": {
+          "column_min_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.min",
+              "domain_kwargs": {
+                "column": "pin"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          },
+          "column_max_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.max",
+              "domain_kwargs": {
+                "column": "pin"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          }
+        }
+      },
+      "kwargs": {
+        "strict_max": false,
+        "mostly": 1.0,
+        "max_value": 60000000010000,
+        "column": "pin",
+        "strict_min": false,
+        "min_value": 1000000020000
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "meta": {
+        "profiler_details": {
+          "column_min_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.min",
+              "domain_kwargs": {
+                "column": "mailed_land"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          },
+          "column_max_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.max",
+              "domain_kwargs": {
+                "column": "mailed_land"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          }
+        }
+      },
+      "kwargs": {
+        "strict_max": false,
+        "mostly": 1.0,
+        "max_value": 900000000,
+        "column": "mailed_land",
+        "strict_min": false,
+        "min_value": 0
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "meta": {
+        "profiler_details": {
+          "column_min_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.min",
+              "domain_kwargs": {
+                "column": "mailed_bldg"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          },
+          "column_max_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.max",
+              "domain_kwargs": {
+                "column": "mailed_bldg"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          }
+        }
+      },
+      "kwargs": {
+        "strict_max": false,
+        "mostly": 1.0,
+        "max_value": 400000000,
+        "column": "mailed_bldg",
+        "strict_min": false,
+        "min_value": 0
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "meta": {
+        "profiler_details": {
+          "column_min_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.min",
+              "domain_kwargs": {
+                "column": "mailed_tot"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          },
+          "column_max_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.max",
+              "domain_kwargs": {
+                "column": "mailed_tot"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          }
+        }
+      },
+      "kwargs": {
+        "strict_max": false,
+        "mostly": 1.0,
+        "max_value": 1000000000,
+        "column": "mailed_tot",
+        "strict_min": false,
+        "min_value": 0
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "meta": {
+        "profiler_details": {
+          "column_min_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.min",
+              "domain_kwargs": {
+                "column": "board_bldg"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          },
+          "column_max_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.max",
+              "domain_kwargs": {
+                "column": "board_bldg"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          }
+        }
+      },
+      "kwargs": {
+        "strict_max": false,
+        "mostly": 1.0,
+        "max_value": 400000000,
+        "column": "board_bldg",
+        "strict_min": false,
+        "min_value": 0
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "meta": {
+        "profiler_details": {
+          "column_min_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.min",
+              "domain_kwargs": {
+                "column": "board_land"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          },
+          "column_max_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.max",
+              "domain_kwargs": {
+                "column": "board_land"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          }
+        }
+      },
+      "kwargs": {
+        "strict_max": false,
+        "mostly": 1.0,
+        "max_value": 70000000,
+        "column": "board_land",
+        "strict_min": false,
+        "min_value": 0
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "meta": {
+        "profiler_details": {
+          "column_min_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.min",
+              "domain_kwargs": {
+                "column": "board_tot"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          },
+          "column_max_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.max",
+              "domain_kwargs": {
+                "column": "board_tot"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          }
+        }
+      },
+      "kwargs": {
+        "strict_max": false,
+        "mostly": 1.0,
+        "max_value": 400000000,
+        "column": "board_tot",
+        "strict_min": false,
+        "min_value": 0
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "meta": {
+        "profiler_details": {
+          "column_min_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.min",
+              "domain_kwargs": {
+                "column": "certified_bldg"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          },
+          "column_max_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.max",
+              "domain_kwargs": {
+                "column": "certified_bldg"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          }
+        }
+      },
+      "kwargs": {
+        "strict_max": false,
+        "mostly": 1.0,
+        "max_value": 400000000,
+        "column": "certified_bldg",
+        "strict_min": false,
+        "min_value": 0
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "meta": {
+        "profiler_details": {
+          "column_min_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.min",
+              "domain_kwargs": {
+                "column": "certified_land"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          },
+          "column_max_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.max",
+              "domain_kwargs": {
+                "column": "certified_land"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          }
+        }
+      },
+      "kwargs": {
+        "strict_max": false,
+        "mostly": 1.0,
+        "max_value": 70000000,
+        "column": "certified_land",
+        "strict_min": false,
+        "min_value": 0
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "meta": {
+        "profiler_details": {
+          "column_min_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.min",
+              "domain_kwargs": {
+                "column": "certified_tot"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          },
+          "column_max_values_range_estimator": {
+            "metric_configuration": {
+              "metric_name": "column.max",
+              "domain_kwargs": {
+                "column": "certified_tot"
+              },
+              "metric_value_kwargs": null,
+              "metric_dependencies": null
+            },
+            "num_batches": 1
+          }
+        }
+      },
+      "kwargs": {
+        "strict_max": false,
+        "mostly": 1.0,
+        "max_value": 400000000,
+        "column": "certified_tot",
+        "strict_min": false,
+        "min_value": 0
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "pin"
+      },
+      "meta": {
+        "profiler_details": {
+          "metric_configuration": {
+            "domain_kwargs": {
+              "column": "pin"
+            },
+            "metric_dependencies": null,
+            "metric_name": "column_values.nonnull.unexpected_count",
+            "metric_value_kwargs": null
+          },
+          "num_batches": 1
+        }
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "source_data_updated"
+      },
+      "meta": {
+        "profiler_details": {
+          "metric_configuration": {
+            "domain_kwargs": {
+              "column": "source_data_updated"
+            },
+            "metric_dependencies": null,
+            "metric_name": "column_values.nonnull.unexpected_count",
+            "metric_value_kwargs": null
+          },
+          "num_batches": 1
+        }
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "ingestion_check_time"
+      },
+      "meta": {
+        "profiler_details": {
+          "metric_configuration": {
+            "domain_kwargs": {
+              "column": "ingestion_check_time"
+            },
+            "metric_dependencies": null,
+            "metric_name": "column_values.nonnull.unexpected_count",
+            "metric_value_kwargs": null
+          },
+          "num_batches": 1
+        }
+      }
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "source_data_updated",
+        "max_value": 20,
+        "min_value": 20,
+        "mostly": 1.0,
+        "strict_max": false,
+        "strict_min": false
+      },
+      "meta": {
+        "profiler_details": {
+          "column_max_length_range_estimator": {
+            "metric_configuration": {
+              "domain_kwargs": {
+                "column": "source_data_updated"
+              },
+              "metric_dependencies": null,
+              "metric_name": "column_values.length.max",
+              "metric_value_kwargs": null
+            },
+            "num_batches": 1
+          },
+          "column_min_length_range_estimator": {
+            "metric_configuration": {
+              "domain_kwargs": {
+                "column": "source_data_updated"
+              },
+              "metric_dependencies": null,
+              "metric_name": "column_values.length.min",
+              "metric_value_kwargs": null
+            },
+            "num_batches": 1
+          }
+        }
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_match_regex",
+      "kwargs": {
+        "column": "source_data_updated",
+        "mostly": 1.0,
+        "regex": "(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})(?:.(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})){3}"
+      },
+      "meta": {
+        "profiler_details": {
+          "evaluated_regexes": {
+            "(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})(?:.(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})){3}": 1.0,
+            "-?\\d+": 1.0,
+            "-?\\d+(?:\\.\\d*)?": 1.0,
+            "<\\/?(?:p|a|b|img)(?: \\/)?>": 0.0,
+            "[A-Za-z0-9\\.,;:!?()\\\"'%\\-]+": 1.0,
+            "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-5][0-9a-fA-F]{3}-[089ab][0-9a-fA-F]{3}-\\b[0-9a-fA-F]{12}\\b ": 0.0,
+            "\\d+": 1.0,
+            "\\s+$": 0.0,
+            "^\\s+": 0.0,
+            "https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,255}\\.[a-z]{2,6}\\b(?:[-a-zA-Z0-9@:%_\\+.~#()?&//=]*)": 0.0
+          },
+          "success_ratio": 1.0
+        }
+      }
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "ingestion_check_time",
+        "max_value": 27,
+        "min_value": 27,
+        "mostly": 1.0,
+        "strict_max": false,
+        "strict_min": false
+      },
+      "meta": {
+        "profiler_details": {
+          "column_max_length_range_estimator": {
+            "metric_configuration": {
+              "domain_kwargs": {
+                "column": "ingestion_check_time"
+              },
+              "metric_dependencies": null,
+              "metric_name": "column_values.length.max",
+              "metric_value_kwargs": null
+            },
+            "num_batches": 1
+          },
+          "column_min_length_range_estimator": {
+            "metric_configuration": {
+              "domain_kwargs": {
+                "column": "ingestion_check_time"
+              },
+              "metric_dependencies": null,
+              "metric_name": "column_values.length.min",
+              "metric_value_kwargs": null
+            },
+            "num_batches": 1
+          }
+        }
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_match_regex",
+      "kwargs": {
+        "column": "ingestion_check_time",
+        "mostly": 1.0,
+        "regex": "(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})(?:.(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})){3}"
+      },
+      "meta": {
+        "profiler_details": {
+          "evaluated_regexes": {
+            "(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})(?:.(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})){3}": 1.0,
+            "-?\\d+": 1.0,
+            "-?\\d+(?:\\.\\d*)?": 1.0,
+            "<\\/?(?:p|a|b|img)(?: \\/)?>": 0.0,
+            "[A-Za-z0-9\\.,;:!?()\\\"'%\\-]+": 1.0,
+            "\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-5][0-9a-fA-F]{3}-[089ab][0-9a-fA-F]{3}-\\b[0-9a-fA-F]{12}\\b ": 0.0,
+            "\\d+": 1.0,
+            "\\s+$": 0.0,
+            "^\\s+": 0.0,
+            "https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,255}\\.[a-z]{2,6}\\b(?:[-a-zA-Z0-9@:%_\\+.~#()?&//=]*)": 0.0
+          },
+          "success_ratio": 1.0
+        }
+      }
+    }
+  ],
+  "ge_cloud_id": null,
+  "meta": {
+    "citations": [
+      {
+        "citation_date": "2023-01-13T01:56:48.176129Z",
+        "comment": "Created by effective Rule-Based Profiler of OnboardingDataAssistant with the configuration included.\n"
+      }
+    ],
+    "great_expectations_version": "0.15.31"
+  }
+}
