@@ -29,7 +29,7 @@ WITH records_with_basic_cleaning AS (
         geometry::GEOMETRY(POINT,4326) AS geometry,
         source_data_updated::timestamptz AS source_data_updated,
         ingestion_check_time::timestamptz AS ingestion_check_time
-    FROM {{ ref('temp_chicago_cta_train_stations') }}
+    FROM {{ ref('chicago_cta_train_stations') }}
     ORDER BY {% for ck in ck_cols %}{{ ck }}{{ "," if not loop.last }}{% endfor %}
 )
 

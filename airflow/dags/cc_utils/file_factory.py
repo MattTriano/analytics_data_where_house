@@ -168,3 +168,136 @@ def make_dbt_data_raw_table_staging_model(table_name: str, engine: Engine) -> No
     file_path = Path(f"/opt/airflow/dbt/models/staging/{table_name}.sql")
     write_lines_to_file(file_lines=file_lines, file_path=file_path)
     update_sources_yml(table_name=table_name)
+
+
+def format_dbt_stub_for_intermediate_standardized_stage(
+    table_name: str, engine: Engine
+) -> List[str]:
+    table_cols = get_table_sqlalchemy_col_objects(
+        table_name=table_name, schema_name="data_raw", engine=engine
+    )
+    table_col_details = [{"name": col.name, "type": col.type} for col in table_cols]
+    file_lines = [
+        """{{ config(materialized='view') }}""",
+        """{% set ck_cols = ["REPLACE_WITH_COMPOSITE_KEY_COLUMNS"] %}""",
+        """{% set record_id = "REPLACE_WITH_BETTER_id" %}""",
+        "",
+        "WITH records_with_basic_cleaning AS (",
+        "    SELECT",
+        "        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},",
+    ]
+
+    col_lines = []
+    for table_col_deet in table_col_details:
+        col_type = table_col_deet["type"]
+        col_name = table_col_deet["name"]
+        if col_name == "source_data_updated":
+            col_lines.append(f"        {col_name}::timestamptz AS {col_name},")
+        elif col_name == "ingestion_check_time":
+            col_lines.append(f"        {col_name}::timestamptz AS {col_name}")
+        else:
+            col_lines.append(col_type_cast_formatter(col_name=col_name, sqlalch_col_type=col_type))
+    file_lines.extend(col_lines)
+    file_lines.extend(
+        [
+            f"""    FROM {{{{ ref('{table_name}') }}}}""",
+            """    ORDER BY {% for ck in ck_cols %}{{ ck }}{{ "," if not loop.last }}{% endfor %}""",
+            ")",
+            "",
+            "",
+            "SELECT *",
+            "FROM records_with_basic_cleaning",
+            "ORDER BY {% for ck in ck_cols %}{{ ck }},{% endfor %} source_data_updated",
+        ]
+    )
+
+    return file_lines
+
+
+def col_type_cast_formatter(col_name: str, sqlalch_col_type) -> str:
+    #     sqlalch_col_type: sqlalchemy.sql.sqltypes.*
+    if str(sqlalch_col_type).upper() == "BIGINT":
+        return f"        {col_name}::bigint AS {col_name},"
+    elif str(sqlalch_col_type).upper() == "INTEGER":
+        return f"        {col_name}::int AS {col_name},"
+    elif str(sqlalch_col_type).upper() == "SMALLINT":
+        return f"        {col_name}::smallint AS {col_name},"
+    elif str(sqlalch_col_type).upper() == "BOOLEAN":
+        return f"        {col_name}::boolean AS {col_name},"
+    elif str(sqlalch_col_type).upper() == "TEXT":
+        return f"        upper({col_name}::text) AS {col_name},"
+    elif str(sqlalch_col_type).upper().startswith("VARCHAR"):
+        return f"        upper({col_name}::varchar) AS {col_name},"
+    elif str(sqlalch_col_type).upper().startswith("CHAR"):
+        return f"        upper({col_name}::char) AS {col_name},"
+    elif str(sqlalch_col_type).upper().startswith("GEOMETRY"):
+        return f"        {col_name}::{str(sqlalch_col_type).upper()} AS {col_name},"
+    elif str(sqlalch_col_type).upper().startswith("DOUBLE_PRECISION"):
+        return f"        {col_name}::double precision AS {col_name},"
+    elif str(sqlalch_col_type).upper() == "DATE":
+        return f"        {col_name}::date AS {col_name},"
+    else:
+        return f"        {col_name}::MANUALLY_REPLACE (was {str(sqlalch_col_type)} AS {col_name},"
+
+
+def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine) -> List[str]:
+    table_cols = get_table_sqlalchemy_col_objects(
+        table_name=table_name, schema_name="data_raw", engine=engine
+    )
+    table_col_names = ["REPLACE_WITH_BETTER_id"]
+    table_col_names.extend([col.name for col in table_cols])
+    file_lines = [
+        f"-- Save to file in /airflow/dbt/models/intermediate/{table_name}_clean.sql",
+        "{{ config(materialized='view') }}",
+        "{% set ck_cols = [",
+        "        REPLACE_WITH_COMPOSITE_KEY_COLUMNS",
+        "] %}",
+        """{% set id_col = "REPLACE_WITH_BETTER_id" %}""",
+    ]
+    table_col_lines = format_jinja_variable_declaration_of_col_list(
+        table_col_names=table_col_names, var_name="base_cols"
+    )
+    file_lines.extend(table_col_lines)
+    cte_lines = [
+        "",
+        "-- selects all records from the standardized view of this data",
+        "WITH std_data AS (",
+        "    SELECT *",
+        f"""    FROM {{{{ ref('{table_name}_standardized') }}}}""",
+        "),",
+        "",
+        "-- keeps the most recently updated version of each record ",
+        "std_records_numbered_latest_first AS (",
+        "    SELECT *,",
+        "        row_number() over(partition by {{id_col}} ORDER BY source_data_updated DESC) as rn",
+        "    FROM std_data",
+        "),",
+        "most_current_records AS (",
+        "    SELECT *",
+        "    FROM std_records_numbered_latest_first",
+        "    WHERE rn = 1",
+        "),",
+        "",
+        "-- selects the source_data_updated (ie the date of publication) value from each record's",
+        "--   first ingestion into the local data warehouse",
+        "std_records_numbered_earliest_first AS (",
+        "    SELECT *,",
+        "        row_number() over(partition by {{id_col}} ORDER BY source_data_updated ASC) as rn",
+        "FROM std_data",
+        "),",
+        "records_first_ingested_pub_date AS (",
+        "    SELECT {{id_col}}, source_data_updated AS first_ingested_pub_date",
+        "    FROM std_records_numbered_earliest_first",
+        "    WHERE rn = 1",
+        ")",
+        "",
+        "SELECT",
+        "    {% for bc in base_cols %}mcr.{{ bc }},{% endfor %}",
+        "    fi.first_ingested_pub_date",
+        "FROM most_current_records AS mcr",
+        "LEFT JOIN records_first_ingested_pub_date AS fi",
+        "ON mcr.{{ id_col }} = fi.{{ id_col }}",
+        "ORDER BY {% for ck in ck_cols %}mcr.{{ ck }} DESC, {% endfor %} mcr.source_data_updated DESC",
+    ]
+    file_lines.extend(cte_lines)
+    return file_lines
