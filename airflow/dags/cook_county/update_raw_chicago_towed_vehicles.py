@@ -31,7 +31,7 @@ from tasks.socrata_tasks import (
     dbt_staging_model_exists,
     make_dbt_staging_model,
     update_result_of_check_in_metadata_table,
-    short_circuit_downstream
+    short_circuit_downstream,
 )
 
 task_logger = logging.getLogger("airflow.task")
@@ -86,15 +86,18 @@ def load_data_tg(
 
 
 @task
-def make_dbt_standardized_model(table_name: str, conn_id: str, task_logger: Logger) -> None:
-
+def make_dbt_standardized_model(conn_id: str, task_logger: Logger, **kwargs) -> None:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     engine = get_pg_engine(conn_id=conn_id)
     std_file_lines = format_dbt_stub_for_intermediate_standardized_stage(
-        table_name=table_name, engine=engine
+        table_name=socrata_metadata.table_name, engine=engine
     )
-    file_path = Path(f"/opt/airflow/dbt/models/intermediate/{table_name}_standardized.sql")
+    file_path = Path(
+        f"/opt/airflow/dbt/models/intermediate/{socrata_metadata.table_name}_standardized.sql"
+    )
     write_lines_to_file(file_lines=std_file_lines, file_path=file_path)
-    task_logger.info(f"file_lines for table {table_name}")
+    task_logger.info(f"file_lines for table {socrata_metadata.table_name}")
     for file_line in std_file_lines:
         task_logger.info(f"    {file_line}")
 
@@ -102,12 +105,15 @@ def make_dbt_standardized_model(table_name: str, conn_id: str, task_logger: Logg
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED)
-def dbt_standardized_model_ready(socrata_metadata: SocrataTableMetadata, task_logger: Logger) -> str:
-    # ti = kwargs["ti"]
-    # socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.load_data_tg")
+def dbt_standardized_model_ready(task_logger: Logger, **kwargs) -> str:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     airflow_home = os.environ["AIRFLOW_HOME"]
     file_path = Path(airflow_home).joinpath(
-        "dbt", "models", "intermediate", f"{socrata_metadata.table_name}_standardized.sql"
+        "dbt",
+        "models",
+        "intermediate",
+        f"{socrata_metadata.table_name}_standardized.sql",
     )
     host_file_path = str(file_path).replace(airflow_home, "/airflow")
     if file_path.is_file():
@@ -131,6 +137,7 @@ def dbt_standardized_model_ready(socrata_metadata: SocrataTableMetadata, task_lo
         task_logger.info(f"Edit the stub before proceeding to generate _clean stage dbt models.")
         return "update_socrata_table.make_dbt_standardized_model"
 
+
 @task
 def highlight_unfinished_dbt_standardized_stub(task_logger: Logger) -> str:
     task_logger.info(
@@ -139,6 +146,7 @@ def highlight_unfinished_dbt_standardized_stub(task_logger: Logger) -> str:
         + "(REPLACE_WITH_COMPOSITE_KEY_COLUMNS or REPLACE_WITH_BETTER_id)."
     )
     return "Please and thank you!"
+
 
 # @task.branch(trigger_rule=TriggerRule.NONE_FAILED)
 # def dbt_standardized_model_exists(socrata_metadata: SocrataTableMetadata, task_logger: Logger) -> str:
@@ -160,6 +168,7 @@ def highlight_unfinished_dbt_standardized_stub(task_logger: Logger) -> str:
 #         task_logger.info(f"Creating a stub in loc: {host_file_path}")
 #         task_logger.info(f"Edit the stub before proceeding to generate _clean stage dbt models.")
 #         return "update_socrata_table.make_dbt_standardized_model"
+
 
 @task
 def endpoint(task_logger: Logger) -> None:
@@ -189,14 +198,10 @@ def update_socrata_table(
         task_logger=task_logger,
     )
     std_model_exists_1 = dbt_standardized_model_ready(
-        socrata_metadata=load_data_tg_1,
-        task_logger=task_logger
+        socrata_metadata=load_data_tg_1, task_logger=task_logger
     )
-    std_model_unfinished_1 = highlight_unfinished_dbt_standardized_stub(
-        task_logger=task_logger
-    )
+    std_model_unfinished_1 = highlight_unfinished_dbt_standardized_stub(task_logger=task_logger)
     make_standardized_stage_1 = make_dbt_standardized_model(
-        table_name=SOCRATA_TABLE.table_name,
         conn_id="dwh_db_conn",
         task_logger=task_logger,
     )
@@ -213,8 +218,12 @@ def update_socrata_table(
         extract_data_1,
         load_data_tg_1,
         std_model_exists_1,
-        [make_standardized_stage_1, std_model_unfinished_1, Label("_standardized dbt model looks good!")],
-        endpoint_1
+        [
+            make_standardized_stage_1,
+            std_model_unfinished_1,
+            Label("_standardized dbt model looks good!"),
+        ],
+        endpoint_1,
     )
     chain(
         metadata_1,

@@ -10,6 +10,7 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
 
+from cc_utils.cleanup import standardize_columns_fill_spaces
 from cc_utils.db import (
     get_pg_engine,
     get_data_table_names_in_schema,
@@ -356,7 +357,8 @@ def ingest_geojson_data(
         )
     except Exception as e:
         task_logger.error(
-            f"Failed to ingest geojson file to temp table. Error: {e}, {type(e)}", exc_info=True
+            f"Failed to ingest geojson file to temp table. Error: {e}, {type(e)}",
+            exc_info=True,
         )
 
 
@@ -410,6 +412,7 @@ def create_temp_data_raw_table(conn_id: str, task_logger: Logger, **kwargs) -> N
             import geopandas as gpd
 
             df_subset = gpd.read_file(local_file_path, rows=2000000)
+        df_subset = standardize_columns_fill_spaces(df=df_subset)
         a_table = SQLTable(
             frame=df_subset,
             name=table_name,
