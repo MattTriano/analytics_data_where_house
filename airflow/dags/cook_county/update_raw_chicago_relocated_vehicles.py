@@ -4,7 +4,7 @@ import logging
 from airflow.decorators import dag
 
 from tasks.socrata_tasks import update_socrata_table
-from sources.tables import CHICAGO_TOWED_VEHICLES as SOCRATA_TABLE
+from sources.tables import CHICAGO_RELOCATED_VEHICLES as SOCRATA_TABLE
 
 task_logger = logging.getLogger("airflow.task")
 
@@ -15,7 +15,7 @@ task_logger = logging.getLogger("airflow.task")
     catchup=False,
     tags=["cook_county", "chicago", "fact_table", "transit", "data_raw"],
 )
-def update_data_raw_chicago_towed_vehicles():
+def update_data_raw_chicago_relocated_vehicles():
     update_1 = update_socrata_table(
         socrata_table=SOCRATA_TABLE,
         conn_id="dwh_db_conn",
@@ -24,4 +24,4 @@ def update_data_raw_chicago_towed_vehicles():
     update_1
 
 
-update_data_raw_chicago_towed_vehicles()
+update_data_raw_chicago_relocated_vehicles()
