@@ -12,8 +12,10 @@ sources:
       - name: chicago_cta_train_stations
       - name: chicago_food_inspections
       - name: chicago_homicide_and_shooting_victimizations
+      - name: chicago_relocated_vehicles
       - name: chicago_shotspotter_alerts
       - name: chicago_street_center_lines
+      - name: chicago_towed_vehicles
       - name: chicago_traffic_crashes
       - name: cook_county_neighborhood_boundaries
       - name: cook_county_parcel_locations
@@ -25,8 +27,10 @@ sources:
       - name: temp_chicago_cta_train_stations
       - name: temp_chicago_food_inspections
       - name: temp_chicago_homicide_and_shooting_victimizations
+      - name: temp_chicago_relocated_vehicles
       - name: temp_chicago_shotspotter_alerts
       - name: temp_chicago_street_center_lines
+      - name: temp_chicago_towed_vehicles
       - name: temp_chicago_traffic_crashes
       - name: temp_cook_county_neighborhood_boundaries
       - name: temp_cook_county_parcel_locations

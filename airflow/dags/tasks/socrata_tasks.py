@@ -650,7 +650,7 @@ def make_dbt_standardized_model(conn_id: str, task_logger: Logger, **kwargs) -> 
     task_logger.info(f"Leaving make_dbt_standardized_model")
 
 
-@task.branch(trigger_rule=TriggerRule.NONE_FAILED)
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def dbt_standardized_model_ready(task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
