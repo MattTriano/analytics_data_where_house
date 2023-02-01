@@ -241,18 +241,26 @@ def col_type_cast_formatter(col_name: str, sqlalch_col_type) -> str:
 
 
 def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine) -> List[str]:
+    std_file_path = Path(f"/airflow/dbt/models/intermediate/{table_name}_standardized.sql")
+    with open(std_file_path, "r") as f:
+        file_lines = f.readlines()
+
+    ck_cols_el = [ln.replace("\n", "") for ln in file_lines if ln.startswith("{% set ck_cols")][0]
+    record_col_el = [ln.replace("\n", "") for ln in file_lines if ln.startswith("{% set record_id")][0]
+    split_record_list = record_col_el.split('"')
+    if len(split_record_list) != 3:
+        raise Exception(f"Something prevented string '{record_col_el}' from splitting correctly.")
+    
     table_cols = get_table_sqlalchemy_col_objects(
         table_name=table_name, schema_name="data_raw", engine=engine
     )
-    table_col_names = ["REPLACE_WITH_BETTER_id"]
+    table_col_names = [split_record_list[1]]
     table_col_names.extend([col.name for col in table_cols])
     file_lines = [
         f"-- Save to file in /airflow/dbt/models/intermediate/{table_name}_clean.sql",
         "{{ config(materialized='view') }}",
-        "{% set ck_cols = [",
-        "        REPLACE_WITH_COMPOSITE_KEY_COLUMNS",
-        "] %}",
-        """{% set id_col = "REPLACE_WITH_BETTER_id" %}""",
+        ck_cols_el,
+        record_col_el,
     ]
     table_col_lines = format_jinja_variable_declaration_of_col_list(
         table_col_names=table_col_names, var_name="base_cols"
@@ -269,7 +277,7 @@ def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine
         "-- keeps the most recently updated version of each record ",
         "std_records_numbered_latest_first AS (",
         "    SELECT *,",
-        "        row_number() over(partition by {{id_col}} ORDER BY source_data_updated DESC) as rn",
+        "        row_number() over(partition by {{record_id}} ORDER BY source_data_updated DESC) as rn",
         "    FROM std_data",
         "),",
         "most_current_records AS (",
@@ -282,11 +290,11 @@ def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine
         "--   first ingestion into the local data warehouse",
         "std_records_numbered_earliest_first AS (",
         "    SELECT *,",
-        "        row_number() over(partition by {{id_col}} ORDER BY source_data_updated ASC) as rn",
+        "        row_number() over(partition by {{record_id}} ORDER BY source_data_updated ASC) as rn",
         "FROM std_data",
         "),",
         "records_first_ingested_pub_date AS (",
-        "    SELECT {{id_col}}, source_data_updated AS first_ingested_pub_date",
+        "    SELECT {{record_id}}, source_data_updated AS first_ingested_pub_date",
         "    FROM std_records_numbered_earliest_first",
         "    WHERE rn = 1",
         ")",
@@ -296,8 +304,70 @@ def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine
         "    fi.first_ingested_pub_date",
         "FROM most_current_records AS mcr",
         "LEFT JOIN records_first_ingested_pub_date AS fi",
-        "ON mcr.{{ id_col }} = fi.{{ id_col }}",
+        "ON mcr.{{ record_id }} = fi.{{ record_id }}",
         "ORDER BY {% for ck in ck_cols %}mcr.{{ ck }} DESC, {% endfor %} mcr.source_data_updated DESC",
     ]
     file_lines.extend(cte_lines)
     return file_lines
+
+# def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine) -> List[str]:
+#     table_cols = get_table_sqlalchemy_col_objects(
+#         table_name=table_name, schema_name="data_raw", engine=engine
+#     )
+#     table_col_names = ["REPLACE_WITH_BETTER_id"]
+#     table_col_names.extend([col.name for col in table_cols])
+#     file_lines = [
+#         f"-- Save to file in /airflow/dbt/models/intermediate/{table_name}_clean.sql",
+#         "{{ config(materialized='view') }}",
+#         "{% set ck_cols = [",
+#         "        REPLACE_WITH_COMPOSITE_KEY_COLUMNS",
+#         "] %}",
+#         """{% set id_col = "REPLACE_WITH_BETTER_id" %}""",
+#     ]
+#     table_col_lines = format_jinja_variable_declaration_of_col_list(
+#         table_col_names=table_col_names, var_name="base_cols"
+#     )
+#     file_lines.extend(table_col_lines)
+#     cte_lines = [
+#         "",
+#         "-- selects all records from the standardized view of this data",
+#         "WITH std_data AS (",
+#         "    SELECT *",
+#         f"""    FROM {{{{ ref('{table_name}_standardized') }}}}""",
+#         "),",
+#         "",
+#         "-- keeps the most recently updated version of each record ",
+#         "std_records_numbered_latest_first AS (",
+#         "    SELECT *,",
+#         "        row_number() over(partition by {{id_col}} ORDER BY source_data_updated DESC) as rn",
+#         "    FROM std_data",
+#         "),",
+#         "most_current_records AS (",
+#         "    SELECT *",
+#         "    FROM std_records_numbered_latest_first",
+#         "    WHERE rn = 1",
+#         "),",
+#         "",
+#         "-- selects the source_data_updated (ie the date of publication) value from each record's",
+#         "--   first ingestion into the local data warehouse",
+#         "std_records_numbered_earliest_first AS (",
+#         "    SELECT *,",
+#         "        row_number() over(partition by {{id_col}} ORDER BY source_data_updated ASC) as rn",
+#         "FROM std_data",
+#         "),",
+#         "records_first_ingested_pub_date AS (",
+#         "    SELECT {{id_col}}, source_data_updated AS first_ingested_pub_date",
+#         "    FROM std_records_numbered_earliest_first",
+#         "    WHERE rn = 1",
+#         ")",
+#         "",
+#         "SELECT",
+#         "    {% for bc in base_cols %}mcr.{{ bc }},{% endfor %}",
+#         "    fi.first_ingested_pub_date",
+#         "FROM most_current_records AS mcr",
+#         "LEFT JOIN records_first_ingested_pub_date AS fi",
+#         "ON mcr.{{ id_col }} = fi.{{ id_col }}",
+#         "ORDER BY {% for ck in ck_cols %}mcr.{{ ck }} DESC, {% endfor %} mcr.source_data_updated DESC",
+#     ]
+#     file_lines.extend(cte_lines)
+#     return file_lines
