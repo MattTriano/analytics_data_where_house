@@ -4,7 +4,6 @@
 
 WITH records_with_basic_cleaning AS (
     SELECT
-        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
         upper(service_request_number::text)             AS service_request_number,
         relocated_date::timestamp                       AS relocated_date,
         upper(relocated_reason::text)                   AS relocated_reason,

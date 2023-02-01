@@ -237,7 +237,7 @@ def col_type_cast_formatter(col_name: str, sqlalch_col_type) -> str:
     elif str(sqlalch_col_type).upper() == "DATE":
         return f"        {col_name}::date AS {col_name},"
     else:
-        return f"        {col_name}::MANUALLY_REPLACE (was {str(sqlalch_col_type)} AS {col_name},"
+        return f"        {col_name}::MANUALLY_REPLACE (was {str(sqlalch_col_type)}) AS {col_name},"
 
 
 def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine) -> List[str]:
