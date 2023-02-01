@@ -694,7 +694,7 @@ def highlight_unfinished_dbt_standardized_stub(task_logger: Logger) -> str:
     return "Please and thank you!"
 
 
-@task
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def endpoint(task_logger: Logger) -> None:
     task_logger.info("Ending run")
     return "end"
