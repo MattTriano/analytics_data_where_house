@@ -119,9 +119,9 @@ COOK_COUNTY_PARCEL_VALUE_ASSESSMENTS = SocrataTable(
     clean_schedule="30 4 4 * *",
 )
 
-COOK_COUNTY_LTEQ_SIX_UNIT_PARCEL_IMPROVEMENTS = SocrataTable(
+COOK_COUNTY_MULTIFAM_PARCEL_IMPROVEMENTS = SocrataTable(
     table_id="x54s-btds",
-    table_name="cook_county_lteq_six_unit_parcel_improvements",
+    table_name="cook_county_multifam_parcel_improvements",
     schedule="20 3 * * 4",
     clean_schedule="20 4 * * 4",
 )

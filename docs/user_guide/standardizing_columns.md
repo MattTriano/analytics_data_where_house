@@ -118,7 +118,9 @@ ORDER BY row_count
 
 Useful casting
 
-* `<col_name>::smallint` Small Integers
+* `<col_name>::smallint` Small Integers (up to 2^16, or 65536)
+* `<col_name>::int` Small Integers (up to 2^32, or 4294967296)
+* `<col_name>::bigint` Small Integers (up to 2^64, or 1.8446744e+19)
 * `<col_name>::double precision` Floats (decimal numerics)
 
 
