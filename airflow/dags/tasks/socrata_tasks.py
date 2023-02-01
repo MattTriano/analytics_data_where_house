@@ -1,5 +1,6 @@
 import datetime as dt
 from logging import Logger
+import os
 from pathlib import Path
 from urllib.request import urlretrieve
 
@@ -10,12 +11,17 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
 
+from cc_utils.cleanup import standardize_columns_fill_spaces
 from cc_utils.db import (
     get_pg_engine,
     get_data_table_names_in_schema,
     execute_structural_command,
 )
-from cc_utils.file_factory import make_dbt_data_raw_table_staging_model
+from cc_utils.file_factory import (
+    make_dbt_data_raw_table_staging_model,
+    write_lines_to_file,
+    format_dbt_stub_for_intermediate_standardized_stage,
+)
 from cc_utils.socrata import SocrataTable, SocrataTableMetadata
 from cc_utils.utils import (
     get_local_data_raw_dir,
@@ -356,7 +362,8 @@ def ingest_geojson_data(
         )
     except Exception as e:
         task_logger.error(
-            f"Failed to ingest geojson file to temp table. Error: {e}, {type(e)}", exc_info=True
+            f"Failed to ingest geojson file to temp table. Error: {e}, {type(e)}",
+            exc_info=True,
         )
 
 
@@ -410,6 +417,7 @@ def create_temp_data_raw_table(conn_id: str, task_logger: Logger, **kwargs) -> N
             import geopandas as gpd
 
             df_subset = gpd.read_file(local_file_path, rows=2000000)
+        df_subset = standardize_columns_fill_spaces(df=df_subset)
         a_table = SQLTable(
             frame=df_subset,
             name=table_name,
@@ -623,6 +631,75 @@ def run_ge_validation_checkpoint(
         task_logger.info("Validation Failed! Check data docs to find failed validations")
 
 
+@task
+def make_dbt_standardized_model(conn_id: str, task_logger: Logger, **kwargs) -> None:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
+    engine = get_pg_engine(conn_id=conn_id)
+    std_file_lines = format_dbt_stub_for_intermediate_standardized_stage(
+        table_name=socrata_metadata.table_name, engine=engine
+    )
+    file_path = Path(
+        f"/opt/airflow/dbt/models/intermediate/{socrata_metadata.table_name}_standardized.sql"
+    )
+    write_lines_to_file(file_lines=std_file_lines, file_path=file_path)
+    task_logger.info(f"file_lines for table {socrata_metadata.table_name}")
+    for file_line in std_file_lines:
+        task_logger.info(f"    {file_line}")
+
+    task_logger.info(f"Leaving make_dbt_standardized_model")
+
+
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def dbt_standardized_model_ready(task_logger: Logger, **kwargs) -> str:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
+    airflow_home = os.environ["AIRFLOW_HOME"]
+    file_path = Path(airflow_home).joinpath(
+        "dbt",
+        "models",
+        "intermediate",
+        f"{socrata_metadata.table_name}_standardized.sql",
+    )
+    host_file_path = str(file_path).replace(airflow_home, "/airflow")
+    if file_path.is_file():
+        with open(file_path, "r") as f:
+            file_lines = f.readlines()
+        for file_line in file_lines:
+            if (
+                "REPLACE_WITH_COMPOSITE_KEY_COLUMNS" in file_line
+                or "REPLACE_WITH_BETTER_id" in file_line
+            ):
+                task_logger.info(
+                    f"Found unfinished stub for dbt _standardized model in {host_file_path}."
+                    + " Please update that model before proceeding to feature engineering."
+                )
+                return "update_socrata_table.highlight_unfinished_dbt_standardized_stub"
+        task_logger.info(f"Found a _standardized stage dbt model that looks finished; Proceeding")
+        return "update_socrata_table.endpoint"
+    else:
+        task_logger.info(f"No _standardized stage dbt model found.")
+        task_logger.info(f"Creating a stub in loc: {host_file_path}")
+        task_logger.info(f"Edit the stub before proceeding to generate _clean stage dbt models.")
+        return "update_socrata_table.make_dbt_standardized_model"
+
+
+@task
+def highlight_unfinished_dbt_standardized_stub(task_logger: Logger) -> str:
+    task_logger.info(
+        f"Hey! Go finish the dbt _standardized model file indicated in the logs for the "
+        + "dbt_standardized_model_ready task! It still contains at least one placeholder value"
+        + "(REPLACE_WITH_COMPOSITE_KEY_COLUMNS or REPLACE_WITH_BETTER_id)."
+    )
+    return "Please and thank you!"
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def endpoint(task_logger: Logger) -> None:
+    task_logger.info("Ending run")
+    return "end"
+
+
 @task_group
 def update_socrata_table(
     socrata_table: SocrataTable,
@@ -644,6 +721,15 @@ def update_socrata_table(
         conn_id=conn_id,
         task_logger=task_logger,
     )
+    std_model_exists_1 = dbt_standardized_model_ready(
+        socrata_metadata=load_data_tg_1, task_logger=task_logger
+    )
+    std_model_unfinished_1 = highlight_unfinished_dbt_standardized_stub(task_logger=task_logger)
+    make_standardized_stage_1 = make_dbt_standardized_model(
+        conn_id="dwh_db_conn",
+        task_logger=task_logger,
+    )
+    endpoint_1 = endpoint(task_logger=task_logger)
     update_metadata_false_1 = update_result_of_check_in_metadata_table(
         conn_id=conn_id, task_logger=task_logger, data_updated=False
     )
@@ -655,6 +741,13 @@ def update_socrata_table(
         Label("Fresher data available"),
         extract_data_1,
         load_data_tg_1,
+        std_model_exists_1,
+        [
+            make_standardized_stage_1,
+            std_model_unfinished_1,
+            Label("dbt _standardized model looks good!"),
+        ],
+        endpoint_1,
     )
     chain(
         metadata_1,

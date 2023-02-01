@@ -1,3 +1,4 @@
+from copy import copy
 from dataclasses import dataclass
 import datetime as dt
 import filecmp
@@ -79,3 +80,35 @@ def get_paths_of_files_identical_to_prior_data_pulls(
                 if files_are_identical:
                     paths_for_duplicated_files.append(later_file)
     return paths_for_duplicated_files
+
+
+def standardize_columns_fill_spaces(df):
+    initial_columns = copy(df.columns)
+    fixed_columns = {c: c for c in initial_columns}
+    print(fixed_columns)
+
+    columns_with_spaces = [col for col in initial_columns if " " in col]
+    columns_without_spaces = [col for col in initial_columns if " " not in col]
+    underscores_imputed = ["_".join(col.split()) for col in copy(columns_with_spaces)]
+
+    for column_with_spaces in columns_with_spaces:
+        print(f"column_with_spaces: {column_with_spaces}")
+        fixed_col_name = "_".join(column_with_spaces.split())
+        print(f"fixed_col_name: {fixed_col_name}")
+        print(f"column_with_spaces: {column_with_spaces}")
+        if (fixed_col_name not in fixed_columns.keys()) and (
+            fixed_col_name not in fixed_columns.values()
+        ):
+            fixed_columns[column_with_spaces] = fixed_col_name
+        else:
+            suffix = 1
+            while (
+                (f"{fixed_col_name}_{suffix}" in fixed_columns.keys())
+                or (f"{fixed_col_name}_{suffix}" in fixed_columns.values())
+                or (f"{fixed_col_name}_{suffix}" in underscores_imputed)
+            ):
+                suffix += 1
+            fixed_columns[column_with_spaces] = f"{fixed_col_name}_{suffix}"
+    fixed_columns = {k: v.lower() for k, v in fixed_columns.items()}
+    df = df.rename(columns=fixed_columns)
+    return df

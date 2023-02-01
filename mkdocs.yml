@@ -48,6 +48,7 @@ nav:
         - "Manual Workflow": user_guide/validation/manually_setting_expectations.md
         - "Data Assistant Workflow": user_guide/validation/data_assistant_workflow.md
       - "Setting Checkpoints": user_guide/making_expectation_suites.md
+    - "Standardizing Columns": user_guide/standardizing_columns.md
     - "Accessing Systems": user_guide/accessing_resources.md
   - "Data Sources":
     - 'Socrata ELT': data_sources/socrata.md

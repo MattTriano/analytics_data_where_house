@@ -1,18 +1,22 @@
 # Using the system
 
-The workflow for producing usable tables follows the pattern
+The workflow for producing usable tables follows this pattern:
 
 1. (`data_raw` schema): Set up an ingestion pipeline.
 
-    1.1. Extract data to a local file,
+    1.1. Extract data to a local file.
 
-    1.2. Load that data into a "temp" table,    
+    1.2. Load that data into a "temp" table.
     
-    1.3. Select distinct records that aren't already in the warehouse and add them to a persistant table,    
+    1.3. Select distinct records that aren't already in the warehouse and add them to a persistant table.
     
     1.4. Define a suite of expectations to validate future data updates.
 
-2. (`intermediate` schema): Implement a dbt model that defines data cleaning transformations for that data set.
+2. (`intermediate` schema): Implement dbt models that standardize and clean the data set's columns.
+
+    2.1. [Standardize column](standardizing_columns.md) [names, dtypes, order] in the `f"{data_set_name}_standardized.sql` dbt model file.
+
+    2.2. Clean columns (handle outliers, nulls, typos, etc) in the `f"{data_set_name}clean.sql` dbt model file.
 
 3. (`feature` schema): Implement dbt models to engineer data features.
 

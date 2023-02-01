@@ -42,6 +42,13 @@ CHICAGO_HOMICIDES_AND_SHOOTING_VICTIMIZATIONS = SocrataTable(
     clean_schedule="10 7,19 * * *",
 )
 
+CHICAGO_RELOCATED_VEHICLES = SocrataTable(
+    table_id="5k2z-suxx",
+    table_name="chicago_relocated_vehicles",
+    schedule="35 11,23 * * *",
+    clean_schedule="43 11,23 * * *",
+)
+
 CHICAGO_SHOTSPOTTER_ALERTS = SocrataTable(
     table_id="3h7q-7mdb",
     table_name="chicago_shotspotter_alerts",
@@ -56,11 +63,32 @@ CHICAGO_STREET_CENTER_LINES = SocrataTable(
     clean_schedule="40 0 2 2 *",
 )
 
+CHICAGO_TOWED_VEHICLES = SocrataTable(
+    table_id="ygr5-vcbg",
+    table_name="chicago_towed_vehicles",
+    schedule="15 11,23 * * *",
+    clean_schedule="23 11,23 * * *",
+)
+
 CHICAGO_TRAFFIC_CRASHES_LINES = SocrataTable(
     table_id="85ca-t3if",
     table_name="chicago_traffic_crashes",
     schedule="20 3,15 * * *",
     clean_schedule="40 3,15 * * *",
+)
+
+COOK_COUNTY_ADDRESS_POINTS = SocrataTable(
+    table_id="78yw-iddh",
+    table_name="cook_county_address_points",
+    schedule="40 5 * * 2",
+    clean_schedule="55 5 * * 2",
+)
+
+COOK_COUNTY_PARCEL_ASSESSMENT_APPEALS = SocrataTable(
+    table_id="7pny-nedm",
+    table_name="cook_county_parcel_assessment_appeals",
+    schedule="0 13 * * 6",
+    clean_schedule="30 14 * * 6",
 )
 
 COOK_COUNTY_NEIGHBORHOOD_BOUNDARIES = SocrataTable(
@@ -89,4 +117,18 @@ COOK_COUNTY_PARCEL_VALUE_ASSESSMENTS = SocrataTable(
     table_name="cook_county_parcel_value_assessments",
     schedule="0 3 4 * *",
     clean_schedule="30 4 4 * *",
+)
+
+COOK_COUNTY_MULTIFAM_PARCEL_IMPROVEMENTS = SocrataTable(
+    table_id="x54s-btds",
+    table_name="cook_county_multifam_parcel_improvements",
+    schedule="20 3 * * 4",
+    clean_schedule="20 4 * * 4",
+)
+
+COOK_COUNTY_CONDO_PARCEL_IMPROVEMENTS = SocrataTable(
+    table_id="3r7i-mrz4",
+    table_name="cook_county_condo_parcel_improvements",
+    schedule="20 3 * * 3",
+    clean_schedule="20 4 * * 3",
 )
