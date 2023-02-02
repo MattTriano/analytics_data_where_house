@@ -38,6 +38,37 @@ def get_table_sqlalchemy_col_objects(table_name: str, schema_name: str, engine: 
     return table_cols
 
 
+def get_ordered_table_cols_from__standardized_model(std_file_path: Path) -> List[str]:
+    if std_file_path.is_file():
+        with open(std_file_path, "r") as f:
+            std_file_lines = f.readlines()
+    else:
+        raise Exception(f"No file found at the expected location, {std_file_path}.")
+
+    record_index = [
+        std_file_lines.index(el) for el in std_file_lines if el.startswith("{% set record_id")
+    ][0]
+    record_id = std_file_lines[record_index].split('"')[1]
+    table_cols = [record_id]
+
+    select_index = std_file_lines.index("    SELECT\n") + 2
+    end_index = [std_file_lines.index(el) for el in std_file_lines if el.startswith("    FROM")][0]
+    col_containing_lines = std_file_lines[select_index:end_index]
+    table_cols.extend(
+        [line.split(" AS ")[1].split(",")[0].replace("\n", "") for line in col_containing_lines]
+    )
+    return table_cols
+
+
+def get_composite_key_cols_definition_line_from__standardized_model(std_file_path: Path) -> str:
+    with open(std_file_path, "r") as f:
+        std_file_lines = f.readlines()
+    ck_cols_el = [ln.replace("\n", "") for ln in std_file_lines if ln.startswith("{% set ck_cols")][
+        0
+    ]
+    return ck_cols_el
+
+
 def format_dbt_stub_for_data_raw_stage(table_name: str, engine: Engine) -> List[str]:
     table_cols = get_table_sqlalchemy_col_objects(
         table_name=table_name, schema_name="data_raw", engine=engine
@@ -240,31 +271,20 @@ def col_type_cast_formatter(col_name: str, sqlalch_col_type) -> str:
         return f"        {col_name}::MANUALLY_REPLACE (was {str(sqlalch_col_type)}) AS {col_name},"
 
 
-def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine) -> List[str]:
+def format_dbt_stub_for_intermediate_clean_stage(table_name: str) -> List[str]:
     std_file_path = Path(f"/opt/airflow/dbt/models/intermediate/{table_name}_standardized.sql")
-    with open(std_file_path, "r") as f:
-        file_lines = f.readlines()
-
-    ck_cols_el = [ln.replace("\n", "") for ln in file_lines if ln.startswith("{% set ck_cols")][0]
-    record_col_el = [
-        ln.replace("\n", "") for ln in file_lines if ln.startswith("{% set record_id")
-    ][0]
-    split_record_list = record_col_el.split('"')
-    if len(split_record_list) != 3:
-        raise Exception(f"Something prevented string '{record_col_el}' from splitting correctly.")
-
-    table_cols = get_table_sqlalchemy_col_objects(
-        table_name=table_name, schema_name="data_raw", engine=engine
+    table_cols = get_ordered_table_cols_from__standardized_model(std_file_path=std_file_path)
+    record_col_el = table_cols[0]
+    ck_cols_el = get_composite_key_cols_definition_line_from__standardized_model(
+        std_file_path=std_file_path
     )
-    table_col_names = [split_record_list[1]]
-    table_col_names.extend([col.name for col in table_cols])
     file_lines = [
         "{{ config(materialized='view') }}",
         ck_cols_el,
         record_col_el,
     ]
     table_col_lines = format_jinja_variable_declaration_of_col_list(
-        table_col_names=table_col_names, var_name="base_cols"
+        table_col_names=table_cols, var_name="base_cols"
     )
     file_lines.extend(table_col_lines)
     cte_lines = [
@@ -310,66 +330,3 @@ def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine
     ]
     file_lines.extend(cte_lines)
     return file_lines
-
-
-# def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine) -> List[str]:
-#     table_cols = get_table_sqlalchemy_col_objects(
-#         table_name=table_name, schema_name="data_raw", engine=engine
-#     )
-#     table_col_names = ["REPLACE_WITH_BETTER_id"]
-#     table_col_names.extend([col.name for col in table_cols])
-#     file_lines = [
-#         f"-- Save to file in /airflow/dbt/models/intermediate/{table_name}_clean.sql",
-#         "{{ config(materialized='view') }}",
-#         "{% set ck_cols = [",
-#         "        REPLACE_WITH_COMPOSITE_KEY_COLUMNS",
-#         "] %}",
-#         """{% set id_col = "REPLACE_WITH_BETTER_id" %}""",
-#     ]
-#     table_col_lines = format_jinja_variable_declaration_of_col_list(
-#         table_col_names=table_col_names, var_name="base_cols"
-#     )
-#     file_lines.extend(table_col_lines)
-#     cte_lines = [
-#         "",
-#         "-- selects all records from the standardized view of this data",
-#         "WITH std_data AS (",
-#         "    SELECT *",
-#         f"""    FROM {{{{ ref('{table_name}_standardized') }}}}""",
-#         "),",
-#         "",
-#         "-- keeps the most recently updated version of each record ",
-#         "std_records_numbered_latest_first AS (",
-#         "    SELECT *,",
-#         "        row_number() over(partition by {{id_col}} ORDER BY source_data_updated DESC) as rn",
-#         "    FROM std_data",
-#         "),",
-#         "most_current_records AS (",
-#         "    SELECT *",
-#         "    FROM std_records_numbered_latest_first",
-#         "    WHERE rn = 1",
-#         "),",
-#         "",
-#         "-- selects the source_data_updated (ie the date of publication) value from each record's",
-#         "--   first ingestion into the local data warehouse",
-#         "std_records_numbered_earliest_first AS (",
-#         "    SELECT *,",
-#         "        row_number() over(partition by {{id_col}} ORDER BY source_data_updated ASC) as rn",
-#         "FROM std_data",
-#         "),",
-#         "records_first_ingested_pub_date AS (",
-#         "    SELECT {{id_col}}, source_data_updated AS first_ingested_pub_date",
-#         "    FROM std_records_numbered_earliest_first",
-#         "    WHERE rn = 1",
-#         ")",
-#         "",
-#         "SELECT",
-#         "    {% for bc in base_cols %}mcr.{{ bc }},{% endfor %}",
-#         "    fi.first_ingested_pub_date",
-#         "FROM most_current_records AS mcr",
-#         "LEFT JOIN records_first_ingested_pub_date AS fi",
-#         "ON mcr.{{ id_col }} = fi.{{ id_col }}",
-#         "ORDER BY {% for ck in ck_cols %}mcr.{{ ck }} DESC, {% endfor %} mcr.source_data_updated DESC",
-#     ]
-#     file_lines.extend(cte_lines)
-#     return file_lines
