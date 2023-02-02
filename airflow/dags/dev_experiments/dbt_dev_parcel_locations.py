@@ -31,7 +31,7 @@ def a_dbt_data_raw_update_location_test():
     )
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED)
 
-    # dbt_stage_table_1 >> 
+    # dbt_stage_table_1 >>
     dbt_update_data_raw_table_1 >> end_1
 
 

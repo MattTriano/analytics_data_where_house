@@ -241,23 +241,24 @@ def col_type_cast_formatter(col_name: str, sqlalch_col_type) -> str:
 
 
 def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine) -> List[str]:
-    std_file_path = Path(f"/airflow/dbt/models/intermediate/{table_name}_standardized.sql")
+    std_file_path = Path(f"/opt/airflow/dbt/models/intermediate/{table_name}_standardized.sql")
     with open(std_file_path, "r") as f:
         file_lines = f.readlines()
 
     ck_cols_el = [ln.replace("\n", "") for ln in file_lines if ln.startswith("{% set ck_cols")][0]
-    record_col_el = [ln.replace("\n", "") for ln in file_lines if ln.startswith("{% set record_id")][0]
+    record_col_el = [
+        ln.replace("\n", "") for ln in file_lines if ln.startswith("{% set record_id")
+    ][0]
     split_record_list = record_col_el.split('"')
     if len(split_record_list) != 3:
         raise Exception(f"Something prevented string '{record_col_el}' from splitting correctly.")
-    
+
     table_cols = get_table_sqlalchemy_col_objects(
         table_name=table_name, schema_name="data_raw", engine=engine
     )
     table_col_names = [split_record_list[1]]
     table_col_names.extend([col.name for col in table_cols])
     file_lines = [
-        f"-- Save to file in /airflow/dbt/models/intermediate/{table_name}_clean.sql",
         "{{ config(materialized='view') }}",
         ck_cols_el,
         record_col_el,
@@ -309,6 +310,7 @@ def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine
     ]
     file_lines.extend(cte_lines)
     return file_lines
+
 
 # def format_dbt_stub_for_intermediate_clean_stage(table_name: str, engine: Engine) -> List[str]:
 #     table_cols = get_table_sqlalchemy_col_objects(

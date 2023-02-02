@@ -36,19 +36,6 @@ from airflow.utils.trigger_rule import TriggerRule
 from cc_utils.file_factory import format_dbt_stub_for_intermediate_clean_stage, write_lines_to_file
 from cc_utils.db import get_pg_engine
 
-# @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-# def dbt_staging_model_exists(task_logger: Logger, **kwargs) -> str:
-#     ti = kwargs["ti"]
-#     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
-#     dbt_staging_model_dir = Path(f"/opt/airflow/dbt/models/staging")
-#     task_logger.info(f"dbt staging model dir ('{dbt_staging_model_dir}')")
-#     task_logger.info(f"Dir exists? {dbt_staging_model_dir.is_dir()}")
-#     table_model_path = dbt_staging_model_dir.joinpath(f"{socrata_metadata.table_name}.sql")
-#     if table_model_path.is_file():
-#         return "update_socrata_table.load_data_tg.update_data_raw_table"
-#     else:
-#         return "update_socrata_table.load_data_tg.make_dbt_staging_model"
-
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def dbt_clean_model_ready(task_logger: Logger, **kwargs) -> str:
@@ -75,21 +62,12 @@ def dbt_make_clean_model(conn_id: str, task_logger: Logger, **kwargs) -> Socrata
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     engine = get_pg_engine(conn_id=conn_id)
     airflow_home = os.environ["AIRFLOW_HOME"]
-    # std_file_path = Path(airflow_home).joinpath(
-    #     "dbt",
-    #     "models",
-    #     "intermediate",
-    #     f"{socrata_metadata.table_name}_standardized.sql",
-    # )
     clean_file_path = Path(airflow_home).joinpath(
         "dbt",
         "models",
         "intermediate",
         f"{socrata_metadata.table_name}_clean.sql",
     )
-    # with open(std_file_path, "r") as f:
-    #     std_file_lines = f.readlines()
-    # task_logger.info(f"std_file_lines: {std_file_lines}")
     clean_file_lines = format_dbt_stub_for_intermediate_clean_stage(
         table_name=socrata_metadata.table_name, engine=engine
     )
@@ -119,7 +97,7 @@ def update_socrata_table(
         conn_id=conn_id,
         task_logger=task_logger,
     )
-    std_model_exists_1 = dbt_standardized_model_ready(
+    std_model_ready_1 = dbt_standardized_model_ready(
         socrata_metadata=load_data_tg_1, task_logger=task_logger
     )
     std_model_unfinished_1 = highlight_unfinished_dbt_standardized_stub(task_logger=task_logger)
@@ -135,39 +113,43 @@ def update_socrata_table(
     )
     short_circuit_update_1 = short_circuit_downstream()
 
-    # chain(
-    #     metadata_1,
-    #     fresh_source_data_available_1,
-    #     Label("Fresher data available"),
-    #     extract_data_1,
-    #     load_data_tg_1,
-    #     std_model_exists_1,
-    #     chain(
-    #         make_standardized_stage_1,
-    #         std_model_unfinished_1,
-    #         clean_model_ready_1,
-    #         [make_clean_model_1, Label("dbt _standardized model looks good!")]
-
-    #     ),
-    #     endpoint_1,
-    # )
-    metadata_1 >> fresh_source_data_available_1 >> Label("Fresher data available") >> extract_data_1
-    extract_data_1 >> load_data_tg_1 >> std_model_exists_1
-    std_model_exists_1 >> [
-        Label("dbt _standardized model looks good!"),
-        make_standardized_stage_1,
-        std_model_unfinished_1,
-    ]
-    std_model_exists_1 >> Label("dbt _standardized model looks good!") >> clean_model_ready_1
-    make_standardized_stage_1 >> clean_model_ready_1
-    clean_model_ready_1 >> [make_clean_model_1, Label("dbt _clean model looks good!")] >> endpoint_1
-    std_model_unfinished_1 >> endpoint_1
-
-    # metadata_1 >> fresh_source_data_available_1 >> Label("Fresher data available") >> \
-    #     extract_data_1 >> load_data_tg_1 >> std_model_exists_1 >> \
-    #     [ make_standardized_stage_1 >> std_model_unfinished_1 >>
-    #       clean_model_ready_1 >> [make_clean_model_1, Label("dbt _standardized model looks good!")]
-    #     ] >> endpoint_1
+    chain(
+        metadata_1,
+        fresh_source_data_available_1,
+        Label("Fresher data available"),
+        extract_data_1,
+        load_data_tg_1,
+        std_model_ready_1,
+        [
+            Label("No dbt _standardized model found"),
+            Label("dbt _standardized model needs review"),
+            Label("dbt _standardized model looks good"),
+        ],
+        [
+            make_standardized_stage_1,
+            std_model_unfinished_1,
+            clean_model_ready_1,
+        ],
+        endpoint_1,
+    )
+    chain(
+        clean_model_ready_1,
+        [Label("dbt _clean model looks good!"), make_clean_model_1],
+        endpoint_1
+    )
+    # # START working block
+    # metadata_1 >> fresh_source_data_available_1 >> Label("Fresher data available") >> extract_data_1
+    # extract_data_1 >> load_data_tg_1 >> std_model_ready_1
+    # std_model_ready_1 >> [
+    #     Label("dbt _standardized model looks good!"),
+    #     make_standardized_stage_1,
+    #     std_model_unfinished_1,
+    # ]
+    # std_model_ready_1 >> Label("dbt _standardized model looks good!") >> clean_model_ready_1
+    # make_standardized_stage_1 >> endpoint_1
+    # clean_model_ready_1 >> [make_clean_model_1, Label("dbt _clean model looks good!")] >> endpoint_1
+    # std_model_unfinished_1 >> endpoint_1
+    # # END working block
 
     chain(
         metadata_1,

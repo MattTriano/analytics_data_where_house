@@ -676,7 +676,7 @@ def dbt_standardized_model_ready(task_logger: Logger, **kwargs) -> str:
                 )
                 return "update_socrata_table.highlight_unfinished_dbt_standardized_stub"
         task_logger.info(f"Found a _standardized stage dbt model that looks finished; Proceeding")
-        return "update_socrata_table.endpoint"
+        return "update_socrata_table.dbt_clean_model_ready"
     else:
         task_logger.info(f"No _standardized stage dbt model found.")
         task_logger.info(f"Creating a stub in loc: {host_file_path}")
