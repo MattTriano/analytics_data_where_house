@@ -281,7 +281,7 @@ def format_dbt_stub_for_intermediate_clean_stage(table_name: str) -> List[str]:
     file_lines = [
         "{{ config(materialized='view') }}",
         ck_cols_el,
-        record_col_el,
+        f"""{{% set record_id = "{record_col_el}" %}}""",
     ]
     table_col_lines = format_jinja_variable_declaration_of_col_list(
         table_col_names=table_cols, var_name="base_cols"
