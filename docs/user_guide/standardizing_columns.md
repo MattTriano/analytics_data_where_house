@@ -114,6 +114,35 @@ GROUP BY work_zone_type
 ORDER BY row_count
 ```
 
+#### Extracting date or time components from timestamp-valued columns
+
+This is often useful when trying to evaluate whether a time-zone correction is needed or was incorrectly applied. From domain knowledge, I know that traffic is worst from 8am to 10am (when many are driving to work) and from 4pm to 6pm (when many are driving home). I reason that the rate of crashes will be proportional to the number of vehicles on the road, so the distribution of crash-counts-by-hour should show peaks around both rush hours and a minimum from ~4am to 6am (log after bars close but before most drivers leave for work). If the peaks and valley line up with the expected times, I know the data was published in Chicago time (which is UTC-5 or UTC-6 depending on daylight savings time). If the distribution showed a minimum around 10am and peaks 1pm and 10pm, I'd know the data was published as UTC-0.
+
+```sql
+WITH date_col AS (
+	SELECT crash_date::timestamp AS crash_date
+	FROM data_raw.chicago_traffic_crashes
+)
+
+SELECT count(*), extract(hour FROM crash_date) AS date_hour
+FROM date_col
+GROUP BY date_hour
+ORDER BY date_hour
+```
+
+Check [the documentation](https://www.postgresql.org/docs/current/functions-datetime.html#FUNCTIONS-DATETIME-EXTRACT) to see what else `extract` can extract.
+
+
+#### Zero or left-padding strings incorrectly parsed to a numeric type
+
+If you know that the column values should all be strings of the same length but the leading values were ignored (often zeros or spaces), cast the column (or feature) to a text/char/varchar type and **left-pad** it with a padding character to a given length (shown using `0` as the char and 2 as the length).
+
+```sql
+SELECT lpad(extract(month FROM crash_date::timestamp)::char(2), 2, '0') AS crash_month
+FROM data_raw.temp_chicago_traffic_crashes
+```
+
+
 ## Type Casting
 
 Useful casting
