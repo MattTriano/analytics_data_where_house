@@ -21,6 +21,7 @@ from cc_utils.file_factory import (
     make_dbt_data_raw_table_staging_model,
     write_lines_to_file,
     format_dbt_stub_for_intermediate_standardized_stage,
+    format_dbt_stub_for_intermediate_clean_stage,
 )
 from cc_utils.socrata import SocrataTable, SocrataTableMetadata
 from cc_utils.utils import (
@@ -684,6 +685,45 @@ def dbt_standardized_model_ready(task_logger: Logger, **kwargs) -> str:
         return "update_socrata_table.make_dbt_standardized_model"
 
 
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def dbt_clean_model_ready(task_logger: Logger, **kwargs) -> str:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
+    airflow_home = os.environ["AIRFLOW_HOME"]
+    file_path = Path(airflow_home).joinpath(
+        "dbt",
+        "models",
+        "intermediate",
+        f"{socrata_metadata.table_name}_clean.sql",
+    )
+    host_file_path = str(file_path).replace(airflow_home, "/airflow")
+    if file_path.is_file():
+        task_logger.info(f"Found a _clean stage dbt model that looks finished; Ending")
+        return "update_socrata_table.endpoint"
+    else:
+        return "update_socrata_table.dbt_make_clean_model"
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def dbt_make_clean_model(conn_id: str, task_logger: Logger, **kwargs) -> SocrataTableMetadata:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
+    engine = get_pg_engine(conn_id=conn_id)
+    airflow_home = os.environ["AIRFLOW_HOME"]
+    clean_file_path = Path(airflow_home).joinpath(
+        "dbt",
+        "models",
+        "intermediate",
+        f"{socrata_metadata.table_name}_clean.sql",
+    )
+    clean_file_lines = format_dbt_stub_for_intermediate_clean_stage(
+        table_name=socrata_metadata.table_name
+    )
+    task_logger.info(f"clean_file_lines: {clean_file_lines}")
+    write_lines_to_file(file_lines=clean_file_lines, file_path=clean_file_path)
+    return socrata_metadata
+
+
 @task
 def highlight_unfinished_dbt_standardized_stub(task_logger: Logger) -> str:
     task_logger.info(
@@ -721,7 +761,7 @@ def update_socrata_table(
         conn_id=conn_id,
         task_logger=task_logger,
     )
-    std_model_exists_1 = dbt_standardized_model_ready(
+    std_model_ready_1 = dbt_standardized_model_ready(
         socrata_metadata=load_data_tg_1, task_logger=task_logger
     )
     std_model_unfinished_1 = highlight_unfinished_dbt_standardized_stub(task_logger=task_logger)
@@ -729,6 +769,8 @@ def update_socrata_table(
         conn_id="dwh_db_conn",
         task_logger=task_logger,
     )
+    clean_model_ready_1 = dbt_clean_model_ready(task_logger=task_logger)
+    make_clean_model_1 = dbt_make_clean_model(conn_id=conn_id, task_logger=task_logger)
     endpoint_1 = endpoint(task_logger=task_logger)
     update_metadata_false_1 = update_result_of_check_in_metadata_table(
         conn_id=conn_id, task_logger=task_logger, data_updated=False
@@ -741,13 +783,21 @@ def update_socrata_table(
         Label("Fresher data available"),
         extract_data_1,
         load_data_tg_1,
-        std_model_exists_1,
+        std_model_ready_1,
+        [
+            Label("No dbt _standardized model found"),
+            Label("dbt _standardized model needs review"),
+            Label("dbt _standardized model looks good"),
+        ],
         [
             make_standardized_stage_1,
             std_model_unfinished_1,
-            Label("dbt _standardized model looks good!"),
+            clean_model_ready_1,
         ],
         endpoint_1,
+    )
+    chain(
+        clean_model_ready_1, [Label("dbt _clean model looks good!"), make_clean_model_1], endpoint_1
     )
     chain(
         metadata_1,
