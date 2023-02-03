@@ -1,15 +1,22 @@
 {{ config(materialized='view') }}
-{% set ck_cols = ["inventory_number", "tow_date", "plate"] %}
-{% set record_id = "vehicle_tow_id" %}
+{% set ck_cols = ["unique_id"] %}
+{% set record_id = "unique_id" %}
 {% set base_cols = [
-    "vehicle_tow_id", "inventory_number", "tow_date", "make", "model", "style", "color", "plate",
-    "state", "towed_to_address", "tow_facility_phone", "source_data_updated", "ingestion_check_time"
+    "unique_id", "case_number", "date", "hour", "day_of_week", "month", "updated", "block",
+    "zip_code", "community_area", "beat", "district", "area", "ward", "state_house_district",
+    "state_senate_district", "gunshot_injury_i", "incident_primary", "incident_iucr_secondary",
+    "incident_iucr_cd", "incident_fbi_cd", "incident_fbi_descr", "victimization_primary",
+    "victimization_iucr_secondary", "victimization_iucr_cd", "victimization_fbi_cd",
+    "victimization_fbi_descr", "location_description", "age", "sex", "race",
+    "homicide_victim_first_name", "homicide_victim_mi", "homicide_victim_last_name",
+    "street_outreach_organization", "latitude", "longitude", "geometry", "source_data_updated",
+    "ingestion_check_time"
 ] %}
 
 -- selects all records from the standardized view of this data
 WITH std_data AS (
     SELECT *
-    FROM {{ ref('chicago_towed_vehicles_standardized') }}
+    FROM {{ ref('chicago_homicide_and_shooting_victimizations_standardized') }}
 ),
 
 -- keeps the most recently updated version of each record 

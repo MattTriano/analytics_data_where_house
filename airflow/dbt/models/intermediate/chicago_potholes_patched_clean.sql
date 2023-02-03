@@ -1,6 +1,6 @@
 {{ config(materialized='view') }}
 {% set ck_cols = ["address", "request_date", "completion_date"] %}
-pothole_repair_id
+{% set record_id = "pothole_repair_id" %}
 {% set base_cols = [
     "pothole_repair_id", "request_date", "completion_date", "address",
     "number_of_potholes_filled_on_block", "latitude", "longitude", "geometry",

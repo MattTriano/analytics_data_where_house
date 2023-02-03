@@ -1,15 +1,17 @@
 {{ config(materialized='view') }}
-{% set ck_cols = ["inventory_number", "tow_date", "plate"] %}
-{% set record_id = "vehicle_tow_id" %}
+{% set ck_cols = ["unique_id"] %}
+{% set record_id = "unique_id" %}
 {% set base_cols = [
-    "vehicle_tow_id", "inventory_number", "tow_date", "make", "model", "style", "color", "plate",
-    "state", "towed_to_address", "tow_facility_phone", "source_data_updated", "ingestion_check_time"
+    "unique_id", "date", "hour", "day_of_week", "month", "incident_type_description", "rounds",
+    "block", "zip_code", "community_area", "beat", "district", "area", "ward",
+    "illinois_house_district", "illinois_senate_district", "street_outreach_organization",
+    "latitude", "longitude", "geometry", "source_data_updated", "ingestion_check_time"
 ] %}
 
 -- selects all records from the standardized view of this data
 WITH std_data AS (
     SELECT *
-    FROM {{ ref('chicago_towed_vehicles_standardized') }}
+    FROM {{ ref('chicago_shotspotter_alerts_standardized') }}
 ),
 
 -- keeps the most recently updated version of each record 
