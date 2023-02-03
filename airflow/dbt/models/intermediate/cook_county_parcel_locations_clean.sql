@@ -1,6 +1,6 @@
 {{ config(materialized='view') }}
 {% set ck_cols = ["pin"] %}
-{% set id_col = "parcel_location_id" %}
+{% set record_id = "parcel_location_id" %}
 {% set base_cols = [
     "parcel_location_id", "pin", "property_address", "property_apt_no", "property_city",
     "property_zip", "nbhd", "township", "township_name", "municipality", "municipality_fips",
@@ -23,7 +23,7 @@ WITH std_data AS (
 -- keeps the most recently updated version of each record 
 std_records_numbered_latest_first AS (
     SELECT *,
-        row_number() over(partition by {{id_col}} ORDER BY source_data_updated DESC) as rn
+        row_number() over(partition by {{record_id}} ORDER BY source_data_updated DESC) as rn
     FROM std_data
 ),
 most_current_records AS (
@@ -36,11 +36,11 @@ most_current_records AS (
 --   ingestion into the local data warehouse 
 std_records_numbered_earliest_first AS (
     SELECT *, 
-        row_number() over(partition by {{id_col}} ORDER BY source_data_updated ASC) as rn
+        row_number() over(partition by {{record_id}} ORDER BY source_data_updated ASC) as rn
     FROM std_data
 ),
 records_first_ingested_pub_date AS (
-     SELECT {{id_col}}, source_data_updated AS first_ingested_pub_date 
+     SELECT {{record_id}}, source_data_updated AS first_ingested_pub_date
      FROM std_records_numbered_earliest_first
      WHERE rn = 1
 )
@@ -50,5 +50,5 @@ SELECT
     fi.first_ingested_pub_date
 FROM most_current_records AS mcr
 LEFT JOIN records_first_ingested_pub_date AS fi
-ON mcr.{{ id_col }} = fi.{{ id_col }}
+ON mcr.{{ record_id }} = fi.{{ record_id }}
 ORDER BY {% for ck in ck_cols %}mcr.{{ ck }} DESC, {% endfor %} mcr.source_data_updated DESC

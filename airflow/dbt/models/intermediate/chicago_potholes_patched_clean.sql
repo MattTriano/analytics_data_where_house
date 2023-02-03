@@ -1,9 +1,10 @@
 {{ config(materialized='view') }}
 {% set ck_cols = ["address", "request_date", "completion_date"] %}
-{% set record_id = "pothole_repair_id" %}
+pothole_repair_id
 {% set base_cols = [
-    "pothole_repair_id", "completion_date", "latitude", "request_date", "longitude", "address",
-    "number_of_potholes_filled_on_block", "geometry", "source_data_updated", "ingestion_check_time"
+    "pothole_repair_id", "request_date", "completion_date", "address",
+    "number_of_potholes_filled_on_block", "latitude", "longitude", "geometry",
+    "source_data_updated", "ingestion_check_time"
 ] %}
 
 -- selects all records from the standardized view of this data
