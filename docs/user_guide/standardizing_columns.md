@@ -1,3 +1,4 @@
+
 # Standardizing Column Names, dtypes, and order in the _standardized model
 
 The `Update_raw_{data_set_name}` DAG will generate a dbt model file named `{data_set_name}_standardized.sql` in the dbt models directory `/airflow/dbt/models/intermediate/`. This is where you should change column names, dtypes, and order.
@@ -139,7 +140,7 @@ If you know that the column values should all be strings of the same length but 
 
 ```sql
 SELECT lpad(extract(month FROM crash_date::timestamp)::char(2), 2, '0') AS crash_month
-FROM data_raw.temp_chicago_traffic_crashes
+FROM data_raw.chicago_traffic_crashes
 ```
 
 
