@@ -1,5 +1,6 @@
 {{ config(materialized='view') }}
 {% set ck_cols = ["stop_id"] %}
+{% set record_id = "stop_id" %}
 
 WITH records_with_basic_cleaning AS (
     SELECT

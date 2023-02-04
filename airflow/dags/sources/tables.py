@@ -42,6 +42,13 @@ CHICAGO_HOMICIDES_AND_SHOOTING_VICTIMIZATIONS = SocrataTable(
     clean_schedule="10 7,19 * * *",
 )
 
+CHICAGO_POTHOLES_PATCHED = SocrataTable(
+    table_id="wqdh-9gek",
+    table_name="chicago_potholes_patched",
+    schedule="47 8 * * *",
+    clean_schedule="52 8 * * *",
+)
+
 CHICAGO_RELOCATED_VEHICLES = SocrataTable(
     table_id="5k2z-suxx",
     table_name="chicago_relocated_vehicles",

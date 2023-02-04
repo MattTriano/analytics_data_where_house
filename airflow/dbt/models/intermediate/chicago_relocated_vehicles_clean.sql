@@ -1,16 +1,19 @@
 {{ config(materialized='view') }}
-{% set ck_cols = ["pin", "tax_year"] %}
-{% set record_id = "parcel_assessment_id" %}
+{% set ck_cols = ["service_request_number"] %}
+{% set record_id = "service_request_number" %}
 {% set base_cols = [
-    "parcel_assessment_id", "pin", "tax_year", "class", "township_code", "township_name",
-    "mailed_bldg", "mailed_land", "mailed_tot", "certified_bldg", "certified_land", "certified_tot",
-    "board_bldg", "board_land", "board_tot", "source_data_updated", "ingestion_check_time"
+    "service_request_number", "relocated_date", "relocated_reason", "relocated_from_address_number",
+    "relocated_from_street_direction", "relocated_from_street_name", "relocated_from_suffix",
+    "relocated_from_longitude", "relocated_from_latitude", "relocated_from_x_coordinate",
+    "relocated_from_y_coordinate", "relocated_to_address_number", "relocated_to_direction",
+    "relocated_to_street_name", "relocated_to_suffix", "plate", "make", "state", "color",
+    "geometry", "source_data_updated", "ingestion_check_time"
 ] %}
 
 -- selects all records from the standardized view of this data
 WITH std_data AS (
     SELECT *
-    FROM {{ ref('cook_county_parcel_value_assessments_standardized') }}
+    FROM {{ ref('chicago_relocated_vehicles_standardized') }}
 ),
 
 -- keeps the most recently updated version of each record 
