@@ -14,7 +14,7 @@ WITH records_with_basic_cleaning AS (
         relocated_from_longitude::double precision      AS relocated_from_longitude,
         relocated_from_latitude::double precision       AS relocated_from_latitude,
         relocated_from_x_coordinate::double precision   AS relocated_from_x_coordinate,
-        relocated_from_y_coordinate::double precision   AS relocated_from_y_coordinate,        
+        relocated_from_y_coordinate::double precision   AS relocated_from_y_coordinate,
         upper(relocated_to_address_number::text)        AS relocated_to_address_number,
         upper(relocated_to_direction::text)             AS relocated_to_direction,
         upper(relocated_to_street_name::text)           AS relocated_to_street_name,

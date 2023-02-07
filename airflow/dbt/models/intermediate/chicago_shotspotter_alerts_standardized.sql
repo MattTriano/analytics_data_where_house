@@ -8,7 +8,7 @@ WITH records_with_basic_cleaning AS (
         date::timestamp                             AS date,
         lpad(hour::char(2), 2, '0')                 AS hour,
         day_of_week::smallint                       AS day_of_week,
-        lpad(month::char(2), 2, '0')                AS month,        
+        lpad(month::char(2), 2, '0')                AS month,
         upper(incident_type_description::text)      AS incident_type_description,
         rounds::smallint                            AS rounds,
         upper(block::text)                          AS block,

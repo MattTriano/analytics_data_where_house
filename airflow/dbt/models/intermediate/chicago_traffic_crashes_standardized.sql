@@ -12,7 +12,7 @@ WITH records_with_basic_cleaning AS (
         crash_month::smallint                   AS crash_month,
         crash_day_of_week::smallint             AS crash_day_of_week,
         crash_hour::smallint                    AS crash_hour,
-        date_police_notified::timestamp         AS date_police_notified,        
+        date_police_notified::timestamp         AS date_police_notified,
         injuries_fatal::smallint                AS injuries_fatal,
         injuries_non_incapacitating::smallint   AS injuries_non_incapacitating,
         injuries_incapacitating::smallint       AS injuries_incapacitating,
