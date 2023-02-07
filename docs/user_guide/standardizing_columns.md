@@ -143,6 +143,22 @@ SELECT lpad(extract(month FROM crash_date::timestamp)::char(2), 2, '0') AS crash
 FROM data_raw.chicago_traffic_crashes
 ```
 
+#### Removing punctuation or numbers from strings
+
+If you want to replace any characters except for letters or spaces, use `regexp_replace()` with regex pattern `[^A-Z ]` (`^` means "except", and the `g` flag indicates "replace all matches").
+
+```sql
+WITH alpha_only AS (
+	SELECT regexp_replace(upper(city::text), '[^A-Z ]', '', 'g') as city
+	FROM data_raw.chicago_food_inspections
+)
+
+SELECT count(*), city
+FROM alpha_only
+GROUP BY city
+ORDER BY count desc
+```
+
 
 ## Type Casting
 
