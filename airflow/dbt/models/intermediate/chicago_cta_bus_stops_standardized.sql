@@ -11,7 +11,7 @@ WITH records_with_basic_cleaning AS (
         upper(cross_st::text)             AS cross_st,
         upper(city::text)                 AS city,
         upper(routesstpg::text)           AS routesstpg,
-        upper(owlroutes::text)            AS owlroutes,        
+        upper(owlroutes::text)            AS owlroutes,
         upper(pos::text)                  AS pos,
         geometry::GEOMETRY(POINT, 4326)   AS geometry,
         source_data_updated::timestamptz  AS source_data_updated,

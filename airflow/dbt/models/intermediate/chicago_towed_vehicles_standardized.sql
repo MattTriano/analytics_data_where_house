@@ -9,7 +9,7 @@ WITH records_with_basic_cleaning AS (
         to_date(upper(tow_date::text), 'MM/DD/YYYY')                       AS tow_date,
         upper(make::varchar(4))                                            AS make,
         upper(model::varchar(3))                                           AS model,
-        upper(style::varchar(2))                                           AS style,        
+        upper(style::varchar(2))                                           AS style,
         upper(color::char(3))                                              AS color,
         upper(plate::varchar(10))                                          AS plate,
         upper(state::char(2))                                              AS state,

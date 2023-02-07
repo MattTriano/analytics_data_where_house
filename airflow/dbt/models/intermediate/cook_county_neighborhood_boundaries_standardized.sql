@@ -8,9 +8,9 @@ WITH records_with_basic_cleaning AS (
         upper(town_nbhd::text)                          AS town_nbhd,
         upper(triad_code::char(1))                      AS triad_code,
         upper(triad_name::text)                         AS triad_name, 
-        lpad(upper(township_code::char(2)), 2, '0')     AS township_code,        
+        lpad(upper(township_code::char(2)), 2, '0')     AS township_code,
         lpad(upper(nbhd::char(3)), 3, '0')              AS nbhd,
-        upper(township_name::text)                      AS township_name,        
+        upper(township_name::text)                      AS township_name,
         geometry::GEOMETRY(MULTIPOLYGON,4326)           AS geometry,
         source_data_updated::timestamptz                AS source_data_updated,
         ingestion_check_time::timestamptz               AS ingestion_check_time

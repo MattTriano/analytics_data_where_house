@@ -6,7 +6,7 @@ WITH records_with_basic_cleaning AS (
     SELECT
         upper(stop_id::text)                  AS stop_id,
         upper(station_name::text)             AS station_name,
-        upper(station_descriptive_name::text) AS station_descriptive_name,        
+        upper(station_descriptive_name::text) AS station_descriptive_name,
         upper(direction_id::char(1))          AS direction_id,
         map_id::int                           AS map_id,
         upper(stop_name::text)                AS stop_name,
