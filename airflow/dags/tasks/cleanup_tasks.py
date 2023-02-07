@@ -89,3 +89,49 @@ def delete_directories(dirs_to_delete: List, task_logger: Logger) -> None:
             shutil.rmtree(dir_to_delete)
         else:
             task_logger.info(f"Path {dir_to_delete} isn't to a directory. Very curious...")
+
+
+@task
+def get_details_on_data_raw_files(task_logger: Logger) -> List:
+    data_dir_path = Path("/opt/airflow/data_raw").resolve()
+    raw_file_objs = get_raw_socrata_data_file_objs(
+        data_dir_path=data_dir_path, table_id_pattern=re.compile("^(\S{4}-\S{4})")
+    )
+    if len(raw_file_objs) > 0:
+        for raw_file_obj in raw_file_objs:
+            task_logger.info(f"raw_file_obj {raw_file_obj}.")
+        return raw_file_objs
+    else:
+        task_logger.info(f"No files found in dir {data_dir_path}.")
+        return list()
+
+
+@task
+def get_paths_to_data_files_over_n_downloads_old(
+    raw_file_objs: List, task_logger: str, keep_n_files: int = 20
+) -> List:
+    sorted_objs = sorted(raw_file_objs, key=lambda x: x.file_name)
+
+    file_dicts = {}
+    for sorted_obj in sorted_objs:
+        if sorted_obj.table_id not in file_dicts.keys():
+            file_dicts[sorted_obj.table_id] = list()
+        else:
+            file_dicts[sorted_obj.table_id].append(sorted_obj)
+    files_to_drop = []
+    for table_id in file_dicts.keys():
+        old_file_paths = [el.file_path for el in file_dicts[table_id][:-keep_n_files]]
+        if len(old_file_paths) > 0:
+            files_to_drop.extend(old_file_paths)
+            task_logger.info(f"Table id: {table_id}, files to delete: {len(old_file_paths)}")
+    return files_to_drop
+
+
+@task
+def delete_files_over_n_downloads_old(files_to_drop: List, task_logger: Logger) -> None:
+    if len(files_to_drop) > 0:
+        for file_to_drop in files_to_drop:
+            task_logger.info(f"file: {file_to_drop}")
+            task_logger.info(f"  Pre-drop.  File still exists? {file_to_drop.is_file()}")
+            file_to_drop.unlink()
+            task_logger.info(f"  Post-drop. File still exists? {file_to_drop.is_file()}")
