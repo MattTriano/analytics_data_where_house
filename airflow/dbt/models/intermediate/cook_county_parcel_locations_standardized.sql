@@ -46,7 +46,7 @@ WITH records_with_basic_cleaning AS (
         indicator_has_latlon::int::boolean                AS indicator_has_latlon,
         longitude::double precision                       AS longitude,
         latitude::double precision                        AS latitude,
-        ST_SetSRID(ST_Point( longitude, latitude), 4326)  AS geometry,
+        ST_SetSRID(ST_Point(longitude, latitude), 4326)   AS geometry,
         source_data_updated::timestamptz                  AS source_data_updated,
         ingestion_check_time::timestamptz                 AS ingestion_check_time
     FROM {{ ref('cook_county_parcel_locations') }}
