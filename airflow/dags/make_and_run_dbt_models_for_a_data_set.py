@@ -18,7 +18,7 @@ from cc_utils.file_factory import (
 )
 from tasks.socrata_tasks import highlight_unfinished_dbt_standardized_stub
 
-from sources.tables import CHICAGO_FOOD_INSPECTIONS as SOCRATA_TABLE
+from sources.tables import CHICAGO_POLICE_STATIONS as SOCRATA_TABLE
 
 task_logger = logging.getLogger("airflow.task")
 

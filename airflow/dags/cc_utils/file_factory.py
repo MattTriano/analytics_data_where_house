@@ -55,8 +55,13 @@ def get_ordered_table_cols_from__standardized_model(std_file_path: Path) -> List
     end_index = [std_file_lines.index(el) for el in std_file_lines if el.startswith("    FROM")][0]
     col_containing_lines = std_file_lines[select_index:end_index]
     table_cols.extend(
-        [line.split(" AS ")[1].split(",")[0].replace("\n", "") for line in col_containing_lines]
+        [
+            line.split(" AS ")[1].split(",")[0].replace("\n", "")
+            for line in col_containing_lines
+            if " AS " in line
+        ]
     )
+    print(col_containing_lines)
     return table_cols
 
 

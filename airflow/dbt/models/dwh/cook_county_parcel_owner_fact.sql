@@ -7,7 +7,7 @@ WITH owner_features AS (
         town_nbhd,
         owner_occupied,
         owner_name
-    FROM {{ ref('cook_county_parcel_locations_features') }}
+    FROM {{ ref('cook_county_parcel_locations_feature') }}
 )
 
 SELECT 

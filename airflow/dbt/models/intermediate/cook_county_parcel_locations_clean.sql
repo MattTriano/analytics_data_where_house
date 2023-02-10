@@ -1,4 +1,4 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 {% set ck_cols = ["pin"] %}
 {% set record_id = "parcel_location_id" %}
 {% set base_cols = [
