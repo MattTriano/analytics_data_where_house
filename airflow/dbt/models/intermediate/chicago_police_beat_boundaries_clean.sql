@@ -2,7 +2,7 @@
 {% set ck_cols = ["beat_num"] %}
 {% set record_id = "beat_num" %}
 {% set base_cols = [
-    "beat_num", "beat_num", "beat", "district", "sector", "geometry", "source_data_updated",
+    "beat_num", "beat", "district", "sector", "geometry", "source_data_updated",
     "ingestion_check_time"
 ] %}
 
