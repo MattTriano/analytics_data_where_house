@@ -1,9 +1,10 @@
 {{ config(materialized='view') }}
 {% set ck_cols = ["pin"] %}
+{% set record_id = "parcel_location_id" %}
 
 WITH records_with_basic_cleaning AS (
     SELECT
-        {{ dbt_utils.generate_surrogate_key(ck_cols) }}   AS parcel_location_id,
+        {{ dbt_utils.generate_surrogate_key(ck_cols) }}   AS {{ record_id }},
         pin::bigint                                       AS pin,
         upper(property_address::text)                     AS property_address,
         upper(property_apt_no::text)                      AS property_apt_no,

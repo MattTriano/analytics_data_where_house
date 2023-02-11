@@ -9,6 +9,7 @@ sources:
       - name: chicago_affordable_rental_housing
       - name: chicago_bike_paths
       - name: chicago_city_boundary
+      - name: chicago_community_area_boundaries
       - name: chicago_cta_bus_stops
       - name: chicago_cta_train_stations
       - name: chicago_food_inspections
@@ -30,6 +31,7 @@ sources:
       - name: temp_chicago_affordable_rental_housing
       - name: temp_chicago_bike_paths
       - name: temp_chicago_city_boundary
+      - name: temp_chicago_community_area_boundaries
       - name: temp_chicago_cta_bus_stops
       - name: temp_chicago_cta_train_stations
       - name: temp_chicago_food_inspections

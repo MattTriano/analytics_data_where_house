@@ -35,6 +35,13 @@ CHICAGO_CITY_BOUNDARY = SocrataTable(
     clean_schedule="10 20 10 8 *",
 )
 
+CHICAGO_COMMUNITY_AREA_BOUNDARIES = SocrataTable(
+    table_id="cauq-8yn6",
+    table_name="chicago_community_area_boundaries",
+    schedule="41 5 3 9 *",
+    clean_schedule="51 5 3 9 *",
+)
+
 CHICAGO_CTA_TRAIN_LINES = SocrataTable(
     table_id="53r7-y88m",
     table_name="chicago_cta_train_lines",
