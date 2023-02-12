@@ -1,0 +1,14 @@
+# Engineering Temporal (Time Series) Features
+
+```sql
+SELECT
+	to_char(sale_date, 'YYYY-MM')       AS month_of_sale,
+	count(sale_price)                   AS num_sales,
+	max(sale_price)                     AS max_sale_price,
+	avg(sale_price)::bigint             AS mean_sale_price,
+	min(sale_price)                     AS min_sale_price,
+	percentile_cont(0.5) WITHIN GROUP (order by sale_price) AS median_sale_price	
+FROM feature.cook_county_parcel_price_change_between_sales
+GROUP BY month_of_sale
+ORDER BY month_of_sale
+```
