@@ -1,9 +1,11 @@
 {{ config(materialized='table') }}
 
-WITH last_parcel_sale AS (
+WITH sale_features AS (
     SELECT
         parcel_sale_id,
         pin,
+        class,
+        class_descr,
         is_multisale,
         num_parcels_sale,
         sale_price,
@@ -14,7 +16,7 @@ WITH last_parcel_sale AS (
         years_since_last_sale,
         last_sale_was_multisale,
         num_parcels_last_sale
-    FROM {{ ref('cook_county_parcel_price_change_between_sales') }}
+    FROM {{ ref('cook_county_parcel_sales_feature') }}
 ),
 sale_details AS (
     SELECT
@@ -23,7 +25,6 @@ sale_details AS (
         is_mydec_date,
         sale_deed_type,
         sale_type,
-        class,
         township_code,
         sale_seller_name,    
         sale_buyer_name,    
@@ -33,28 +34,29 @@ sale_details AS (
 )
 
 SELECT
-    ls.parcel_sale_id,
-    ls.pin,
-    ls.is_multisale,
-    ls.num_parcels_sale,
-    ls.sale_price,
-    ls.sale_date,
-    ls.last_sale_price,
-    ls.last_sale_date,
-    ls.price_change_since_last_sale,
-    ls.years_since_last_sale,
-    ls.last_sale_was_multisale,
-    ls.num_parcels_last_sale,
+    sf.parcel_sale_id,
+    sf.pin,
+    sf.class,
+    sf.class_descr,
+    sf.is_multisale,
+    sf.num_parcels_sale,
+    sf.sale_price,
+    sf.sale_date,
+    sf.last_sale_price,
+    sf.last_sale_date,
+    sf.price_change_since_last_sale,
+    sf.years_since_last_sale,
+    sf.last_sale_was_multisale,
+    sf.num_parcels_last_sale,
     sd.sale_document_num,
     sd.is_mydec_date,
     sd.sale_deed_type,
     sd.sale_type,
-    sd.class,
     sd.township_code,
     sd.sale_seller_name,
     sd.sale_buyer_name,
     sd.source_data_updated,
     sd.ingestion_check_time
-FROM last_parcel_sale AS ls
+FROM sale_features AS sf
 FULL OUTER JOIN sale_details AS sd
-    ON ls.parcel_sale_id = sd.parcel_sale_id
+    ON sf.parcel_sale_id = sd.parcel_sale_id
