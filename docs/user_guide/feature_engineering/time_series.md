@@ -12,3 +12,25 @@ FROM feature.cook_county_parcel_price_change_between_sales
 GROUP BY month_of_sale
 ORDER BY month_of_sale
 ```
+
+## Generating an evenly spaced series of dates
+
+```sql
+WITH sale_counts AS (
+	SELECT
+		count(*),
+		to_char(sale_date, 'YYYY-MM')       AS month_of_sale
+	FROM dwh.cook_county_parcel_sales_fact
+	GROUP BY month_of_sale
+),
+end_dates AS (
+	SELECT *
+	FROM generate_series(
+		(SELECT concat(min(month_of_sale), '-01')::date FROM sale_counts WHERE count >= 5),
+		(SELECT concat(max(month_of_sale), '-01')::date FROM sale_counts WHERE count >= 5),
+		interval '1 month'
+	)		
+)
+
+SELECT * FROM end_dates
+```
