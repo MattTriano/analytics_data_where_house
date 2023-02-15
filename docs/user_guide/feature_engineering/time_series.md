@@ -26,11 +26,13 @@ WITH sale_counts AS (
 end_dates AS (
 	SELECT *
 	FROM generate_series(
-		(SELECT concat(min(month_of_sale), '-01')::date FROM sale_counts WHERE count >= 5),
-		(SELECT concat(max(month_of_sale), '-01')::date FROM sale_counts WHERE count >= 5),
+		(SELECT (min(month_of_sale) || '-01')::date FROM sale_counts WHERE count >= 5),
+		(SELECT (max(month_of_sale) || '-01')::date FROM sale_counts WHERE count >= 5),
 		interval '1 month'
 	)		
 )
 
 SELECT * FROM end_dates
 ```
+
+Syntax decoder: `||` is the same as `concat()`

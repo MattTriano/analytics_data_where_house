@@ -3,6 +3,7 @@ import logging
 from logging import Logger
 
 from airflow.decorators import dag
+from airflow.models.baseoperator import chain
 
 from tasks.ddl_tasks import ensure_schema_exists
 
@@ -17,10 +18,16 @@ task_logger = logging.getLogger("airflow.task")
     tags=["ddl"],
 )
 def ensure_dwh_schema_exists():
-    ensure_schema_exists_1 = ensure_schema_exists(
+    ensure_dwh_schema_exists_1 = ensure_schema_exists(
         schema_name="dwh", conn_id="dwh_db_conn", task_logger=task_logger
     )
-    ensure_schema_exists_1
+    ensure_report_schema_exists_1 = ensure_schema_exists(
+        schema_name="report", conn_id="dwh_db_conn", task_logger=task_logger
+    )
+    chain(
+        ensure_dwh_schema_exists_1,
+        ensure_report_schema_exists_1,
+    )
 
 
 ensure_dwh_schema_exists()
