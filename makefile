@@ -69,13 +69,7 @@ create_warehouse_infra: quiet_startup
 	docker compose exec airflow-scheduler /bin/bash -c \
 		"airflow dags trigger ensure_metadata_table_exists";
 	docker compose exec airflow-scheduler /bin/bash -c \
-		"airflow dags trigger ensure_data_raw_schema_exists";
-	docker compose exec airflow-scheduler /bin/bash -c \
-		"airflow dags trigger ensure_clean_schema_exists";
-	docker compose exec airflow-scheduler /bin/bash -c \
-		"airflow dags trigger ensure_feature_schema_exists";
-	docker compose exec airflow-scheduler /bin/bash -c \
-		"airflow dags trigger ensure_dwh_schema_exists";
+		"airflow dags trigger setup_schemas";
 	docker compose exec airflow-scheduler /bin/bash -c "cd dbt && dbt deps";
 
 build_python_img:
