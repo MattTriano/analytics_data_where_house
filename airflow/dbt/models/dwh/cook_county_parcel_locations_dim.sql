@@ -35,6 +35,7 @@ feature_cols AS (
         owner_name,
         cpd_beat,
         cpd_district,
+        chicago_community,
         geometry
     FROM {{ ref('cook_county_parcel_locations_feature') }}
 )
@@ -51,6 +52,7 @@ SELECT
     fc.owner_name,
     fc.cpd_beat,
     fc.cpd_district,
+    fc.chicago_community,
     cc.nbhd,
     cc.township,
     cc.township_name,
