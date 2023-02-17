@@ -1,5 +1,5 @@
 {{ config(materialized='table') }}
-{% set min_count_in_period = 3 %}
+{% set min_count = 3 %}
 
 WITH sale_counts_per_group_per_month AS (
 	SELECT
@@ -14,12 +14,12 @@ end_dates AS (
 		(
 			SELECT (min(month_of_sale) || '-01')::date
 			FROM sale_counts_per_group_per_month
-			WHERE count >= {{ min_count_in_period }}
+			WHERE count >= {{ min_count }}
 		),
 		(
 			SELECT (max(month_of_sale) || '-01')::date
 			FROM sale_counts_per_group_per_month
-			WHERE count >= {{ min_count_in_period }}
+			WHERE count >= {{ min_count }}
 		),
 		interval '1 month'
 	) AS month_of_sale

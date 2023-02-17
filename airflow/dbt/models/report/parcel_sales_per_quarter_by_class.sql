@@ -1,5 +1,5 @@
 {{ config(materialized='table') }}
-{% set min_count_in_period = 2 %}
+{% set min_count = 2 %}
 
 WITH sale_counts_per_group_per_qtr AS (
 	SELECT
@@ -14,12 +14,12 @@ end_dates AS (
 		(
 			SELECT (date_part('year', min(to_date(qtr_of_sale, 'YYYY-Q'))) || '-01-01')::date
 			FROM sale_counts_per_group_per_qtr
-			WHERE count >= {{ min_count_in_period }}
+			WHERE count >= {{ min_count }}
 		),
 		(
 			SELECT (date_part('year', max(to_date(qtr_of_sale, 'YYYY-Q'))) || '-01-01')::date
 			FROM sale_counts_per_group_per_qtr
-			WHERE count >= {{ min_count_in_period }}
+			WHERE count >= {{ min_count }}
 		),
 		interval '3 months'
 	) AS qtr_of_sale

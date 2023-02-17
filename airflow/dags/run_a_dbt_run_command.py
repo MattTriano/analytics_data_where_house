@@ -8,7 +8,7 @@ import subprocess
 from airflow.decorators import dag, task
 from airflow.utils.trigger_rule import TriggerRule
 
-from sources.tables import COOK_COUNTY_PARCEL_SALES as SOCRATA_TABLE
+from sources.tables import COOK_COUNTY_PARCEL_LOCATIONS as SOCRATA_TABLE
 
 task_logger = logging.getLogger("airflow.task")
 

@@ -1,36 +1,36 @@
 {{ config(materialized='table') }}
-{% set min_count = 2 %}
-{% set area_feat = "town_nbhd" %}
+{% set min_count = 3 %}
+{% set area_feat = "tract_geoid" %}
 
-WITH sale_counts_per_group_per_qtr AS (
+WITH sale_counts_per_group_per_month AS (
 	SELECT
 		count(*),
-		to_char(sale_date, 'YYYY-Q') AS qtr_of_sale
+		to_char(sale_date, 'YYYY-MM')       AS month_of_sale
 	FROM {{ ref('cook_county_parcel_sales_fact') }}
 	WHERE left(class, 1) = '2'
-	GROUP BY qtr_of_sale
+	GROUP BY month_of_sale
 ),
 end_dates AS (
-	SELECT to_char(qtr_of_sale, 'YYYY-Q') AS qtr_of_sale
+	SELECT to_char(month_of_sale, 'YYYY-MM') AS month_of_sale
 	FROM generate_series(
 		(
-			SELECT (date_part('year', min(to_date(qtr_of_sale, 'YYYY-Q'))) || '-01-01')::date
-			FROM sale_counts_per_group_per_qtr
+			SELECT (min(month_of_sale) || '-01')::date
+			FROM sale_counts_per_group_per_month
 			WHERE count >= {{ min_count }}
 		),
 		(
-			SELECT (date_part('year', max(to_date(qtr_of_sale, 'YYYY-Q'))) || '-01-01')::date
-			FROM sale_counts_per_group_per_qtr
+			SELECT (max(month_of_sale) || '-01')::date
+			FROM sale_counts_per_group_per_month
 			WHERE count >= {{ min_count }}
 		),
-		interval '3 months'
-	) AS qtr_of_sale
+		interval '1 month'
+	) AS month_of_sale
 ),
 sales_w_area_feat AS (
 	SELECT
 		ps.parcel_sale_id,
 		ps.pin,
-		to_char(ps.sale_date, 'YYYY-Q')       AS qtr_of_sale,
+		to_char(ps.sale_date, 'YYYY-MM')       AS month_of_sale,
 		ps.class,
 		ps.class_descr,
 		ps.sale_price,
@@ -42,7 +42,7 @@ sales_w_area_feat AS (
 ),
 sales_stats_per_group AS (
 	SELECT
-		qtr_of_sale,
+		month_of_sale,
 		class,
 		class_descr,
 		{{ area_feat }},
@@ -52,12 +52,12 @@ sales_stats_per_group AS (
 		min(sale_price)                     AS min_sale_price,
 		percentile_cont(0.5) WITHIN GROUP (order by sale_price) AS median_sale_price	
 	FROM sales_w_area_feat
-	GROUP BY {{ area_feat }}, class_descr, class, qtr_of_sale
-	ORDER BY {{ area_feat }}, qtr_of_sale, class
+	GROUP BY {{ area_feat }}, class_descr, class, month_of_sale
+	ORDER BY {{ area_feat }}, month_of_sale, class
 )
 
 SELECT
-	ed.qtr_of_sale,
+	ed.month_of_sale,
 	gss.class,
 	gss.{{ area_feat }},
 	COALESCE(gss.class_descr, 'DEPRECATED CLASS') AS class_descr,
@@ -68,5 +68,5 @@ SELECT
 	COALESCE(gss.median_sale_price, 0)            AS median_sale_price
 FROM end_dates AS ed
 LEFT JOIN sales_stats_per_group AS gss
-ON ed.qtr_of_sale = gss.qtr_of_sale
-ORDER BY ed.qtr_of_sale, gss.{{ area_feat }}, gss.class
+ON ed.month_of_sale = gss.month_of_sale
+ORDER BY ed.month_of_sale, gss.{{ area_feat }}, gss.class

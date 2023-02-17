@@ -1,13 +1,34 @@
 {{ config(materialized='table') }}
-{% set min_count = 2 %}
-{% set area_feat = "town_nbhd" %}
+{% set min_count = 3 %}
+{% set area_feat = "cpd_district" %}
 
-WITH sale_counts_per_group_per_qtr AS (
+WITH chicago_location_features AS (
+	SELECT
+		pin,
+		{{ area_feat }},
+		geometry
+	FROM {{ ref('cook_county_parcel_locations_dim') }}
+	WHERE property_city = 'CHICAGO'
+),
+chicago_residential_sales AS (
+	SELECT
+		ps.parcel_sale_id,
+		ps.pin,
+		to_char(ps.sale_date, 'YYYY-Q')       AS qtr_of_sale,
+		ps.class,
+		ps.class_descr,
+		ps.sale_price,
+		plf.{{ area_feat }}
+	FROM {{ ref('cook_county_parcel_sales_fact') }} AS ps
+	LEFT JOIN chicago_location_features AS plf
+	ON ps.pin = plf.pin
+	WHERE left(ps.class, 1) = '2'
+),
+sale_counts_per_group_per_qtr AS (
 	SELECT
 		count(*),
-		to_char(sale_date, 'YYYY-Q') AS qtr_of_sale
-	FROM {{ ref('cook_county_parcel_sales_fact') }}
-	WHERE left(class, 1) = '2'
+		qtr_of_sale
+	FROM chicago_residential_sales
 	GROUP BY qtr_of_sale
 ),
 end_dates AS (
@@ -23,22 +44,8 @@ end_dates AS (
 			FROM sale_counts_per_group_per_qtr
 			WHERE count >= {{ min_count }}
 		),
-		interval '3 months'
+		interval '3 month'
 	) AS qtr_of_sale
-),
-sales_w_area_feat AS (
-	SELECT
-		ps.parcel_sale_id,
-		ps.pin,
-		to_char(ps.sale_date, 'YYYY-Q')       AS qtr_of_sale,
-		ps.class,
-		ps.class_descr,
-		ps.sale_price,
-		pl.{{ area_feat }}
-	FROM {{ ref('cook_county_parcel_sales_fact') }} AS ps
-	LEFT JOIN {{ ref('cook_county_parcel_locations_dim') }} AS pl
-	ON ps.pin = pl.pin
-	WHERE left(ps.class, 1) = '2'
 ),
 sales_stats_per_group AS (
 	SELECT
@@ -51,7 +58,7 @@ sales_stats_per_group AS (
 		avg(sale_price)::bigint             AS mean_sale_price,
 		min(sale_price)                     AS min_sale_price,
 		percentile_cont(0.5) WITHIN GROUP (order by sale_price) AS median_sale_price	
-	FROM sales_w_area_feat
+	FROM chicago_residential_sales
 	GROUP BY {{ area_feat }}, class_descr, class, qtr_of_sale
 	ORDER BY {{ area_feat }}, qtr_of_sale, class
 )
