@@ -49,6 +49,9 @@ nav:
         - "Data Assistant Workflow": user_guide/validation/data_assistant_workflow.md
       - "Setting Checkpoints": user_guide/making_expectation_suites.md
     - "Standardizing Columns": user_guide/standardizing_columns.md
+    - "Engineering Features":
+      - user_guide/feature_engineering/index.md
+      - "Geospatial Features": user_guide/feature_engineering/geospatial.md
     - "Accessing Systems": user_guide/accessing_resources.md
   - "Data Sources":
     - 'Socrata ELT': data_sources/socrata.md

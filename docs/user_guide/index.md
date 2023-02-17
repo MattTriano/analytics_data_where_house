@@ -39,6 +39,8 @@ The workflow for producing usable tables follows this pattern:
 
 3. (`feature` schema): Implement dbt models to engineer data features.
 
+    3.1. [Engineer desired features](feature_engineering/index.md)
+
 4. (`dwh` schema): Implement dbt models to assemble data into analytically useful tables.
 
 For tables hosted by Socrata, this system reduces steps 1.1 through 1.3 to a [3 minute operation](/user_guide/adding_a_socrata_pipeline), generates a nearly ready `..._standardized.sql` stub for 2.1, and automatically produces the `..._clean.sql` file from 2.2 after the `..._standardized.sql` stub is edited.

@@ -90,7 +90,7 @@ services:
     restart: always
 
   db_admin:
-    image: adwh_pgadmin:6.19
+    image: adwh_pgadmin:6.20
     build:
       context: ./
       dockerfile: ./Dockerfiles/pgadmin4.Dockerfile
@@ -107,7 +107,7 @@ services:
       - re_etl_admin:/var/lib/pgadmin
 
   dbt_proj:
-    image: adwh_dbt:1.3.1
+    image: adwh_dbt:1.4.1
     build:
       context: ./
       dockerfile: ./Dockerfiles/dbt.Dockerfile

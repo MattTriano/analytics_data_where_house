@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: cook_county_parcel_price_change_between_sales
+  - name: cook_county_parcel_sales_feature
     config:
       schema: feature
     description: '{{ doc("parcels_cc_sales") }}'

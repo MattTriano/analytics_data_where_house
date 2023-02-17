@@ -1,5 +1,12 @@
 from cc_utils.socrata import SocrataTable
 
+CHICAGO_311_SERVICE_REQUESTS = SocrataTable(
+    table_id="v6vf-nfxy",
+    table_name="chicago_311_service_requests",
+    schedule="52 3 * * 4",
+    clean_schedule="24 4 * * 4",
+)
+
 CHICAGO_AFFORDABLE_RENTAL_HOUSING = SocrataTable(
     table_id="s6ha-ppgi",
     table_name="chicago_affordable_rental_housing",
@@ -7,11 +14,39 @@ CHICAGO_AFFORDABLE_RENTAL_HOUSING = SocrataTable(
     clean_schedule="50 2 * * 1",
 )
 
+CHICAGO_BIKE_PATHS = SocrataTable(
+    table_id="3w5d-sru8",
+    table_name="chicago_bike_paths",
+    schedule="0 22 10 8 *",
+    clean_schedule="10 22 10 8 *",
+)
+
+CHICAGO_BUSINESS_LICENSES = SocrataTable(
+    table_id="r5kz-chrr",
+    table_name="chicago_business_licenses",
+    schedule="51 4 * * 3",
+    clean_schedule="10 5 * * 3",
+)
+
 CHICAGO_CITY_BOUNDARY = SocrataTable(
     table_id="ewy2-6yfk",
     table_name="chicago_city_boundary",
     schedule="0 20 10 8 *",
     clean_schedule="10 20 10 8 *",
+)
+
+CHICAGO_COMMUNITY_AREA_BOUNDARIES = SocrataTable(
+    table_id="cauq-8yn6",
+    table_name="chicago_community_area_boundaries",
+    schedule="41 5 3 9 *",
+    clean_schedule="51 5 3 9 *",
+)
+
+CHICAGO_CTA_TRAIN_LINES = SocrataTable(
+    table_id="53r7-y88m",
+    table_name="chicago_cta_train_lines",
+    schedule="12 5 5 * *",
+    clean_schedule="22 5 5 * *",
 )
 
 CHICAGO_CTA_TRAIN_STATIONS = SocrataTable(
@@ -28,6 +63,13 @@ CHICAGO_CTA_BUS_STOPS = SocrataTable(
     clean_schedule="45 5 5 * *",
 )
 
+CHICAGO_DIVVY_STATIONS = SocrataTable(
+    table_id="bbyy-e7gq",
+    table_name="chicago_divvy_stations",
+    schedule="30 5 * * 1",
+    clean_schedule="45 5 * * 1",
+)
+
 CHICAGO_FOOD_INSPECTIONS = SocrataTable(
     table_id="4ijn-s7e5",
     table_name="chicago_food_inspections",
@@ -42,11 +84,46 @@ CHICAGO_HOMICIDES_AND_SHOOTING_VICTIMIZATIONS = SocrataTable(
     clean_schedule="10 7,19 * * *",
 )
 
+CHICAGO_MURALS = SocrataTable(
+    table_id="we8h-apcf",
+    table_name="chicago_murals",
+    schedule="47 6 * * *",
+    clean_schedule="52 6 * * *",
+)
+
+CHICAGO_POLICE_BEAT_BOUNDARIES = SocrataTable(
+    table_id="aerh-rz74",
+    table_name="chicago_police_beat_boundaries",
+    schedule="47 7 3 * *",
+    clean_schedule="52 7 3 * *",
+)
+
+CHICAGO_POLICE_DISTRICT_BOUNDARIES = SocrataTable(
+    table_id="fthy-xz3r",
+    table_name="chicago_police_district_boundaries",
+    schedule="47 6 3 * *",
+    clean_schedule="52 6 3 * *",
+)
+
+CHICAGO_POLICE_STATIONS = SocrataTable(
+    table_id="z8bn-74gv",
+    table_name="chicago_police_stations",
+    schedule="47 5 3 * *",
+    clean_schedule="52 5 3 * *",
+)
+
 CHICAGO_POTHOLES_PATCHED = SocrataTable(
     table_id="wqdh-9gek",
     table_name="chicago_potholes_patched",
     schedule="47 8 * * *",
     clean_schedule="52 8 * * *",
+)
+
+CHICAGO_RED_LIGHT_CAMERA_VIOLATIONS = SocrataTable(
+    table_id="spqx-js37",
+    table_name="chicago_red_light_camera_violations",
+    schedule="35 05 * * *",
+    clean_schedule="43 05 * * *",
 )
 
 CHICAGO_RELOCATED_VEHICLES = SocrataTable(
@@ -82,6 +159,13 @@ CHICAGO_TRAFFIC_CRASHES_LINES = SocrataTable(
     table_name="chicago_traffic_crashes",
     schedule="20 3,15 * * *",
     clean_schedule="40 3,15 * * *",
+)
+
+CHICAGO_VACANT_AND_ABANDONED_BUILDINGS = SocrataTable(
+    table_id="kc9i-wq85",
+    table_name="chicago_vacant_and_abandoned_buildings",
+    schedule="21 15 * * *",
+    clean_schedule="41 15 * * *",
 )
 
 COOK_COUNTY_ADDRESS_POINTS = SocrataTable(

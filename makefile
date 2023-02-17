@@ -52,31 +52,25 @@ restart:
 	docker compose up;
 
 dbt_generate_docs:
-	docker compose exec dbt_proj /bin/bash -c "dbt docs generate";
+	docker compose exec airflow-scheduler /bin/bash -c "cd dbt && dbt docs generate"
 
 serve_dbt_docs: dbt_generate_docs
 	docker compose exec dbt_proj /bin/bash -c "dbt docs serve --port 18080";
 
 update_dbt_packages: quiet_startup
-	docker compose exec dbt_proj /bin/bash -c "dbt deps";
+	docker compose exec airflow-scheduler /bin/bash -c "cd dbt && dbt deps"
 
 clean_dbt:
-	docker compose exec dbt_proj /bin/bash -c "dbt clean";
-	docker compose exec dbt_proj /bin/bash -c "dbt deps";
-	mkdir -p airflow/dbt/target;
+	docker compose exec airflow-scheduler /bin/bash -c "cd dbt && dbt clean";
+	docker compose exec airflow-scheduler /bin/bash -c "cd dbt && dbt deps";
+	docker compose exec airflow-scheduler /bin/bash -c "mkdir -p /opt/airflow/dbt/target"
 
 create_warehouse_infra: quiet_startup
 	docker compose exec airflow-scheduler /bin/bash -c \
 		"airflow dags trigger ensure_metadata_table_exists";
 	docker compose exec airflow-scheduler /bin/bash -c \
-		"airflow dags trigger ensure_data_raw_schema_exists";
-	docker compose exec airflow-scheduler /bin/bash -c \
-		"airflow dags trigger ensure_clean_schema_exists";
-	docker compose exec airflow-scheduler /bin/bash -c \
-		"airflow dags trigger ensure_feature_schema_exists";
-	docker compose exec airflow-scheduler /bin/bash -c \
-		"airflow dags trigger ensure_dwh_schema_exists";
-	docker compose exec dbt_proj /bin/bash -c "dbt deps";
+		"airflow dags trigger setup_schemas";
+	docker compose exec airflow-scheduler /bin/bash -c "cd dbt && dbt deps";
 
 build_python_img:
 	docker compose build --no-cache py-utils 2>&1 | tee logs/python_build_logs_$(run_time).txt

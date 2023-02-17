@@ -11,7 +11,7 @@ from cc_utils.db import (
 )
 
 
-@task.branch(trigger_rule=TriggerRule.ALL_DONE)
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def schema_exists(conn_id: str, schema_name: str, task_logger: Logger) -> str:
     if not database_has_schema(engine=get_pg_engine(conn_id=conn_id), schema_name=schema_name):
         task_logger.info(
@@ -23,7 +23,7 @@ def schema_exists(conn_id: str, schema_name: str, task_logger: Logger) -> str:
         return "ensure_schema_exists.end"
 
 
-@task(trigger_rule=TriggerRule.ALL_DONE)
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def create_schema(schema_name: str, conn_id: str, task_logger: Logger) -> None:
     task_logger.info(f"Creating '{schema_name}' schema")
     engine = get_pg_engine(conn_id=conn_id)
