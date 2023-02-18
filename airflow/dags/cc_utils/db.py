@@ -2,7 +2,10 @@ from logging import Logger
 from typing import List, Union
 
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from geoalchemy2 import Geometry, Geography  # Necessary for reflection of cols with spatial dtypes
+from geoalchemy2 import (
+    Geometry,
+    Geography,
+)  # Necessary for reflection of cols with spatial dtypes
 import pandas as pd
 from sqlalchemy import inspect, text
 from sqlalchemy.dialects.postgresql import insert

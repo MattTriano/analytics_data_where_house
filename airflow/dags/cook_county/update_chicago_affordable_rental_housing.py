@@ -13,9 +13,9 @@ task_logger = logging.getLogger("airflow.task")
     schedule=SOCRATA_TABLE.schedule,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["public_housing", "chicago", "cook_county", "geospatial", "data_raw"],
+    tags=["public_housing", "chicago", "cook_county", "geospatial"],
 )
-def update_data_raw_chicago_affordable_rental_housing():
+def update_chicago_affordable_rental_housing():
     update_1 = update_socrata_table(
         socrata_table=SOCRATA_TABLE,
         conn_id="dwh_db_conn",
@@ -24,4 +24,4 @@ def update_data_raw_chicago_affordable_rental_housing():
     update_1
 
 
-update_data_raw_chicago_affordable_rental_housing()
+update_chicago_affordable_rental_housing()

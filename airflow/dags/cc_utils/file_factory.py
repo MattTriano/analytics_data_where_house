@@ -65,7 +65,9 @@ def get_ordered_table_cols_from__standardized_model(std_file_path: Path) -> List
     return table_cols
 
 
-def get_composite_key_cols_definition_line_from__standardized_model(std_file_path: Path) -> str:
+def get_composite_key_cols_definition_line_from__standardized_model(
+    std_file_path: Path,
+) -> str:
     with open(std_file_path, "r") as f:
         std_file_lines = f.readlines()
     ck_cols_el = [ln.replace("\n", "") for ln in std_file_lines if ln.startswith("{% set ck_cols")][

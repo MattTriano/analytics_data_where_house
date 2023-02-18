@@ -4,7 +4,7 @@ import logging
 from airflow.decorators import dag
 
 from tasks.socrata_tasks import update_socrata_table
-from sources.tables import CHICAGO_HOMICIDES_AND_SHOOTING_VICTIMIZATIONS as SOCRATA_TABLE
+from sources.tables import CHICAGO_CTA_BUS_STOPS as SOCRATA_TABLE
 
 task_logger = logging.getLogger("airflow.task")
 
@@ -13,9 +13,9 @@ task_logger = logging.getLogger("airflow.task")
     schedule=SOCRATA_TABLE.schedule,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["chicago", "violent_crime", "fact_table", "data_raw"],
+    tags=["transit", "chicago", "cook_county", "geospatial"],
 )
-def update_data_raw_chicago_homicide_and_shooting_victimizations():
+def update_chicago_cta_bus_stops():
     update_1 = update_socrata_table(
         socrata_table=SOCRATA_TABLE,
         conn_id="dwh_db_conn",
@@ -24,4 +24,4 @@ def update_data_raw_chicago_homicide_and_shooting_victimizations():
     update_1
 
 
-update_data_raw_chicago_homicide_and_shooting_victimizations()
+update_chicago_cta_bus_stops()

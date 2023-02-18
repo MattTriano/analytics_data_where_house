@@ -13,9 +13,9 @@ task_logger = logging.getLogger("airflow.task")
     schedule=SOCRATA_TABLE.schedule,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["cook_county", "parcels", "fact_table", "data_raw"],
+    tags=["cook_county", "parcels", "fact_table"],
 )
-def update_data_raw_cc_multifam_parcel_improvements():
+def update_cc_multifam_parcel_improvements():
     update_1 = update_socrata_table(
         socrata_table=SOCRATA_TABLE,
         conn_id="dwh_db_conn",
@@ -24,4 +24,4 @@ def update_data_raw_cc_multifam_parcel_improvements():
     update_1
 
 
-update_data_raw_cc_multifam_parcel_improvements()
+update_cc_multifam_parcel_improvements()

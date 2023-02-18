@@ -13,7 +13,7 @@ task_logger = logging.getLogger("airflow.task")
     schedule=SOCRATA_TABLE.schedule,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["transit", "chicago", "cook_county", "geospatial", "data_raw"],
+    tags=["transit", "chicago", "cook_county", "geospatial"],
 )
 def update_chicago_bike_paths():
     update_1 = update_socrata_table(
