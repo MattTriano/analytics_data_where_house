@@ -152,12 +152,26 @@ def setup_schemas():
     create_report_schema_1 = create_report_schema(conn_id="dwh_db_conn", task_logger=task_logger)
 
     chain(
-        data_raw_schema_exists_1, [Label("data_raw schema exists"), create_data_raw_schema_1], end_1
+        data_raw_schema_exists_1,
+        [Label("data_raw schema exists"), create_data_raw_schema_1],
+        end_1,
     )
-    chain(clean_schema_exists_1, [Label("clean schema exists"), create_clean_schema_1], end_1)
-    chain(feature_schema_exists_1, [Label("feature schema exists"), create_feature_schema_1], end_1)
+    chain(
+        clean_schema_exists_1,
+        [Label("clean schema exists"), create_clean_schema_1],
+        end_1,
+    )
+    chain(
+        feature_schema_exists_1,
+        [Label("feature schema exists"), create_feature_schema_1],
+        end_1,
+    )
     chain(dwh_schema_exists_1, [Label("dwh schema exists"), create_dwh_schema_1], end_1)
-    chain(report_schema_exists_1, [Label("report schema exists"), create_report_schema_1], end_1)
+    chain(
+        report_schema_exists_1,
+        [Label("report schema exists"), create_report_schema_1],
+        end_1,
+    )
 
 
 setup_schemas()

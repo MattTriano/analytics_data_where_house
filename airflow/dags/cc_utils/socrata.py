@@ -27,7 +27,6 @@ class SocrataTable:
     table_name: Optional[str] = None
     download_format: Optional[str] = None
     schedule: Optional[str] = None
-    clean_schedule: Optional[str] = None
 
 
 class SocrataTableMetadata:

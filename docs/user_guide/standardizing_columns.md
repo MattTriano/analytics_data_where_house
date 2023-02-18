@@ -73,6 +73,25 @@ FROM (
 ) AS temp
 ```
 
+#### Confirming a set of column(s) form a primary/composite key
+
+Add one or more columns to the `(partition by ...)` list and run the query. If the returned count is 0, then the column set is a valid composite key (or primary key if there's only one column). Aim to use the smallest set of columns that returns zero.
+
+```sql
+WITH composite_key_candidates AS (
+	SELECT row_number() over(partition by sale_document_num, pin) as rn
+	FROM data_raw.cook_county_parcel_sales
+)
+
+SELECT count(*)
+FROM composite_key_candidates
+WHERE rn > 1
+```
+
+The `row_number() over(partition by col1, col2, ..., coln) as rn...` operation will partition the data into groups with every distinct combination of values in the named columns, and within each grouping, it will produce row numnbers (from 1 up to the number of records in that group). 
+
+If the set of columns produces a set of values that can identify every distinct record, there shouldn't be any records where the row number (`rn`) is above 1.
+
 #### Records with duplicated values in a given column
 
 When identifying a set of distinct columns, often one column (**crash_record_id** in this example) is highly unique by itself, but not perfectly unique. This query shows you all columns for the set of records with duplicated **crash_record_id** values. Looking through column values, look for the other features that changed. 

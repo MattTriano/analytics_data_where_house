@@ -2,6 +2,7 @@ import datetime as dt
 import logging
 
 from airflow.decorators import dag, task
+from airflow.models.baseoperator import chain
 from airflow.operators.empty import EmptyOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.postgres.operators.postgres import PostgresOperator
@@ -100,12 +101,17 @@ def ensure_metadata_table_exists():
     )
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.ALL_DONE)
 
-    metadata_schema_exists_branch_1 >> create_metadata_schema_1 >> create_metadata_table_1 >> end_1
-    (
-        metadata_schema_exists_branch_1
-        >> table_exists_in_schema_1
-        >> [create_metadata_table_1, metadata_table_exists_1]
-        >> end_1
+    chain(
+        metadata_schema_exists_branch_1,
+        create_metadata_schema_1,
+        create_metadata_table_1,
+        end_1,
+    )
+    chain(
+        metadata_schema_exists_branch_1,
+        table_exists_in_schema_1,
+        [create_metadata_table_1, metadata_table_exists_1],
+        end_1,
     )
 
 

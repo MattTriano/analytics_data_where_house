@@ -4,7 +4,7 @@ import logging
 from airflow.decorators import dag
 
 from tasks.socrata_tasks import update_socrata_table
-from sources.tables import COOK_COUNTY_MULTIFAM_PARCEL_IMPROVEMENTS as SOCRATA_TABLE
+from sources.tables import COOK_COUNTY_PARCEL_LOCATIONS as SOCRATA_TABLE
 
 task_logger = logging.getLogger("airflow.task")
 
@@ -13,9 +13,9 @@ task_logger = logging.getLogger("airflow.task")
     schedule=SOCRATA_TABLE.schedule,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["cook_county", "parcels", "fact_table", "data_raw"],
+    tags=["cook_county", "parcels", "dimension_table"],
 )
-def update_data_raw_cc_multifam_parcel_improvements():
+def update_cook_county_parcel_locations():
     update_1 = update_socrata_table(
         socrata_table=SOCRATA_TABLE,
         conn_id="dwh_db_conn",
@@ -24,4 +24,4 @@ def update_data_raw_cc_multifam_parcel_improvements():
     update_1
 
 
-update_data_raw_cc_multifam_parcel_improvements()
+update_cook_county_parcel_locations()

@@ -4,7 +4,7 @@ import logging
 from airflow.decorators import dag
 
 from tasks.socrata_tasks import update_socrata_table
-from sources.tables import CHICAGO_CTA_TRAIN_LINES as SOCRATA_TABLE
+from sources.tables import CHICAGO_TRAFFIC_CRASHES_LINES as SOCRATA_TABLE
 
 task_logger = logging.getLogger("airflow.task")
 
@@ -15,7 +15,7 @@ task_logger = logging.getLogger("airflow.task")
     catchup=False,
     tags=["transit", "chicago", "cook_county", "geospatial"],
 )
-def update_chicago_cta_train_lines():
+def update_chicago_traffic_crashes():
     update_1 = update_socrata_table(
         socrata_table=SOCRATA_TABLE,
         conn_id="dwh_db_conn",
@@ -24,4 +24,4 @@ def update_chicago_cta_train_lines():
     update_1
 
 
-# update_chicago_cta_train_lines()
+update_chicago_traffic_crashes()
