@@ -12,14 +12,12 @@ SAMPLE_DATA_SET = SocrataTable(
     table_id="wvhk-k5uv",             # (1)
     table_name="sample_data_set",   # (2)
     schedule="0 6 4 * *",             # (3)
-    clean_schedule="30 6 4 * *",    # (4)
     )
 ```
 
 1. A Socrata table's `table_id` will always be 9 characters long and consist of two blocks of 4 characters (numbers or lowercase letters) separated by a hyphen. You can find the `table_id` in the data documentation URL or export link for the data set.
 2. Ideally the name of the `SocrataTable` instance should be the uppercased `table_name` (which should be lowercase).
 3. This sets the update frequency. If you aren't familiar with the `crontab` format, use [cron expressions](https://crontab.cronhub.io/).
-4. This should just be a bit after the schedule time.
 
 <a name="make-a-dag-file"></a>
 ## 2. Create a DAG for the data set

@@ -161,14 +161,16 @@ def fail_endpoint(task_logger: Logger) -> None:
 
 
 @dag(
-    schedule=SOCRATA_TABLE.clean_schedule,
+    schedule=SOCRATA_TABLE.schedule,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
     tags=["dbt", "utility"],
 )
 def generate_and_or_run_dbt_models():
     table_in_warehouse_1 = table_in_warehouse(
-        table_name=SOCRATA_TABLE.table_name, conn_id="dwh_db_conn", task_logger=task_logger
+        table_name=SOCRATA_TABLE.table_name,
+        conn_id="dwh_db_conn",
+        task_logger=task_logger,
     )
     table_not_in_warehouse_1 = table_not_in_warehouse(
         table_name=SOCRATA_TABLE.table_name, task_logger=task_logger
@@ -178,7 +180,9 @@ def generate_and_or_run_dbt_models():
     )
     std_model_unfinished_1 = highlight_unfinished_dbt_standardized_stub(task_logger=task_logger)
     make_std_model_1 = make_standardized_dbt_model(
-        table_name=SOCRATA_TABLE.table_name, conn_id="dwh_db_conn", task_logger=task_logger
+        table_name=SOCRATA_TABLE.table_name,
+        conn_id="dwh_db_conn",
+        task_logger=task_logger,
     )
     clean_model_ready_1 = clean_dbt_model_ready(
         table_name=SOCRATA_TABLE.table_name, task_logger=task_logger

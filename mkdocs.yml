@@ -52,6 +52,7 @@ nav:
     - "Engineering Features":
       - user_guide/feature_engineering/index.md
       - "Geospatial Features": user_guide/feature_engineering/geospatial.md
+      - "Time Series Features": user_guide/feature_engineering/time_series.md
     - "Accessing Systems": user_guide/accessing_resources.md
   - "Data Sources":
     - 'Socrata ELT': data_sources/socrata.md

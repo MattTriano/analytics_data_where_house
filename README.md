@@ -37,7 +37,6 @@ COOK_COUNTY_PARCEL_SALES = SocrataTable(
     table_id="wvhk-k5uv",
     table_name="cook_county_parcel_sales",
     schedule="0 6 4 * *",
-    clean_schedule="30 6 4 * *",
 )
 ```
 Note: It's a convention in python to capitalize the names of constants, and as the `table_id` and `table_name` for a data set should be constant, I use the capitalized `table_name` as the name of the data set's `SocrataTable` instance variable.

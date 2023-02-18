@@ -48,7 +48,7 @@ def run_specific_dbt_model_for_a_data_set(table_name: str, task_logger: Logger) 
 
 
 @dag(
-    schedule=SOCRATA_TABLE.clean_schedule,
+    schedule=SOCRATA_TABLE.schedule,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
     tags=["dbt", "utility"],
