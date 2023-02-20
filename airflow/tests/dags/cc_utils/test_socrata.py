@@ -6,6 +6,9 @@ from typing import Dict
 import unittest
 from unittest.mock import Mock, patch
 
+from inspect import getsource
+
+import pandas as pd
 import pytest
 
 sys.path.append("../../airflow")
@@ -20,6 +23,14 @@ from dags.sources.tables import (
 LOGGER = logging.getLogger("SocrataTesting")
 
 
+def load_json(file_path: Path) -> Dict:
+    if file_path.is_file():
+        with open(file_path, "r", encoding="utf-8") as json_file:
+            return json.load(json_file)
+    else:
+        raise Exception(f"No file found in location {file_path}")
+
+
 def load_table_metadata_json(table_id: str) -> Dict:
     if "__file__" in globals().keys():
         file_path = (
@@ -29,11 +40,7 @@ def load_table_metadata_json(table_id: str) -> Dict:
         )
     else:
         raise Exception("run tests from the command line, please")
-    if file_path.is_file():
-        with open(file_path, "r", encoding="utf-8") as json_file:
-            return json.load(json_file)
-    else:
-        raise Exception(f"No file found in location {file_path}")
+    return load_json(file_path)
 
 
 @pytest.fixture(scope="session")
@@ -43,14 +50,49 @@ def monkeysession():
 
 
 @pytest.fixture(scope="class")
-def mock_SocrataTableMetadata(monkeysession):
+def mock_SocrataTableMetadata(monkeysession, table_metadata_df):
     def mock_get_table_metadata(socrata_table):
         print(f"socrata_table: {socrata_table}")
         return load_table_metadata_json(table_id=socrata_table.table_id)
 
+    def mock_get_prior_metadata_checks_from_db(*args, **kwargs) -> pd.DataFrame:
+        print(f"Variables in local scope: {locals()}")
+        print(f"locals()['kwargs']['engine']: {locals()['kwargs']['engine']}")
+        print(f"locals()['kwargs']['engine'].table_id: {locals()['kwargs']['engine'].table_id}")
+        return table_metadata_df.loc[
+            table_metadata_df["table_id"] == locals()["kwargs"]["engine"].table_id
+        ].copy()
+
+    # def mock_check_warehouse_data_freshness()
+
     monkeysession.setattr(
         socrata.SocrataTableMetadata, "get_table_metadata", mock_get_table_metadata
     )
+    monkeysession.setattr(
+        socrata.SocrataTableMetadata,
+        "get_prior_metadata_checks_from_db",
+        mock_get_prior_metadata_checks_from_db,
+    )
+
+
+class TestNull_data_updated_on_Value:
+    @pytest.fixture(scope="class")
+    def socrata_metadata(self, mock_SocrataTableMetadata):
+        socrata_table = CHICAGO_CITY_BOUNDARY
+        mock_socrata_metadata = socrata.SocrataTableMetadata(socrata_table=socrata_table)
+        # print(f"SocrataTableMetadata attrs: {dir(mock_socrata_metadata)}")
+        # print(f"source for get_table_metadata: {getsource(mock_socrata_metadata.get_table_metadata)}")
+        # print(f"source for get_prior_metadata_checks_from_db: {getsource(mock_socrata_metadata.get_prior_metadata_checks_from_db)}")
+        # print(f"source for initialize_data_freshness_check_record: {getsource(mock_socrata_metadata.initialize_data_freshness_check_record)}")
+        # print(f"source for check_warehouse_data_freshness: {getsource(mock_socrata_metadata.check_warehouse_data_freshness)}")
+        mock_socrata_metadata.initialize_data_freshness_check_record()
+        yield mock_socrata_metadata
+
+    def test_freshness_check_logic(self, socrata_metadata):
+        socrata_metadata.check_warehouse_data_freshness(socrata_metadata)
+        print(f"SocrataTableMetadata attrs: {dir(socrata_metadata)}")
+        assert socrata_metadata.latest_data_update_datetime is None
+        assert socrata_metadata.data_freshness_check["data_pulled_this_check"] == False
 
 
 class TestCSVSocrataTableMetadata:
