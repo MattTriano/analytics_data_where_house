@@ -52,18 +52,18 @@ def monkeysession():
 @pytest.fixture(scope="class")
 def mock_SocrataTableMetadata(monkeysession, table_metadata_df):
     def mock_get_table_metadata(socrata_table):
-        print(f"socrata_table: {socrata_table}")
+        # print(f"socrata_table: {socrata_table}")
         return load_table_metadata_json(table_id=socrata_table.table_id)
 
     def mock_get_prior_metadata_checks_from_db(*args, **kwargs) -> pd.DataFrame:
-        print(f"Variables in local scope: {locals()}")
-        print(f"locals()['kwargs']['engine']: {locals()['kwargs']['engine']}")
-        print(f"locals()['kwargs']['engine'].table_id: {locals()['kwargs']['engine'].table_id}")
-        return table_metadata_df.loc[
+        # print(f"Variables in local scope: {locals()}")
+        # print(f"locals()['kwargs']['engine']: {locals()['kwargs']['engine']}")
+        # print(f"locals()['kwargs']['engine'].table_id: {locals()['kwargs']['engine'].table_id}")
+        check_df = table_metadata_df.loc[
             table_metadata_df["table_id"] == locals()["kwargs"]["engine"].table_id
         ].copy()
-
-    # def mock_check_warehouse_data_freshness()
+        # print(f"check_df: {check_df}")
+        return check_df
 
     monkeysession.setattr(
         socrata.SocrataTableMetadata, "get_table_metadata", mock_get_table_metadata
@@ -80,19 +80,53 @@ class TestNull_data_updated_on_Value:
     def socrata_metadata(self, mock_SocrataTableMetadata):
         socrata_table = CHICAGO_CITY_BOUNDARY
         mock_socrata_metadata = socrata.SocrataTableMetadata(socrata_table=socrata_table)
-        # print(f"SocrataTableMetadata attrs: {dir(mock_socrata_metadata)}")
-        # print(f"source for get_table_metadata: {getsource(mock_socrata_metadata.get_table_metadata)}")
-        # print(f"source for get_prior_metadata_checks_from_db: {getsource(mock_socrata_metadata.get_prior_metadata_checks_from_db)}")
-        # print(f"source for initialize_data_freshness_check_record: {getsource(mock_socrata_metadata.initialize_data_freshness_check_record)}")
-        # print(f"source for check_warehouse_data_freshness: {getsource(mock_socrata_metadata.check_warehouse_data_freshness)}")
         mock_socrata_metadata.initialize_data_freshness_check_record()
         yield mock_socrata_metadata
 
     def test_freshness_check_logic(self, socrata_metadata):
         socrata_metadata.check_warehouse_data_freshness(socrata_metadata)
-        print(f"SocrataTableMetadata attrs: {dir(socrata_metadata)}")
         assert socrata_metadata.latest_data_update_datetime is None
         assert socrata_metadata.data_freshness_check["data_pulled_this_check"] == False
+
+
+class TestFreshnessCheckLogic:
+    @pytest.fixture(scope="class")
+    def socrata_metadata_reg_updates(self, mock_SocrataTableMetadata):
+        socrata_table = COOK_COUNTY_PARCEL_SALES
+        mock_socrata_metadata = socrata.SocrataTableMetadata(socrata_table=socrata_table)
+        mock_socrata_metadata.initialize_data_freshness_check_record()
+        yield mock_socrata_metadata
+
+    @pytest.fixture(scope="class")
+    def socrata_metadata_never_updated(self, mock_SocrataTableMetadata):
+        socrata_table = CHICAGO_CITY_BOUNDARY
+        mock_socrata_metadata = socrata.SocrataTableMetadata(socrata_table=socrata_table)
+        mock_socrata_metadata.initialize_data_freshness_check_record()
+        yield mock_socrata_metadata
+
+    def test_reg_updates_freshness_check_logic(self, socrata_metadata_reg_updates):
+        socrata_metadata_reg_updates.check_warehouse_data_freshness(
+            engine=socrata_metadata_reg_updates
+        )
+        # print(f"socrata_metadata_reg_updates.table_name: {socrata_metadata_reg_updates.table_name}")
+        # print(f"socrata_metadata_reg_updates.data_freshness_check: {socrata_metadata_reg_updates.data_freshness_check}")
+        # print(f"socrata_metadata_reg_updates.latest_data_update_datetime: {socrata_metadata_reg_updates.latest_data_update_datetime}")
+        # print(f"socrata_metadata_reg_updates.data_freshness_check['data_pulled_this_check']: {socrata_metadata_reg_updates.data_freshness_check['data_pulled_this_check']}")
+        assert socrata_metadata_reg_updates.latest_data_update_datetime == "2022-12-01T06:16:57Z"
+        assert socrata_metadata_reg_updates.data_freshness_check["data_pulled_this_check"] is None
+        assert socrata_metadata_reg_updates.data_freshness_check["updated_data_available"] == True
+
+    def test_never_updated_freshness_check_logic(self, socrata_metadata_never_updated):
+        socrata_metadata_never_updated.check_warehouse_data_freshness(
+            engine=socrata_metadata_never_updated
+        )
+        assert socrata_metadata_never_updated.latest_data_update_datetime is None
+        assert (
+            socrata_metadata_never_updated.data_freshness_check["data_pulled_this_check"] == False
+        )
+        assert (
+            socrata_metadata_never_updated.data_freshness_check["updated_data_available"] == False
+        )
 
 
 class TestCSVSocrataTableMetadata:
