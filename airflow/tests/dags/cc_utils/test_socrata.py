@@ -6,6 +6,9 @@ from typing import Dict
 import unittest
 from unittest.mock import Mock, patch
 
+from inspect import getsource
+
+import pandas as pd
 import pytest
 
 sys.path.append("../../airflow")
@@ -20,6 +23,14 @@ from dags.sources.tables import (
 LOGGER = logging.getLogger("SocrataTesting")
 
 
+def load_json(file_path: Path) -> Dict:
+    if file_path.is_file():
+        with open(file_path, "r", encoding="utf-8") as json_file:
+            return json.load(json_file)
+    else:
+        raise Exception(f"No file found in location {file_path}")
+
+
 def load_table_metadata_json(table_id: str) -> Dict:
     if "__file__" in globals().keys():
         file_path = (
@@ -29,11 +40,7 @@ def load_table_metadata_json(table_id: str) -> Dict:
         )
     else:
         raise Exception("run tests from the command line, please")
-    if file_path.is_file():
-        with open(file_path, "r", encoding="utf-8") as json_file:
-            return json.load(json_file)
-    else:
-        raise Exception(f"No file found in location {file_path}")
+    return load_json(file_path)
 
 
 @pytest.fixture(scope="session")
@@ -43,14 +50,60 @@ def monkeysession():
 
 
 @pytest.fixture(scope="class")
-def mock_SocrataTableMetadata(monkeysession):
+def mock_SocrataTableMetadata(monkeysession, table_metadata_df):
     def mock_get_table_metadata(socrata_table):
-        print(f"socrata_table: {socrata_table}")
         return load_table_metadata_json(table_id=socrata_table.table_id)
+
+    def mock_get_prior_metadata_checks_from_db(*args, **kwargs) -> pd.DataFrame:
+        check_df = table_metadata_df.loc[
+            table_metadata_df["table_id"] == locals()["kwargs"]["engine"].table_id
+        ].copy()
+        return check_df
 
     monkeysession.setattr(
         socrata.SocrataTableMetadata, "get_table_metadata", mock_get_table_metadata
     )
+    monkeysession.setattr(
+        socrata.SocrataTableMetadata,
+        "get_prior_metadata_checks_from_db",
+        mock_get_prior_metadata_checks_from_db,
+    )
+
+
+class TestFreshnessCheckLogic:
+    @pytest.fixture(scope="class")
+    def socrata_metadata_reg_updates(self, mock_SocrataTableMetadata):
+        socrata_table = COOK_COUNTY_PARCEL_SALES
+        mock_socrata_metadata = socrata.SocrataTableMetadata(socrata_table=socrata_table)
+        mock_socrata_metadata.initialize_data_freshness_check_record()
+        yield mock_socrata_metadata
+
+    @pytest.fixture(scope="class")
+    def socrata_metadata_never_updated(self, mock_SocrataTableMetadata):
+        socrata_table = CHICAGO_CITY_BOUNDARY
+        mock_socrata_metadata = socrata.SocrataTableMetadata(socrata_table=socrata_table)
+        mock_socrata_metadata.initialize_data_freshness_check_record()
+        yield mock_socrata_metadata
+
+    def test_reg_updates_freshness_check_logic(self, socrata_metadata_reg_updates):
+        socrata_metadata_reg_updates.check_warehouse_data_freshness(
+            engine=socrata_metadata_reg_updates
+        )
+        assert socrata_metadata_reg_updates.latest_data_update_datetime == "2022-12-01T06:16:57Z"
+        assert socrata_metadata_reg_updates.data_freshness_check["data_pulled_this_check"] is None
+        assert socrata_metadata_reg_updates.data_freshness_check["updated_data_available"] == True
+
+    def test_never_updated_freshness_check_logic(self, socrata_metadata_never_updated):
+        socrata_metadata_never_updated.check_warehouse_data_freshness(
+            engine=socrata_metadata_never_updated
+        )
+        assert socrata_metadata_never_updated.latest_data_update_datetime is None
+        assert (
+            socrata_metadata_never_updated.data_freshness_check["data_pulled_this_check"] == False
+        )
+        assert (
+            socrata_metadata_never_updated.data_freshness_check["updated_data_available"] == False
+        )
 
 
 class TestCSVSocrataTableMetadata:

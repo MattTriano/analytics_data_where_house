@@ -22,7 +22,7 @@ runtime_configuration: {}
 validations:
   - batch_request:
       datasource_name: where_house_source
-      data_connector_name: default_inferred_data_connector_name
+      data_connector_name: data_raw_inferred_data_connector_name
       data_asset_name: data_raw.temp_cook_county_parcel_sales
       data_connector_query:
         index: -1

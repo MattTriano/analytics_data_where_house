@@ -289,18 +289,26 @@ class SocrataTableMetadata:
             self.data_freshness_check["updated_metadata_available"] = True
         else:
             latest_pull = check_df.loc[data_pulled_previously_mask, "time_of_check"].max()
-            latest_source_data_update = typeset_zulu_tz_datetime_str(
-                datetime_str=self.latest_data_update_datetime
-            )
-            latest_source_metadata_update = typeset_zulu_tz_datetime_str(
-                datetime_str=self.latest_metadata_update_datetime
-            )
-            if latest_source_data_update > latest_pull:
-                self.data_freshness_check["updated_data_available"] = True
-            if latest_source_metadata_update > latest_pull:
-                self.data_freshness_check["updated_metadata_available"] = True
-            if (latest_pull >= latest_source_data_update) & (
-                latest_pull >= latest_source_metadata_update
+            if self.latest_data_update_datetime is not None:
+                latest_source_data_update = typeset_zulu_tz_datetime_str(
+                    datetime_str=self.latest_data_update_datetime
+                )
+                if latest_source_data_update > latest_pull:
+                    self.data_freshness_check["updated_data_available"] = True
+            elif self.latest_data_update_datetime is None:
+                self.data_freshness_check["updated_data_available"] = False
+
+            if self.latest_metadata_update_datetime is not None:
+                latest_source_metadata_update = typeset_zulu_tz_datetime_str(
+                    datetime_str=self.latest_metadata_update_datetime
+                )
+                if latest_source_metadata_update > latest_pull:
+                    self.data_freshness_check["updated_metadata_available"] = True
+            elif self.latest_metadata_update_datetime is None:
+                self.data_freshness_check["updated_metadata_available"] = False
+
+            if (not self.data_freshness_check["updated_data_available"]) & (
+                not self.data_freshness_check["updated_metadata_available"]
             ):
                 self.data_freshness_check["data_pulled_this_check"] = False
 

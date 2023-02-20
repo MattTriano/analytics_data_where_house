@@ -82,4 +82,4 @@ get_py_utils_shell: start_python_container
 	docker compose exec py-utils /bin/bash
 
 run_tests: start_python_container
-	docker compose exec py-utils /bin/bash -c "python -m pytest"
+	docker compose exec py-utils /bin/bash -c "python -m pytest -s"
