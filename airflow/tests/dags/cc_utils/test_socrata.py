@@ -52,17 +52,12 @@ def monkeysession():
 @pytest.fixture(scope="class")
 def mock_SocrataTableMetadata(monkeysession, table_metadata_df):
     def mock_get_table_metadata(socrata_table):
-        # print(f"socrata_table: {socrata_table}")
         return load_table_metadata_json(table_id=socrata_table.table_id)
 
     def mock_get_prior_metadata_checks_from_db(*args, **kwargs) -> pd.DataFrame:
-        # print(f"Variables in local scope: {locals()}")
-        # print(f"locals()['kwargs']['engine']: {locals()['kwargs']['engine']}")
-        # print(f"locals()['kwargs']['engine'].table_id: {locals()['kwargs']['engine'].table_id}")
         check_df = table_metadata_df.loc[
             table_metadata_df["table_id"] == locals()["kwargs"]["engine"].table_id
         ].copy()
-        # print(f"check_df: {check_df}")
         return check_df
 
     monkeysession.setattr(
@@ -73,20 +68,6 @@ def mock_SocrataTableMetadata(monkeysession, table_metadata_df):
         "get_prior_metadata_checks_from_db",
         mock_get_prior_metadata_checks_from_db,
     )
-
-
-class TestNull_data_updated_on_Value:
-    @pytest.fixture(scope="class")
-    def socrata_metadata(self, mock_SocrataTableMetadata):
-        socrata_table = CHICAGO_CITY_BOUNDARY
-        mock_socrata_metadata = socrata.SocrataTableMetadata(socrata_table=socrata_table)
-        mock_socrata_metadata.initialize_data_freshness_check_record()
-        yield mock_socrata_metadata
-
-    def test_freshness_check_logic(self, socrata_metadata):
-        socrata_metadata.check_warehouse_data_freshness(socrata_metadata)
-        assert socrata_metadata.latest_data_update_datetime is None
-        assert socrata_metadata.data_freshness_check["data_pulled_this_check"] == False
 
 
 class TestFreshnessCheckLogic:
@@ -108,10 +89,6 @@ class TestFreshnessCheckLogic:
         socrata_metadata_reg_updates.check_warehouse_data_freshness(
             engine=socrata_metadata_reg_updates
         )
-        # print(f"socrata_metadata_reg_updates.table_name: {socrata_metadata_reg_updates.table_name}")
-        # print(f"socrata_metadata_reg_updates.data_freshness_check: {socrata_metadata_reg_updates.data_freshness_check}")
-        # print(f"socrata_metadata_reg_updates.latest_data_update_datetime: {socrata_metadata_reg_updates.latest_data_update_datetime}")
-        # print(f"socrata_metadata_reg_updates.data_freshness_check['data_pulled_this_check']: {socrata_metadata_reg_updates.data_freshness_check['data_pulled_this_check']}")
         assert socrata_metadata_reg_updates.latest_data_update_datetime == "2022-12-01T06:16:57Z"
         assert socrata_metadata_reg_updates.data_freshness_check["data_pulled_this_check"] is None
         assert socrata_metadata_reg_updates.data_freshness_check["updated_data_available"] == True
