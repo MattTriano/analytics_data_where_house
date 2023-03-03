@@ -12,7 +12,7 @@ After cloning this project, `cd` into your local repo, run this `make` command a
 user@host:.../your_local_repo$ make make_credentials
 ```
 
-The program will validate the values you enter, assemble them into some compound values (mostly connection strings), and output these configs into the dot-env files (`.env` and `.dwh.env`) in the top-level repo directory. Review these files and make any changes before you initialize the system (i.e., when these username and password pairs are used to create roles in databases or Airflow starts using the Fernet key to encrypt passwords in connection strings).
+The program will validate the values you enter, assemble them into some compound values (mostly connection strings), and output these configs into the dot-env files (`.env` and `.env.dwh`) in the top-level repo directory. Review these files and make any changes before you initialize the system (i.e., when these username and password pairs are used to create roles in databases or Airflow starts using the Fernet key to encrypt passwords in connection strings).
 
 ### Initializing the system
 

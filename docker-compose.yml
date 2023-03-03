@@ -154,7 +154,7 @@ services:
       dockerfile: Dockerfiles/postgis.Dockerfile
     shm_size: 4gb
     env_file:
-      - .dwh.env
+      - .env.dwh
     networks:
       - re_etl_net
     ports:

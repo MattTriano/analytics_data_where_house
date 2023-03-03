@@ -133,8 +133,8 @@
       "<DWH_POSTGRES_DB>": ".env::DWH_POSTGRES_DB"
     }
   },
-  ".dwh.env::POSTGRES_USER": {
-    "file": ".dwh.env",
+  ".env.dwh::POSTGRES_USER": {
+    "file": ".env.dwh",
     "name": "POSTGRES_USER",
     "group": "Data Warehouse DB",
     "default_value": "DWH_POSTGRES_USER",
@@ -145,8 +145,8 @@
       "DWH_POSTGRES_USER": ".env::DWH_POSTGRES_USER"
     }
   },
-  ".dwh.env::POSTGRES_PASSWORD": {
-    "file": ".dwh.env",
+  ".env.dwh::POSTGRES_PASSWORD": {
+    "file": ".env.dwh",
     "name": "POSTGRES_PASSWORD",
     "group": "Data Warehouse DB",
     "default_value": "DWH_POSTGRES_PASSWORD",
@@ -157,8 +157,8 @@
       "DWH_POSTGRES_PASSWORD": ".env::DWH_POSTGRES_PASSWORD"
     }
   },
-  ".dwh.env::POSTGRES_DB": {
-    "file": ".dwh.env",
+  ".env.dwh::POSTGRES_DB": {
+    "file": ".env.dwh",
     "name": "POSTGRES_DB",
     "group": "Data Warehouse DB",
     "default_value": "DWH_POSTGRES_DB",

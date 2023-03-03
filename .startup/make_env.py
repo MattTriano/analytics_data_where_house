@@ -143,13 +143,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print("Please enter Environment Variable values at the following prompts:")
-    print("(you can manually edit these values in the .env and .dwh.env files later, ")
+    print("(you can manually edit these values in the .env and .env.dwh files later, ")
     print("just be aware that some env-var-values are made of other env-var-values)")
 
     project_dir = Path(args.project_dir)
     dot_env_exists = dot_env_file_already_exists(project_dir=args.project_dir, file_name=".env")
     dot_dwh_dot_env_exists = dot_env_file_already_exists(
-        project_dir=args.project_dir, file_name=".dwh.env"
+        project_dir=args.project_dir, file_name=".env.dwh"
     )
     if (dot_env_exists == False) and (dot_dwh_dot_env_exists == False):
         env_var_dict = load_env_var_defaults_file(project_dir=args.project_dir)
