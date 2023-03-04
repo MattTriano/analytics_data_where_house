@@ -1,6 +1,7 @@
 site_name: Analytics Data Where House Docs
 theme:
   name: material
+  custom_dir: docs/overrides
   palette:
 
     # Palette toggle for light mode

@@ -13,21 +13,30 @@ This platform automates curating a local data warehouse of interesting, up-to-da
 At present, it uses docker to provision and run:
 
 * a PostgreSQL + PostGIS database as the data warehouse,
+* **Apache Superset** for:
+    * Interactive Data Visualization and EDA
+    * Dashboarding and Reporting
+
+    ![Geospatial Data Analysis](/assets/imgs/superset/deckgl_polygon_chart_demo.png)
+    ![Time Series Analysis](/assets/imgs/superset/median_sale_price_by_property_class.png)    
+    ![Dashboarding](/assets/imgs/superset/dashboard_demo.png)
+
 * a **pgAdmin4** database administration interface,
 
     ![Sample Exploration of a DWH table](/assets/imgs/pgAdmin4/Geospatial_query_and_data_in_pgAdmin4.png)
 
-* **Airflow** components to orchestrate tasks (note: uses a LocalExecutor),
+* **Airflow** components to orchestrate execution of tasks,
 
-    ![Airflow DagBag for Cook County tag](/assets/imgs/systems/Airflow_Cook_County_Tagged_DagBag.png)
+    ![Airflow DagBag for Cook County tag](/assets/imgs/Socrata_ELT_DAG/Running_DAGs.png)
 
 * **dbt** to:
-    * manage data transformation + cleaning tasks,
+    * manage sequential data transformation + cleaning tasks,
     * serve data documentation and data lineage graphs, and
     * facilitate search of the data dictionary and data catalog 
-
-    ![dbt Data Documentation Interface](/assets/imgs/systems/dbt_data_docs_interface_showing_parcel_sales.png)
+    
     ![dbt Data Lineage Graph](/assets/imgs/systems/dbt_lineage_graph_of_parcel_sales.png)
+    ![All Data Tables' Lineage Graphs](/assets/imgs/dbt/lineage_graph_of_all_nodes.png)
+    ![One Data Set's Lineage Graph](/assets/imgs/systems/dbt_data_docs_interface_showing_parcel_sales.png)    
 
 * great_expectations for anomaly detection and data monitoring, and
 
@@ -35,8 +44,8 @@ At present, it uses docker to provision and run:
 
 * custom python code that makes it easy to implement an ELT pipeline for [any other table hosted by Socrata](http://www.opendatanetwork.com/)
 
-    ![load_data_tg TaskGroup High Level](/assets/imgs/Socrata_ELT_DAG/High_level_load_data_tg.PNG)
-
     ![data-loading TaskGroups in load_data_tg TaskGroup](/assets/imgs/Socrata_ELT_DAG/Full_view_data_loaders_in_load_data_tg.PNG)
 
-    ![load_data_tg TaskGroup High Level](/assets/imgs/Socrata_ELT_DAG/High_level_load_data_tg.PNG)
+    ![load_data_tg TaskGroup High Level](/assets/imgs/Socrata_ELT_DAG/load_data_task_group_w_checkpoints.png)    
+
+    ![automate as much pipeline development as possible](/assets/imgs/Socrata_ELT_DAG/generate_and_run_dbt_models.png)
