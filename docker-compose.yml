@@ -22,6 +22,8 @@ x-airflow-common:
     - ./airflow/data_raw:/opt/airflow/data_raw
     - ./airflow/dbt:/opt/airflow/dbt
     - ./airflow/great_expectations:/opt/airflow/great_expectations
+    - ./airflow/tests:/opt/airflow/tests
+    - ./airflow/pytest.ini:/opt/airflow/pytest.ini
     - ./profiles.yml:/home/airflow/.dbt/profiles.yml
   user: "${AIRFLOW_UID:-50000}:0"
   networks:

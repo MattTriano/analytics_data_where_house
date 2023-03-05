@@ -86,5 +86,6 @@ start_python_container:
 get_py_utils_shell: start_python_container
 	docker compose exec py-utils /bin/bash
 
-run_tests: start_python_container
-	docker compose exec py-utils /bin/bash -c "python -m pytest -s"
+run_tests:
+	docker compose exec airflow-scheduler /bin/bash -c \
+		"cd /opt/airflow && python -m pytest -s"
