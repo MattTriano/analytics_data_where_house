@@ -71,6 +71,14 @@
     "user_input": false,
     "dependant_on_other_env_vars": false
   },
+  ".env::AIRFLOW__WEBSERVER__SESSION_BACKEND": {
+    "file": ".env",
+    "name": "AIRFLOW__WEBSERVER__SESSION_BACKEND",
+    "group": "securecookie",
+    "default_value": true,
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
   ".env::PGADMIN_DEFAULT_EMAIL": {
     "file": ".env",
     "name": "PGADMIN_DEFAULT_EMAIL",
@@ -209,6 +217,16 @@
     "invalid_substrings": "[\\s]",
     "dependant_on_other_env_vars": false
   },
+  ".env.superset::ADMIN_USERNAME": {
+    "file": ".env.superset",
+    "name": "ADMIN_USERNAME",
+    "group": "Superset",
+    "default_value": "superset_admin_username",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
   ".env.superset::POSTGRES_DB": {
     "file": ".env.superset",
     "name": "POSTGRES_DB",
@@ -248,5 +266,19 @@
     "valid_pattern": null,
     "invalid_substrings": "[\\s]",
     "dependant_on_other_env_vars": false
+  },
+  ".env::SQLALCHEMY_DATABASE_URI": {
+    "file": ".env.superset",
+    "name": "SQLALCHEMY_DATABASE_URI",
+    "group": "Superset",
+    "default_value": "postgresql+psycopg2://<USER>:<PASSWORD>@ss_db:5432/<DB>",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "is_uri": true,
+    "env_var_mappings": {
+      "<USER>": ".env.superset::POSTGRES_USER",
+      "<PASSWORD>": ".env.superset::POSTGRES_PASSWORD",
+      "<DB>": ".env.superset::POSTGRES_DB"
+    }
   }
 }

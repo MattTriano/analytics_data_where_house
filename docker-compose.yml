@@ -317,26 +317,6 @@ services:
       - -c
       - airflow
 
-  py-utils:
-    image: adwh_py_utils:0.1
-    build:
-      context: ./
-      dockerfile: ./Dockerfiles/python.Dockerfile
-    profiles: [ "testing", "startup" ]
-    env_file:
-      - .env
-    environment:
-      GE_JUPYTER_CMD: "jupyter lab --allow-root --ip 0.0.0.0 --port 18888"
-    stdin_open: true
-    tty: true
-    networks:
-      - re_etl_net
-    ports:
-      - "18888:18888"
-    entrypoint: [ "/bin/bash" ]
-    volumes:
-      - ./airflow:/home
-
 networks:
   re_etl_net:
 
