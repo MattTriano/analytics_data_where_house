@@ -168,5 +168,85 @@
     "env_var_mappings": {
       "DWH_POSTGRES_DB": ".env::DWH_POSTGRES_DB"
     }
+  },
+  ".env.superset::ADMIN_EMAIL": {
+    "file": ".env.superset",
+    "name": "ADMIN_EMAIL",
+    "group": "Superset",
+    "default_value": "superset_admin@email.com",
+    "user_input": true,
+    "valid_pattern": "[^@\\s]+@[^@\\s]+\\.[\\w]+$",
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::ADMIN_FIRST_NAME": {
+    "file": ".env.superset",
+    "name": "ADMIN_FIRST_NAME",
+    "group": "Superset",
+    "default_value": "superset_admin_first_name",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::ADMIN_LAST_NAME": {
+    "file": ".env.superset",
+    "name": "ADMIN_LAST_NAME",
+    "group": "Superset",
+    "default_value": "superset_admin_last_name",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::ADMIN_PASSWORD": {
+    "file": ".env.superset",
+    "name": "ADMIN_PASSWORD",
+    "group": "Superset",
+    "default_value": "superset_admin_password",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::POSTGRES_DB": {
+    "file": ".env.superset",
+    "name": "POSTGRES_DB",
+    "group": "Superset",
+    "default_value": "superset_db",
+    "user_input": false,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::POSTGRES_USER": {
+    "file": ".env.superset",
+    "name": "POSTGRES_USER",
+    "group": "Superset",
+    "default_value": "superset_db_username",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::POSTGRES_PASSWORD": {
+    "file": ".env.superset",
+    "name": "POSTGRES_PASSWORD",
+    "group": "Superset",
+    "default_value": "superset_db_password",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::PYTHONPATH": {
+    "file": ".env.superset",
+    "name": "PYTHONPATH",
+    "group": "Superset",
+    "default_value": "/app/pythonpath:/app/docker/pythonpath_dev",
+    "user_input": false,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
   }
 }
