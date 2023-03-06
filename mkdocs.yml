@@ -57,6 +57,7 @@ nav:
       - "Time Series Features": user_guide/feature_engineering/time_series.md
     - "Visualization and EDA":
       - user_guide/visualization/index.md
+      - "Making Charts": user_guide/visualization/visualization.md
     - "Accessing Systems": user_guide/accessing_resources.md
   - "Data Sources":
     - 'Socrata ELT': data_sources/socrata.md
@@ -76,6 +77,7 @@ markdown_extensions:
   - attr_list
   - md_in_html
   - def_list
+  - footnotes
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.highlight:
