@@ -13,6 +13,7 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+    GE_JUPYTER_CMD: "jupyter lab --allow-root --ip 0.0.0.0 --port 18888"
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
   volumes:
     - ./airflow/dags:/opt/airflow/dags
@@ -21,6 +22,8 @@ x-airflow-common:
     - ./airflow/data_raw:/opt/airflow/data_raw
     - ./airflow/dbt:/opt/airflow/dbt
     - ./airflow/great_expectations:/opt/airflow/great_expectations
+    - ./airflow/tests:/opt/airflow/tests
+    - ./airflow/pytest.ini:/opt/airflow/pytest.ini
     - ./profiles.yml:/home/airflow/.dbt/profiles.yml
   user: "${AIRFLOW_UID:-50000}:0"
   networks:
@@ -30,7 +33,94 @@ x-airflow-common:
     airflow_db:
       condition: service_healthy
 
+x-superset-common:
+  &superset-common
+  build:
+    context: ./
+    dockerfile: Dockerfiles/superset.Dockerfile
+  networks:
+    - re_etl_net
+  env_file:
+    - .env.superset
+  environment:
+    SUPERSET_LOAD_EXAMPLES: false
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+
+  depends_on:
+    &superset-common-depends-on
+    redis:
+      condition: service_healthy
+    ss_db:
+      condition: service_healthy
+
 services:
+  superset:
+    <<: *superset-common
+    image: adwh_superset:2.0.1
+    command: [ "/app/docker/docker-bootstrap.sh", "app-gunicorn" ]
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    depends_on:
+      <<: *superset-common-depends-on
+      ss_init:
+        condition: service_completed_successfully
+    volumes:
+      - ss_core_vol:/app/superset_home
+
+  ss_db:
+    image: adwh_ss_db:14.5
+    build:
+      context: ./
+      dockerfile: Dockerfiles/airflow_db.Dockerfile
+    env_file:
+      - .env.superset
+    networks:
+      - re_etl_net
+    ports:
+      - "5442:5432"
+    volumes:
+      - re_ss_db_vol:/var/lib/postgresql/data/
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h ss_db -d $${POSTGRES_DB} -U $${POSTGRES_USER}"
+        ]
+      interval: 5s
+      retries: 5
+    restart: always
+
+  ss_init:
+    <<: *superset-common
+    command: [ "/app/docker/docker-init.sh" ]
+    depends_on:
+      - redis
+      - ss_db
+    volumes:
+      - ss_core_vol:/app/superset_home
+    healthcheck:
+      disable: true
+
+  redis:
+    image: adwh_redis:7.0.8
+    build:
+      context: ./
+      dockerfile: Dockerfiles/redis.Dockerfile
+    ports:
+      - "6379:6379"
+    volumes:
+      - re_redis_vol:/data
+    networks:
+      - re_etl_net
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+
   airflow_db:
     image: adwh_airflow_pg_db:14.5
     build:
@@ -66,7 +156,7 @@ services:
       dockerfile: Dockerfiles/postgis.Dockerfile
     shm_size: 4gb
     env_file:
-      - .dwh.env
+      - .env.dwh
     networks:
       - re_etl_net
     ports:
@@ -78,10 +168,10 @@ services:
         [
           "CMD",
           "pg_isready",
+          "-h",
+          "dwh_db",
           "-d",
           "${POSTGRES_DB}",
-          "-p",
-          "5431",
           "-U",
           "${POSTGRES_USER}"
         ]
@@ -227,26 +317,6 @@ services:
       - -c
       - airflow
 
-  py-utils:
-    image: adwh_py_utils:0.1
-    build:
-      context: ./
-      dockerfile: ./Dockerfiles/python.Dockerfile
-    profiles: [ "testing", "startup" ]
-    env_file:
-      - .env
-    environment:
-      GE_JUPYTER_CMD: "jupyter lab --allow-root --ip 0.0.0.0 --port 18888"
-    stdin_open: true
-    tty: true
-    networks:
-      - re_etl_net
-    ports:
-      - "18888:18888"
-    entrypoint: [ "/bin/bash" ]
-    volumes:
-      - ./airflow:/home
-
 networks:
   re_etl_net:
 
@@ -255,3 +325,6 @@ volumes:
   re_airflow_db:
   re_etl_admin:
   re_dwh_db:
+  re_ss_db_vol:
+  re_redis_vol:
+  ss_core_vol:

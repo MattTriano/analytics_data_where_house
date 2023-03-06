@@ -71,6 +71,14 @@
     "user_input": false,
     "dependant_on_other_env_vars": false
   },
+  ".env::AIRFLOW__WEBSERVER__SESSION_BACKEND": {
+    "file": ".env",
+    "name": "AIRFLOW__WEBSERVER__SESSION_BACKEND",
+    "group": "securecookie",
+    "default_value": true,
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
   ".env::PGADMIN_DEFAULT_EMAIL": {
     "file": ".env",
     "name": "PGADMIN_DEFAULT_EMAIL",
@@ -133,8 +141,8 @@
       "<DWH_POSTGRES_DB>": ".env::DWH_POSTGRES_DB"
     }
   },
-  ".dwh.env::POSTGRES_USER": {
-    "file": ".dwh.env",
+  ".env.dwh::POSTGRES_USER": {
+    "file": ".env.dwh",
     "name": "POSTGRES_USER",
     "group": "Data Warehouse DB",
     "default_value": "DWH_POSTGRES_USER",
@@ -145,8 +153,8 @@
       "DWH_POSTGRES_USER": ".env::DWH_POSTGRES_USER"
     }
   },
-  ".dwh.env::POSTGRES_PASSWORD": {
-    "file": ".dwh.env",
+  ".env.dwh::POSTGRES_PASSWORD": {
+    "file": ".env.dwh",
     "name": "POSTGRES_PASSWORD",
     "group": "Data Warehouse DB",
     "default_value": "DWH_POSTGRES_PASSWORD",
@@ -157,8 +165,8 @@
       "DWH_POSTGRES_PASSWORD": ".env::DWH_POSTGRES_PASSWORD"
     }
   },
-  ".dwh.env::POSTGRES_DB": {
-    "file": ".dwh.env",
+  ".env.dwh::POSTGRES_DB": {
+    "file": ".env.dwh",
     "name": "POSTGRES_DB",
     "group": "Data Warehouse DB",
     "default_value": "DWH_POSTGRES_DB",
@@ -167,6 +175,110 @@
     "is_uri": false,
     "env_var_mappings": {
       "DWH_POSTGRES_DB": ".env::DWH_POSTGRES_DB"
+    }
+  },
+  ".env.superset::ADMIN_EMAIL": {
+    "file": ".env.superset",
+    "name": "ADMIN_EMAIL",
+    "group": "Superset",
+    "default_value": "superset_admin@email.com",
+    "user_input": true,
+    "valid_pattern": "[^@\\s]+@[^@\\s]+\\.[\\w]+$",
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::ADMIN_FIRST_NAME": {
+    "file": ".env.superset",
+    "name": "ADMIN_FIRST_NAME",
+    "group": "Superset",
+    "default_value": "superset_admin_first_name",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::ADMIN_LAST_NAME": {
+    "file": ".env.superset",
+    "name": "ADMIN_LAST_NAME",
+    "group": "Superset",
+    "default_value": "superset_admin_last_name",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::ADMIN_PASSWORD": {
+    "file": ".env.superset",
+    "name": "ADMIN_PASSWORD",
+    "group": "Superset",
+    "default_value": "superset_admin_password",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::ADMIN_USERNAME": {
+    "file": ".env.superset",
+    "name": "ADMIN_USERNAME",
+    "group": "Superset",
+    "default_value": "superset_admin_username",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::POSTGRES_DB": {
+    "file": ".env.superset",
+    "name": "POSTGRES_DB",
+    "group": "Superset",
+    "default_value": "superset_db",
+    "user_input": false,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::POSTGRES_USER": {
+    "file": ".env.superset",
+    "name": "POSTGRES_USER",
+    "group": "Superset",
+    "default_value": "superset_db_username",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::POSTGRES_PASSWORD": {
+    "file": ".env.superset",
+    "name": "POSTGRES_PASSWORD",
+    "group": "Superset",
+    "default_value": "superset_db_password",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.superset::PYTHONPATH": {
+    "file": ".env.superset",
+    "name": "PYTHONPATH",
+    "group": "Superset",
+    "default_value": "/app/pythonpath:/app/docker/pythonpath_dev",
+    "user_input": false,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env::SQLALCHEMY_DATABASE_URI": {
+    "file": ".env.superset",
+    "name": "SQLALCHEMY_DATABASE_URI",
+    "group": "Superset",
+    "default_value": "postgresql+psycopg2://<USER>:<PASSWORD>@ss_db:5432/<DB>",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "is_uri": true,
+    "env_var_mappings": {
+      "<USER>": ".env.superset::POSTGRES_USER",
+      "<PASSWORD>": ".env.superset::POSTGRES_PASSWORD",
+      "<DB>": ".env.superset::POSTGRES_DB"
     }
   }
 }

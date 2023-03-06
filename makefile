@@ -25,7 +25,8 @@ make_venv: | $(VENV_PATH)
 make_credentials: | make_venv
 	source $(VENV_PATH)/bin/activate; \
 	python $(STARTUP_DIR)make_env.py \
-		--project_dir=$(MAKEFILE_DIR_PATH)
+		--project_dir=$(MAKEFILE_DIR_PATH) \
+		--mode=interactive
 
 build_images:
 	docker compose build 2>&1 | tee logs/where_house_build_logs_$(run_time).txt
@@ -65,12 +66,17 @@ clean_dbt:
 	docker compose exec airflow-scheduler /bin/bash -c "cd dbt && dbt deps";
 	docker compose exec airflow-scheduler /bin/bash -c "mkdir -p /opt/airflow/dbt/target"
 
-create_warehouse_infra: quiet_startup
+create_warehouse_infra:
 	docker compose exec airflow-scheduler /bin/bash -c \
-		"airflow dags trigger ensure_metadata_table_exists";
-	docker compose exec airflow-scheduler /bin/bash -c \
-		"airflow dags trigger setup_schemas";
-	docker compose exec airflow-scheduler /bin/bash -c "cd dbt && dbt deps";
+		"airflow dags unpause ensure_metadata_table_exists &&\
+		 airflow dags trigger ensure_metadata_table_exists &&\
+		 airflow dags unpause setup_schemas &&\
+		 airflow dags trigger setup_schemas &&\
+		 cd /opt/airflow/dbt && dbt deps &&\
+		 mkdir -p /opt/airflow/dbt/models/intermediate &&\
+		 mkdir -p /opt/airflow/dbt/models/feature &&\
+		 mkdir -p /opt/airflow/dbt/models/dwh &&\
+		 mkdir -p /opt/airflow/dbt/models/report"
 
 build_python_img:
 	docker compose build --no-cache py-utils 2>&1 | tee logs/python_build_logs_$(run_time).txt
@@ -81,5 +87,6 @@ start_python_container:
 get_py_utils_shell: start_python_container
 	docker compose exec py-utils /bin/bash
 
-run_tests: start_python_container
-	docker compose exec py-utils /bin/bash -c "python -m pytest -s"
+run_tests:
+	docker compose exec airflow-scheduler /bin/bash -c \
+		"cd /opt/airflow && python -m pytest -s"

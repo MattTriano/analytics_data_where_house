@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 import urllib
 
 from make_fernet_key import generate_fernet_key_value
+from make_secret_key import generate_secret_key_for_flask
 
 MAX_TRIES = 3
 
@@ -27,7 +28,7 @@ def dot_env_file_already_exists(project_dir: Path, file_name: str = ".env") -> b
     project_dir = Path(project_dir)
 
     if any([p for p in project_dir.iterdir() if p.name == file_name]):
-        print(f"A dot-env file named {file_name} already exists in this project_dir {project_dir}.")
+        print(f"A dot-env file named {file_name} already exists in dir {project_dir}.")
         print("To create new dot-env files via this makefile recipe, delete or move that file")
         print(f"and rerun this makefile recipe.")
         return True
@@ -115,7 +116,7 @@ def get_distinct_dot_env_file_names(env_var_payloads: List) -> List:
     return list(set([p["file"] for p in env_var_payloads]))
 
 
-def create_dot_env_files(project_dir: Path, env_var_dict: Dict) -> None:
+def create_dot_env_files(output_dir: Path, env_var_dict: Dict) -> None:
     env_var_payloads = get_env_var_payloads(env_var_dict=env_var_dict)
     dot_env_file_names = get_distinct_dot_env_file_names(env_var_payloads=env_var_payloads)
     for file_name in dot_env_file_names:
@@ -129,7 +130,7 @@ def create_dot_env_files(project_dir: Path, env_var_dict: Dict) -> None:
             for file_group_payload in file_group_payloads:
                 file_lines.append(f"{file_group_payload['name']}={file_group_payload['set_value']}")
             file_lines.append("")
-        file_out_path = project_dir.joinpath(file_name)
+        file_out_path = output_dir.joinpath(file_name)
         with open(file_out_path, "x") as f:
             all_file_lines = "".join([f"{line}\n" for line in file_lines])
             all_file_lines = all_file_lines.replace("\n\n\n", "\n\n")
@@ -140,30 +141,58 @@ def create_dot_env_files(project_dir: Path, env_var_dict: Dict) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--project_dir", help="The project's top-level directory")
+    parser.add_argument(
+        "--mode", default="dev", help="Credential-defining process: options: ['interactive', 'dev']"
+    )
     args = parser.parse_args()
 
-    print("Please enter Environment Variable values at the following prompts:")
-    print("(you can manually edit these values in the .env and .dwh.env files later, ")
-    print("just be aware that some env-var-values are made of other env-var-values)")
-
     project_dir = Path(args.project_dir)
-    dot_env_exists = dot_env_file_already_exists(project_dir=args.project_dir, file_name=".env")
-    dot_dwh_dot_env_exists = dot_env_file_already_exists(
-        project_dir=args.project_dir, file_name=".dwh.env"
+    if args.mode == "dev":
+        output_dir = project_dir.joinpath(".startup")
+    else:
+        output_dir = project_dir
+    dot_env_exists = dot_env_file_already_exists(project_dir=output_dir, file_name=".env")
+    dwh_dot_env_exists = dot_env_file_already_exists(project_dir=output_dir, file_name=".env.dwh")
+    superset_dot_env_exists = dot_env_file_already_exists(
+        project_dir=output_dir, file_name=".env.superset"
     )
-    if (dot_env_exists == False) and (dot_dwh_dot_env_exists == False):
-        env_var_dict = load_env_var_defaults_file(project_dir=args.project_dir)
-        env_var_dict = orchestrate_user_input_prompts(env_var_dict=env_var_dict)
-        env_var_dict[".env::AIRFLOW_UID"] = {
-            "file": ".env",
-            "name": "AIRFLOW_UID",
-            "group": "Airflow",
-            "set_value": get_user_uid(),
-        }
-        env_var_dict[".env::AIRFLOW__CORE__FERNET_KEY"] = {
-            "file": ".env",
-            "name": "AIRFLOW__CORE__FERNET_KEY",
-            "group": "Airflow",
-            "set_value": generate_fernet_key_value(),
-        }
-        create_dot_env_files(project_dir=project_dir, env_var_dict=env_var_dict)
+    if dot_env_exists or dwh_dot_env_exists or superset_dot_env_exists:
+        raise Exception(
+            f"One or more dot-env file(s) would be overwritten. Backup and move .env files and "
+            + "try again"
+        )
+
+    print(
+        "Please enter Environment Variable values at the following prompts\n"
+        + "  (you can manually edit these values in the .env, .env.dwh, and .env.superset files "
+        + "later,\n  just be aware that some env-var-values are made of other env-var-values)"
+    )
+
+    env_var_dict = load_env_var_defaults_file(project_dir=args.project_dir)
+    env_var_dict = orchestrate_user_input_prompts(env_var_dict=env_var_dict)
+    env_var_dict[".env::AIRFLOW_UID"] = {
+        "file": ".env",
+        "name": "AIRFLOW_UID",
+        "group": "Airflow",
+        "set_value": get_user_uid().strip(),
+    }
+    env_var_dict[".env::AIRFLOW__CORE__FERNET_KEY"] = {
+        "file": ".env",
+        "name": "AIRFLOW__CORE__FERNET_KEY",
+        "group": "Airflow",
+        "set_value": generate_fernet_key_value(),
+    }
+    secret_key = generate_secret_key_for_flask()
+    env_var_dict[".env::AIRFLOW__WEBSERVER__SECRET_KEY"] = {
+        "file": ".env",
+        "name": "AIRFLOW__WEBSERVER__SECRET_KEY",
+        "group": "Airflow",
+        "set_value": secret_key,
+    }
+    env_var_dict[".env.superset::SECRET_KEY"] = {
+        "file": ".env.superset",
+        "name": "SECRET_KEY",
+        "group": "Superset",
+        "set_value": secret_key,
+    }
+    create_dot_env_files(output_dir=output_dir, env_var_dict=env_var_dict)

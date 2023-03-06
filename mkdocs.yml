@@ -1,6 +1,7 @@
 site_name: Analytics Data Where House Docs
 theme:
   name: material
+  custom_dir: docs/overrides
   palette:
 
     # Palette toggle for light mode
@@ -38,6 +39,7 @@ nav:
     - "Overview": setup/index.md
     - 'Getting Started': setup/getting_started.md
     - 'Configure pgAdmin4': setup/pgAdmin4.md
+    - 'Configure Superset': setup/superset_setup.md
   - "User's Guide":
     - user_guide/index.md
     - "Adding a Socrata Pipeline": user_guide/adding_a_socrata_pipeline.md
@@ -53,6 +55,9 @@ nav:
       - user_guide/feature_engineering/index.md
       - "Geospatial Features": user_guide/feature_engineering/geospatial.md
       - "Time Series Features": user_guide/feature_engineering/time_series.md
+    - "Visualization and EDA":
+      - user_guide/visualization/index.md
+      - "Making Charts": user_guide/visualization/visualization.md
     - "Accessing Systems": user_guide/accessing_resources.md
   - "Data Sources":
     - 'Socrata ELT': data_sources/socrata.md
@@ -72,6 +77,7 @@ markdown_extensions:
   - attr_list
   - md_in_html
   - def_list
+  - footnotes
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.highlight:

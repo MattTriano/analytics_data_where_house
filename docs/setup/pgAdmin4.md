@@ -21,7 +21,7 @@ Before you can use pgAdmin4's interface to explore databases in either of these 
 
 ![pgAdmin4 Add New Server](/assets/imgs/pgAdmin4/Landing_page_view.png)
 
-The values needed to set up these connections will mainly come from a dot-env file (`.env` or `.dwh.env`) or from service names in the `docker-compose.yml` file.
+The values needed to set up these connections will mainly come from a dot-env file (`.env` or `.env.dwh`) or from service names in the `docker-compose.yml` file.
 
 ### Airflow Metadata Database
 To create a new connection, start by clicking the "Add New Server" button (you might have to click the "Servers" line in the lefthand tray first).
