@@ -27,7 +27,7 @@ task_logger = logging.getLogger("airflow.task")
 def run_specific_dbt_model_for_a_data_set(table_name: str, task_logger: Logger) -> None:
     dbt_cmd = f"""cd /opt/airflow/dbt && \
                   dbt --warn-error run --select \
-                  re_dbt.dwh.{table_name}_fact+"""
+                  re_dbt.dwh.chicago_parcel_sales_analytical_table"""
     task_logger.info(f"dbt run command: {dbt_cmd}")
     try:
         subproc_output = subprocess.run(
