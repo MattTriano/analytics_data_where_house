@@ -377,7 +377,7 @@ def load_geojson_data(route_str: str, conn_id: str, task_logger: Logger) -> Socr
     slice_indices_1 = get_geospatial_load_indices(
         socrata_metadata=drop_temp_geojson_1,
         task_logger=task_logger,
-        rows_per_batch=500000,
+        rows_per_batch=250000,
     )
     ingest_temp_geojson_1 = ingest_geojson_data.partial(
         conn_id=conn_id, task_logger=task_logger
