@@ -152,6 +152,12 @@ ORDER BY date_hour
 
 Check [the documentation](https://www.postgresql.org/docs/current/functions-datetime.html#FUNCTIONS-DATETIME-EXTRACT) to see what else `extract` can extract.
 
+#### Casting 4-digit years to datelike values
+
+```sql
+to_date(tax_year::varchar, 'yyyy') AS tax_year
+```
+
 
 #### Zero or left-padding strings incorrectly parsed to a numeric type
 
@@ -187,7 +193,8 @@ Useful casting
 * `<col_name>::int` Small Integers (up to 2^32, or 4294967296)
 * `<col_name>::bigint` Small Integers (up to 2^64, or 1.8446744e+19)
 * `<col_name>::double precision` Floats (decimal numerics)
+* `<col_name>::real::bigint` Useful for trimming trailing decimal zeros from integer-valued numbers
 
 
 ## References:
-* Thought process for the `_standardized` stage: [issue 55](https://github.com/MattTriano/analytics_data_where_house/issues/55) if you're interested in the  
+* Review [issue 55](https://github.com/MattTriano/analytics_data_where_house/issues/55) if you're interested in the thought process for the `_standardized` stage.
