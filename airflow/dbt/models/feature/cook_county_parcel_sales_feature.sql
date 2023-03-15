@@ -214,25 +214,70 @@ WITH last_parcel_sale AS (
         END AS class_descr
     FROM {{ ref('cook_county_parcel_sales_clean') }}
 ),
-price_change_since_last_sale AS (
+since_last_sale_feats AS (
     SELECT
         parcel_sale_id,
         pin,
         class,
         class_descr,
-        is_multisale,
-        num_parcels_sale,
         sale_price,
         sale_date,
+        is_multisale,
+        num_parcels_sale,
         last_sale_price,
         last_sale_date,
-        (sale_price::real - last_sale_price::real)    AS price_change_since_last_sale,
-        (sale_date - last_sale_date)::real / 365.2422 AS years_since_last_sale,
         last_sale_was_multisale,
-        num_parcels_last_sale
+        num_parcels_last_sale,
+        (sale_price::numeric - last_sale_price::numeric)    AS price_change_since_last_sale,
+        NULLIF((
+            (sale_date - last_sale_date)::numeric / 365.2422)::numeric, 0)
+        AS years_since_last_sale        
     FROM last_parcel_sale
+),
+years_since_last_filtered AS (
+    SELECT
+        parcel_sale_id,
+        pin,
+        class,
+        class_descr,        
+        sale_price,
+        sale_date,
+        is_multisale,
+        num_parcels_sale,
+        last_sale_price,
+        last_sale_date,
+        last_sale_was_multisale,
+        num_parcels_last_sale,
+        price_change_since_last_sale,
+        years_since_last_sale,
+        CASE WHEN years_since_last_sale < 1/12 THEN NULL
+            ELSE years_since_last_sale
+        END AS years_since_last_sale_trimmed
+    FROM since_last_sale_feats
+),
+sales_w_aroi AS (
+    SELECT
+        parcel_sale_id,
+        pin,
+        class,
+        class_descr,        
+        sale_price,
+        sale_date,
+        is_multisale,
+        num_parcels_sale,
+        last_sale_price,
+        last_sale_date,
+        last_sale_was_multisale,
+        num_parcels_last_sale,
+        price_change_since_last_sale,
+        years_since_last_sale,
+        (power(
+			1 + (price_change_since_last_sale / NULLIF(last_sale_price::numeric, 0))::numeric,
+			(1 / years_since_last_sale_trimmed)::numeric
+		)::numeric - 1) * 100 AS annualized_roi
+    FROM years_since_last_filtered
 )
 
 SELECT *
-FROM price_change_since_last_sale
+FROM sales_w_aroi
 ORDER BY pin, sale_date

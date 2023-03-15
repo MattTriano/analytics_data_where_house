@@ -15,7 +15,8 @@ WITH sale_features AS (
         price_change_since_last_sale,
         years_since_last_sale,
         last_sale_was_multisale,
-        num_parcels_last_sale
+        num_parcels_last_sale,
+        annualized_roi
     FROM {{ ref('cook_county_parcel_sales_feature') }}
 ),
 sale_details AS (
@@ -36,19 +37,20 @@ sale_details AS (
 SELECT
     sf.parcel_sale_id,
     sf.pin,
+    sd.sale_document_num,
     sf.class,
     sf.class_descr,
     sf.is_multisale,
     sf.num_parcels_sale,
     sf.sale_price,
     sf.sale_date,
+    sf.last_sale_was_multisale,
+    sf.num_parcels_last_sale,
     sf.last_sale_price,
     sf.last_sale_date,
     sf.price_change_since_last_sale,
-    sf.years_since_last_sale,
-    sf.last_sale_was_multisale,
-    sf.num_parcels_last_sale,
-    sd.sale_document_num,
+    sf.years_since_last_sale,    
+    sf.annualized_roi,    
     sd.is_mydec_date,
     sd.sale_deed_type,
     sd.sale_type,
