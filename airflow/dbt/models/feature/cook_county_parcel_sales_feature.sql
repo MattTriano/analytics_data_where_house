@@ -11,28 +11,7 @@ WITH last_parcel_sale AS (
         LAG(sale_date, 1) OVER (PARTITION BY pin ORDER BY pin ASC, sale_date ASC) AS last_sale_date,
         LAG(sale_price, 1) OVER (PARTITION BY pin ORDER BY pin ASC, sale_date ASC) AS last_sale_price,
         LAG(is_multisale, 1) OVER (PARTITION BY pin ORDER BY pin ASC, sale_date ASC) AS last_sale_was_multisale,
-        LAG(num_parcels_sale, 1) OVER (PARTITION BY pin ORDER BY pin ASC, sale_date ASC) AS num_parcels_last_sale
-    FROM {{ ref('cook_county_parcel_sales_clean') }}
-),
-price_change_since_last_sale AS (
-    SELECT
-        parcel_sale_id,
-        pin,
-        is_multisale,
-        num_parcels_sale,
-        sale_price,
-        sale_date,
-        last_sale_price,
-        last_sale_date,
-        sale_price - last_sale_price            AS price_change_since_last_sale,
-        (sale_date - last_sale_date) / 365.2422 AS years_since_last_sale,
-        last_sale_was_multisale,
-        num_parcels_last_sale
-    FROM last_parcel_sale
-),
-parcel_class_descr AS (
-    SELECT
-        parcel_sale_id,
+        LAG(num_parcels_sale, 1) OVER (PARTITION BY pin ORDER BY pin ASC, sale_date ASC) AS num_parcels_last_sale,
         class,
         CASE
             WHEN class = 'EX' THEN 'EXEMPT PROPERTY'
@@ -233,25 +212,72 @@ parcel_class_descr AS (
             WHEN class = '996' THEN 'RENTED MODERN ROW HOUSES, SEVEN OR MORE UNITS IN A SINGLE DEVELOPMENT OR ONE OR MORE CONTIGUOUS PARCELS IN COMMON OWNERSHIP'
             WHEN class = '997' THEN 'SPECIAL RENTAL STRUCTURE'
         END AS class_descr
-    FROM dwh.cook_county_parcel_sales_fact
+    FROM {{ ref('cook_county_parcel_sales_clean') }}
+),
+since_last_sale_feats AS (
+    SELECT
+        parcel_sale_id,
+        pin,
+        class,
+        class_descr,
+        sale_price,
+        sale_date,
+        is_multisale,
+        num_parcels_sale,
+        last_sale_price,
+        last_sale_date,
+        last_sale_was_multisale,
+        num_parcels_last_sale,
+        (sale_price::numeric - last_sale_price::numeric)    AS price_change_since_last_sale,
+        NULLIF((
+            (sale_date - last_sale_date)::numeric / 365.2422)::numeric, 0)
+        AS years_since_last_sale        
+    FROM last_parcel_sale
+),
+years_since_last_filtered AS (
+    SELECT
+        parcel_sale_id,
+        pin,
+        class,
+        class_descr,        
+        sale_price,
+        sale_date,
+        is_multisale,
+        num_parcels_sale,
+        last_sale_price,
+        last_sale_date,
+        last_sale_was_multisale,
+        num_parcels_last_sale,
+        price_change_since_last_sale,
+        years_since_last_sale,
+        CASE WHEN years_since_last_sale < 1/12 THEN NULL
+            ELSE years_since_last_sale
+        END AS years_since_last_sale_trimmed
+    FROM since_last_sale_feats
+),
+sales_w_aroi AS (
+    SELECT
+        parcel_sale_id,
+        pin,
+        class,
+        class_descr,        
+        sale_price,
+        sale_date,
+        is_multisale,
+        num_parcels_sale,
+        last_sale_price,
+        last_sale_date,
+        last_sale_was_multisale,
+        num_parcels_last_sale,
+        price_change_since_last_sale,
+        years_since_last_sale,
+        (power(
+			1 + (price_change_since_last_sale / NULLIF(last_sale_price::numeric, 0))::numeric,
+			(1 / years_since_last_sale_trimmed)::numeric
+		)::numeric - 1) * 100 AS annualized_roi
+    FROM years_since_last_filtered
 )
 
-SELECT
-    pc.parcel_sale_id,
-    pc.pin,
-    cd.class,
-    cd.class_descr,
-    pc.is_multisale,
-    pc.num_parcels_sale,
-    pc.sale_price,
-    pc.sale_date,
-    pc.last_sale_price,
-    pc.last_sale_date,
-    pc.price_change_since_last_sale,
-    pc.years_since_last_sale,
-    pc.last_sale_was_multisale,
-    pc.num_parcels_last_sale
-FROM price_change_since_last_sale AS pc
-INNER JOIN parcel_class_descr AS cd
-ON pc.parcel_sale_id = cd.parcel_sale_id
-ORDER BY pc.pin, pc.sale_date
+SELECT *
+FROM sales_w_aroi
+ORDER BY pin, sale_date
