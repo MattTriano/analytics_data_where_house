@@ -28,6 +28,12 @@ make_credentials: | make_venv
 		--project_dir=$(MAKEFILE_DIR_PATH) \
 		--mode=interactive
 
+make_credentials_dev: | make_venv
+	source $(VENV_PATH)/bin/activate; \
+	python $(STARTUP_DIR)make_env.py \
+		--project_dir=$(MAKEFILE_DIR_PATH) \
+		--mode=dev
+
 build_images:
 	docker compose build 2>&1 | tee logs/where_house_build_logs_$(run_time).txt
 

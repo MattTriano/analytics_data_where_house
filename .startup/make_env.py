@@ -195,4 +195,10 @@ if __name__ == "__main__":
         "group": "Superset",
         "set_value": secret_key,
     }
+    env_var_dict[".env.superset::MAPBOX_API_KEY"] = {
+        "file": ".env.superset",
+        "name": "MAPBOX_API_KEY",
+        "group": "Superset",
+        "set_value": "",
+    }
     create_dot_env_files(output_dir=output_dir, env_var_dict=env_var_dict)

@@ -267,7 +267,7 @@
     "invalid_substrings": "[\\s]",
     "dependant_on_other_env_vars": false
   },
-  ".env::SQLALCHEMY_DATABASE_URI": {
+  ".env.superset::SQLALCHEMY_DATABASE_URI": {
     "file": ".env.superset",
     "name": "SQLALCHEMY_DATABASE_URI",
     "group": "Superset",
