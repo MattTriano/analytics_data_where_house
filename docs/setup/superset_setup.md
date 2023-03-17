@@ -21,9 +21,6 @@ Select the PostgreSQL option and then enter the following credentials:
 ![Select the PostgreSQL database driver](/assets/imgs/superset/connecting_a_db_step_1_of_3.png){ style="width:49%" }
 ![Enter your credentials for the data warehouse database](/assets/imgs/superset/connecting_a_db_step_2_of_3.png){ style="width:49%" }
 
-<!-- ![Select the PostgreSQL database driver](/assets/imgs/superset/connecting_a_db_step_3_of_3.png) -->
-<!-- { style="width:49%" } -->
-
 If credentials and configs were entered correctly (and the database container is running), superset will successfully connect to the database and you can save the connection by clicking **FINISH**.
 
 <figure markdown>
