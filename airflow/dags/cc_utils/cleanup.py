@@ -82,24 +82,17 @@ def get_paths_of_files_identical_to_prior_data_pulls(
     return paths_for_duplicated_files
 
 
-def standardize_columns_fill_spaces(df):
+def standardize_columns_fix_defect(df, defect_char: str = " "):
     initial_columns = copy(df.columns)
     fixed_columns = {c: c for c in initial_columns}
-    print(fixed_columns)
-
-    columns_with_spaces = [col for col in initial_columns if " " in col]
-    columns_without_spaces = [col for col in initial_columns if " " not in col]
-    underscores_imputed = ["_".join(col.split()) for col in copy(columns_with_spaces)]
-
-    for column_with_spaces in columns_with_spaces:
-        print(f"column_with_spaces: {column_with_spaces}")
-        fixed_col_name = "_".join(column_with_spaces.split())
-        print(f"fixed_col_name: {fixed_col_name}")
-        print(f"column_with_spaces: {column_with_spaces}")
+    columns_with_defect = [col for col in initial_columns if defect_char in col]
+    underscores_imputed = ["_".join(col.split(defect_char)) for col in copy(columns_with_defect)]
+    for column_with_defect in columns_with_defect:
+        fixed_col_name = "_".join(column_with_defect.split(defect_char))
         if (fixed_col_name not in fixed_columns.keys()) and (
             fixed_col_name not in fixed_columns.values()
         ):
-            fixed_columns[column_with_spaces] = fixed_col_name
+            fixed_columns[column_with_defect] = fixed_col_name
         else:
             suffix = 1
             while (
@@ -108,7 +101,13 @@ def standardize_columns_fill_spaces(df):
                 or (f"{fixed_col_name}_{suffix}" in underscores_imputed)
             ):
                 suffix += 1
-            fixed_columns[column_with_spaces] = f"{fixed_col_name}_{suffix}"
+            fixed_columns[column_with_defect] = f"{fixed_col_name}_{suffix}"
     fixed_columns = {k: v.lower() for k, v in fixed_columns.items()}
     df = df.rename(columns=fixed_columns)
+    return df
+
+
+def standardize_column_names(df):
+    df = standardize_columns_fix_defect(df=df, defect_char=" ")
+    df = standardize_columns_fix_defect(df=df, defect_char="-")
     return df
