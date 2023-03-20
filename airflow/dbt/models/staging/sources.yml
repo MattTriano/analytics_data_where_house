@@ -30,6 +30,7 @@ sources:
       - name: cook_county_parcel_locations
       - name: cook_county_parcel_sales
       - name: cook_county_parcel_value_assessments
+      - name: nyc_parcel_sales
       - name: temp_chicago_affordable_rental_housing
       - name: temp_chicago_bike_paths
       - name: temp_chicago_city_boundary
@@ -54,3 +55,4 @@ sources:
       - name: temp_cook_county_parcel_locations
       - name: temp_cook_county_parcel_sales
       - name: temp_cook_county_parcel_value_assessments
+      - name: temp_nyc_parcel_sales
