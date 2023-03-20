@@ -197,3 +197,9 @@ COOK_COUNTY_CONDO_PARCEL_IMPROVEMENTS = SocrataTable(
     table_name="cook_county_condo_parcel_improvements",
     schedule="20 3 * * 3",
 )
+
+NYC_PARCEL_SALES = SocrataTable(
+    table_id="usep-8jbt",
+    table_name="nyc_parcel_sales",
+    schedule="20 2 * * 3",
+)
