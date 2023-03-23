@@ -250,7 +250,7 @@ years_since_last_filtered AS (
         num_parcels_last_sale,
         price_change_since_last_sale,
         years_since_last_sale,
-        CASE WHEN years_since_last_sale < 1/12 THEN NULL
+        CASE WHEN years_since_last_sale < (1.0 / 12) THEN NULL
             ELSE years_since_last_sale
         END AS years_since_last_sale_trimmed
     FROM since_last_sale_feats

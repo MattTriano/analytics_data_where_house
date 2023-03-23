@@ -208,9 +208,7 @@ def make_dbt_data_raw_table_staging_model(table_name: str, engine: Engine) -> No
     update_sources_yml(table_name=table_name)
 
 
-def format_dbt_stub_for_intermediate_standardized_stage(
-    table_name: str, engine: Engine
-) -> List[str]:
+def format_dbt_stub_for_standardized_stage(table_name: str, engine: Engine) -> List[str]:
     table_cols = get_table_sqlalchemy_col_objects(
         table_name=table_name, schema_name="data_raw", engine=engine
     )
@@ -278,8 +276,8 @@ def col_type_cast_formatter(col_name: str, sqlalch_col_type) -> str:
         return f"        {col_name}::MANUALLY_REPLACE (was {str(sqlalch_col_type)}) AS {col_name},"
 
 
-def format_dbt_stub_for_intermediate_clean_stage(table_name: str) -> List[str]:
-    std_file_path = Path(f"/opt/airflow/dbt/models/intermediate/{table_name}_standardized.sql")
+def format_dbt_stub_for_clean_stage(table_name: str) -> List[str]:
+    std_file_path = Path(f"/opt/airflow/dbt/models/standardized/{table_name}_standardized.sql")
     table_cols = get_ordered_table_cols_from__standardized_model(std_file_path=std_file_path)
     record_col_el = table_cols[0]
     ck_cols_el = get_composite_key_cols_definition_line_from__standardized_model(

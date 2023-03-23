@@ -64,6 +64,22 @@ def create_data_raw_schema(conn_id: str, task_logger: Logger) -> None:
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def standardized_schema_exists(conn_id: str, task_logger: Logger) -> str:
+    does_schema_exist = schema_exists(
+        conn_id=conn_id,
+        schema_name="standardized",
+        task_logger=task_logger,
+    )
+    task_logger.info(f"Result: {does_schema_exist}")
+    return does_schema_exist
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def create_standardized_schema(conn_id: str, task_logger: Logger) -> None:
+    create_schema(schema_name="standardized", conn_id=conn_id, task_logger=task_logger)
+
+
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def clean_schema_exists(conn_id: str, task_logger: Logger) -> str:
     does_schema_exist = schema_exists(
         conn_id=conn_id,
@@ -99,7 +115,7 @@ def create_feature_schema(conn_id: str, task_logger: Logger) -> None:
 def dwh_schema_exists(conn_id: str, task_logger: Logger) -> str:
     does_schema_exist = schema_exists(
         conn_id=conn_id,
-        schema_name="feature",
+        schema_name="dwh",
         task_logger=task_logger,
     )
     task_logger.info(f"Result: {does_schema_exist}")
@@ -115,7 +131,7 @@ def create_dwh_schema(conn_id: str, task_logger: Logger) -> None:
 def report_schema_exists(conn_id: str, task_logger: Logger) -> str:
     does_schema_exist = schema_exists(
         conn_id=conn_id,
-        schema_name="dwh",
+        schema_name="report",
         task_logger=task_logger,
     )
     task_logger.info(f"Result: {does_schema_exist}")
@@ -138,12 +154,18 @@ def setup_schemas():
     data_raw_schema_exists_1 = data_raw_schema_exists(
         conn_id="dwh_db_conn", task_logger=task_logger
     )
+    standardized_schema_exists_1 = standardized_schema_exists(
+        conn_id="dwh_db_conn", task_logger=task_logger
+    )
     clean_schema_exists_1 = clean_schema_exists(conn_id="dwh_db_conn", task_logger=task_logger)
     feature_schema_exists_1 = feature_schema_exists(conn_id="dwh_db_conn", task_logger=task_logger)
     dwh_schema_exists_1 = dwh_schema_exists(conn_id="dwh_db_conn", task_logger=task_logger)
     report_schema_exists_1 = report_schema_exists(conn_id="dwh_db_conn", task_logger=task_logger)
 
     create_data_raw_schema_1 = create_data_raw_schema(
+        conn_id="dwh_db_conn", task_logger=task_logger
+    )
+    create_standardized_schema_1 = create_standardized_schema(
         conn_id="dwh_db_conn", task_logger=task_logger
     )
     create_clean_schema_1 = create_clean_schema(conn_id="dwh_db_conn", task_logger=task_logger)
@@ -154,6 +176,11 @@ def setup_schemas():
     chain(
         data_raw_schema_exists_1,
         [Label("data_raw schema exists"), create_data_raw_schema_1],
+        end_1,
+    )
+    chain(
+        standardized_schema_exists_1,
+        [Label("standardized schema exists"), create_standardized_schema_1],
         end_1,
     )
     chain(

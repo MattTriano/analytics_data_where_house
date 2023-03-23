@@ -21,8 +21,8 @@ from cc_utils.db import (
 from cc_utils.file_factory import (
     make_dbt_data_raw_table_staging_model,
     write_lines_to_file,
-    format_dbt_stub_for_intermediate_standardized_stage,
-    format_dbt_stub_for_intermediate_clean_stage,
+    format_dbt_stub_for_standardized_stage,
+    format_dbt_stub_for_clean_stage,
 )
 from cc_utils.socrata import SocrataTable, SocrataTableMetadata
 from cc_utils.utils import (
@@ -638,11 +638,11 @@ def make_dbt_standardized_model(conn_id: str, task_logger: Logger, **kwargs) -> 
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     engine = get_pg_engine(conn_id=conn_id)
-    std_file_lines = format_dbt_stub_for_intermediate_standardized_stage(
+    std_file_lines = format_dbt_stub_for_standardized_stage(
         table_name=socrata_metadata.table_name, engine=engine
     )
     file_path = Path(
-        f"/opt/airflow/dbt/models/intermediate/{socrata_metadata.table_name}_standardized.sql"
+        f"/opt/airflow/dbt/models/standardized/{socrata_metadata.table_name}_standardized.sql"
     )
     write_lines_to_file(file_lines=std_file_lines, file_path=file_path)
     task_logger.info(f"file_lines for table {socrata_metadata.table_name}")
@@ -660,7 +660,7 @@ def dbt_standardized_model_ready(task_logger: Logger, **kwargs) -> str:
     file_path = Path(airflow_home).joinpath(
         "dbt",
         "models",
-        "intermediate",
+        "standardized",
         f"{socrata_metadata.table_name}_standardized.sql",
     )
     host_file_path = str(file_path).replace(airflow_home, "/airflow")
@@ -694,7 +694,7 @@ def dbt_clean_model_ready(task_logger: Logger, **kwargs) -> str:
     file_path = Path(airflow_home).joinpath(
         "dbt",
         "models",
-        "intermediate",
+        "clean",
         f"{socrata_metadata.table_name}_clean.sql",
     )
     if file_path.is_file():
@@ -712,12 +712,10 @@ def dbt_make_clean_model(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
     clean_file_path = Path(airflow_home).joinpath(
         "dbt",
         "models",
-        "intermediate",
+        "clean",
         f"{socrata_metadata.table_name}_clean.sql",
     )
-    clean_file_lines = format_dbt_stub_for_intermediate_clean_stage(
-        table_name=socrata_metadata.table_name
-    )
+    clean_file_lines = format_dbt_stub_for_clean_stage(table_name=socrata_metadata.table_name)
     task_logger.info(f"clean_file_lines: {clean_file_lines}")
     write_lines_to_file(file_lines=clean_file_lines, file_path=clean_file_path)
     return socrata_metadata
@@ -739,7 +737,7 @@ def run_dbt_models__standardized_onward(task_logger: Logger, **kwargs) -> Socrat
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     dbt_cmd = f"""cd /opt/airflow/dbt && \
                   dbt --warn-error run --select \
-                  re_dbt.intermediate.{socrata_metadata.table_name}_standardized+"""
+                  re_dbt.standardized.{socrata_metadata.table_name}_standardized+"""
     task_logger.info(f"dbt run command: {dbt_cmd}")
     subproc_output = subprocess.run(dbt_cmd, shell=True, capture_output=True, text=True)
     for el in subproc_output.stdout.split("\n"):

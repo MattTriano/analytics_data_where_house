@@ -1,7 +1,7 @@
 
 # Standardizing Column Names, dtypes, and order in the _standardized model
 
-The `Update_raw_{data_set_name}` DAG will generate a dbt model file named `{data_set_name}_standardized.sql` in the dbt models directory `/airflow/dbt/models/intermediate/`. This is where you should change column names, dtypes, and order.
+The `Update_raw_{data_set_name}` DAG will generate a dbt model file named `{data_set_name}_standardized.sql` in the dbt models directory `/airflow/dbt/models/standardized/`. This is where you should change column names, dtypes, and order.
 
 This file will have all of the data set's columns and their inferred dtypes, but you'll have to change at least the two **REPLACE_WITH_...** values before the model can be run. 
 
