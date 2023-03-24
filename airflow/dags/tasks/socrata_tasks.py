@@ -19,10 +19,10 @@ from cc_utils.db import (
     execute_structural_command,
 )
 from cc_utils.file_factory import (
-    make_dbt_data_raw_table_staging_model,
+    make_dbt_data_raw_model_file,
     write_lines_to_file,
-    format_dbt_stub_for_intermediate_standardized_stage,
-    format_dbt_stub_for_intermediate_clean_stage,
+    format_dbt_stub_for_standardized_stage,
+    format_dbt_stub_for_clean_stage,
 )
 from cc_utils.socrata import SocrataTable, SocrataTableMetadata
 from cc_utils.utils import (
@@ -523,15 +523,17 @@ def load_data_tg(
     checkpoint_exists_1 = socrata_table_checkpoint_exists(task_logger=task_logger)
     checkpoint_1 = run_socrata_checkpoint(task_logger=task_logger)
     table_exists_1 = table_exists_in_data_raw(conn_id=conn_id, task_logger=task_logger)
-    create_staging_table_1 = create_table_in_data_raw(
+    create_data_raw_table_1 = create_table_in_data_raw(
         conn_id=conn_id, task_logger=task_logger, temp_table=False
     )
-    dbt_staging_model_exists_1 = dbt_staging_model_exists(task_logger=task_logger, temp_table=False)
-    make_dbt_staging_model_1 = make_dbt_staging_model(conn_id=conn_id, task_logger=task_logger)
+    dbt_data_raw_model_exists_1 = dbt_data_raw_model_exists(
+        task_logger=task_logger, temp_table=False
+    )
+    make_dbt_data_raw_model_1 = make_dbt_data_raw_model(conn_id=conn_id, task_logger=task_logger)
     update_data_raw_table_1 = BashOperator(
         task_id="update_data_raw_table",
         bash_command=f"""cd /opt/airflow/dbt && \
-            dbt --warn-error run --select re_dbt.staging.{socrata_table.table_name}""",
+            dbt --warn-error run --select re_dbt.data_raw.{socrata_table.table_name}""",
         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
     update_metadata_true_1 = update_result_of_check_in_metadata_table(
@@ -544,9 +546,9 @@ def load_data_tg(
         checkpoint_exists_1,
         [Label("Checkpoint Doesn't Exist"), checkpoint_1],
         table_exists_1,
-        [Label("Table Exists"), create_staging_table_1],
-        dbt_staging_model_exists_1,
-        [Label("dbt Staging Model Exists"), make_dbt_staging_model_1],
+        [Label("Table Exists"), create_data_raw_table_1],
+        dbt_data_raw_model_exists_1,
+        [Label("dbt data_raw Model Exists"), make_dbt_data_raw_model_1],
         update_data_raw_table_1,
         update_metadata_true_1,
     )
@@ -585,32 +587,32 @@ def table_exists_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> str
         return "update_socrata_table.load_data_tg.create_table_in_data_raw"
     else:
         task_logger.info(f"Table {socrata_metadata.table_name} in data_raw; skipping.")
-        return "update_socrata_table.load_data_tg.dbt_staging_model_exists"
+        return "update_socrata_table.load_data_tg.dbt_data_raw_model_exists"
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def dbt_staging_model_exists(task_logger: Logger, **kwargs) -> str:
+def dbt_data_raw_model_exists(task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
-    dbt_staging_model_dir = Path(f"/opt/airflow/dbt/models/staging")
-    task_logger.info(f"dbt staging model dir ('{dbt_staging_model_dir}')")
-    task_logger.info(f"Dir exists? {dbt_staging_model_dir.is_dir()}")
-    table_model_path = dbt_staging_model_dir.joinpath(f"{socrata_metadata.table_name}.sql")
+    dbt_data_raw_model_dir = Path(f"/opt/airflow/dbt/models/data_raw")
+    task_logger.info(f"dbt data_raw model dir ('{dbt_data_raw_model_dir}')")
+    task_logger.info(f"Dir exists? {dbt_data_raw_model_dir.is_dir()}")
+    table_model_path = dbt_data_raw_model_dir.joinpath(f"{socrata_metadata.table_name}.sql")
     if table_model_path.is_file():
         return "update_socrata_table.load_data_tg.update_data_raw_table"
     else:
-        return "update_socrata_table.load_data_tg.make_dbt_staging_model"
+        return "update_socrata_table.load_data_tg.make_dbt_data_raw_model"
 
 
 @task(retries=1)
-def make_dbt_staging_model(conn_id: str, task_logger: Logger, **kwargs) -> SocrataTableMetadata:
+def make_dbt_data_raw_model(conn_id: str, task_logger: Logger, **kwargs) -> SocrataTableMetadata:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
 
-    make_dbt_data_raw_table_staging_model(
+    make_dbt_data_raw_model_file(
         table_name=socrata_metadata.table_name, engine=get_pg_engine(conn_id=conn_id)
     )
-    task_logger.info(f"Leaving make_dbt_staging_model")
+    task_logger.info(f"Leaving make_dbt_data_raw_model")
     return socrata_metadata
 
 
@@ -638,11 +640,11 @@ def make_dbt_standardized_model(conn_id: str, task_logger: Logger, **kwargs) -> 
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     engine = get_pg_engine(conn_id=conn_id)
-    std_file_lines = format_dbt_stub_for_intermediate_standardized_stage(
+    std_file_lines = format_dbt_stub_for_standardized_stage(
         table_name=socrata_metadata.table_name, engine=engine
     )
     file_path = Path(
-        f"/opt/airflow/dbt/models/intermediate/{socrata_metadata.table_name}_standardized.sql"
+        f"/opt/airflow/dbt/models/standardized/{socrata_metadata.table_name}_standardized.sql"
     )
     write_lines_to_file(file_lines=std_file_lines, file_path=file_path)
     task_logger.info(f"file_lines for table {socrata_metadata.table_name}")
@@ -660,7 +662,7 @@ def dbt_standardized_model_ready(task_logger: Logger, **kwargs) -> str:
     file_path = Path(airflow_home).joinpath(
         "dbt",
         "models",
-        "intermediate",
+        "standardized",
         f"{socrata_metadata.table_name}_standardized.sql",
     )
     host_file_path = str(file_path).replace(airflow_home, "/airflow")
@@ -694,7 +696,7 @@ def dbt_clean_model_ready(task_logger: Logger, **kwargs) -> str:
     file_path = Path(airflow_home).joinpath(
         "dbt",
         "models",
-        "intermediate",
+        "clean",
         f"{socrata_metadata.table_name}_clean.sql",
     )
     if file_path.is_file():
@@ -712,12 +714,10 @@ def dbt_make_clean_model(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
     clean_file_path = Path(airflow_home).joinpath(
         "dbt",
         "models",
-        "intermediate",
+        "clean",
         f"{socrata_metadata.table_name}_clean.sql",
     )
-    clean_file_lines = format_dbt_stub_for_intermediate_clean_stage(
-        table_name=socrata_metadata.table_name
-    )
+    clean_file_lines = format_dbt_stub_for_clean_stage(table_name=socrata_metadata.table_name)
     task_logger.info(f"clean_file_lines: {clean_file_lines}")
     write_lines_to_file(file_lines=clean_file_lines, file_path=clean_file_path)
     return socrata_metadata
@@ -739,7 +739,7 @@ def run_dbt_models__standardized_onward(task_logger: Logger, **kwargs) -> Socrat
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     dbt_cmd = f"""cd /opt/airflow/dbt && \
                   dbt --warn-error run --select \
-                  re_dbt.intermediate.{socrata_metadata.table_name}_standardized+"""
+                  re_dbt.standardized.{socrata_metadata.table_name}_standardized+"""
     task_logger.info(f"dbt run command: {dbt_cmd}")
     subproc_output = subprocess.run(dbt_cmd, shell=True, capture_output=True, text=True)
     for el in subproc_output.stdout.split("\n"):

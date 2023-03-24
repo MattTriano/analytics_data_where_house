@@ -1,23 +1,16 @@
 {{ config(materialized='table') }}
 {% set source_cols = [
-    "work_zone_type", "injuries_fatal", "workers_present_i", "injuries_non_incapacitating",
-    "crash_record_id", "injuries_incapacitating", "injuries_no_indication", "latitude",
-    "lighting_condition", "street_no", "injuries_unknown", "device_condition", "rd_no",
-    "crash_date", "private_property_i", "trafficway_type", "traffic_control_device", "road_defect",
-    "damage", "crash_date_est_i", "longitude", "crash_month", "street_name", "crash_day_of_week",
-    "crash_hour", "first_crash_type", "injuries_reported_not_evident", "statements_taken_i",
-    "num_units", "most_severe_injury", "date_police_notified", "photos_taken_i",
-    "weather_condition", "prim_contributory_cause", "hit_and_run_i", "report_type", "alignment",
-    "intersection_related_i", "sec_contributory_cause", "crash_type", "beat_of_occurrence",
-    "street_direction", "work_zone_i", "roadway_surface_cond", "posted_speed_limit",
-    "injuries_total", "lane_cnt", "dooring_i", "geometry"
+    "location_state", "facility_type", "city", "location_zip", "inspection_id", "license_",
+    "latitude", "zip", "state", "location_address", "location_city", "aka_name", "risk",
+    "longitude", "dba_name", "inspection_date", "results", "inspection_type", "address",
+    "violations", "geometry"
 ] %}
 {% set metadata_cols = ["source_data_updated", "ingestion_check_time"] %}
 
 -- selecting all records already in the full data_raw table
 WITH records_in_data_raw_table AS (
     SELECT *, 1 AS retention_priority
-    FROM {{ source('staging', 'chicago_traffic_crashes') }}
+    FROM {{ source('data_raw', 'chicago_food_inspections') }}
 ),
 
 -- selecting all distinct records from the latest data pull (in the "temp" table)
@@ -27,7 +20,7 @@ current_pull_with_distinct_combos_numbered AS (
             {% for sc in source_cols %}{{ sc }},{% endfor %}
             {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
         ) as rn
-    FROM {{ source('staging', 'temp_chicago_traffic_crashes') }}
+    FROM {{ source('data_raw', 'temp_chicago_food_inspections') }}
 ),
 distinct_records_in_current_pull AS (
     SELECT

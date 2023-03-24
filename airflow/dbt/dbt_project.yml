@@ -34,18 +34,21 @@ clean-targets:         # directories to be removed by `dbt clean`
 models:
   # Config indicated by + and applies to all files under models/example/
   re_dbt:
-    report:
+    data_raw:
       +materialized: table
-      +schema: report
-    dwh:
-      +materialized: table
-      +schema: dwh
+      +schema: data_raw
+    standardized:
+      +materialized: view
+      +schema: standardized
+    clean:
+      +materialized: view
+      +schema: clean
     feature:
       +materialized: view
       +schema: feature
-    intermediate:
-      +materialized: view
-      +schema: clean
-    staging:
+    dwh:
       +materialized: table
-      +schema: data_raw
+      +schema: dwh
+    report:
+      +materialized: table
+      +schema: report

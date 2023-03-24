@@ -14,7 +14,7 @@ The [Socrata platform](https://www.opendatanetwork.com/) is a wealth of public d
 
 4. (Optional) To check data quality before updating your local table, [set expectations for the data](validation/index.md).
 
-5. (Optional) To [standardize column names, dtypes, or order](standardizing_columns.md) for a data set, edit the file named `{table_name}_standardized.sql` in directory `/airflow/dbt/models/intermediate/`.
+5. (Optional) To [standardize column names, dtypes, or order](standardizing_columns.md) for a data set, edit the file named `{table_name}_standardized.sql` in directory `/airflow/dbt/models/standardized/`.
 
 
 ### Workflow Overview
@@ -31,17 +31,17 @@ The workflow for producing usable tables follows this pattern:
     
     1.4. Define a suite of expectations to validate future data updates.
 
-2. (`intermediate` schema): Implement dbt models that standardize and clean the data set's columns.
+2. (`standardize` schema): Implement dbt models that standardize the data set's columns.
 
-    2.1. [Standardize column](standardizing_columns.md) [names, dtypes, order] in the `f"{data_set_name}_standardized.sql` dbt model file.
+    2.1. [Standardize column](standardizing_columns.md) [names, dtypes, order] and perform cleaning steps in the `f"{data_set_name}_standardized.sql` dbt model file.
 
-    2.2. Clean columns (handle outliers, nulls, typos, etc) in the `f"{data_set_name}_clean.sql` dbt model file.
+3. (`clean` schema): Automatically generates dbt models that implement a deduplication strategy, produce a clean data set.
 
-3. (`feature` schema): Implement dbt models to engineer data features.
+4. (`feature` schema): Implement dbt models to engineer data features.
 
     3.1. [Engineer desired features](feature_engineering/index.md)
 
-4. (`dwh` schema): Implement dbt models to assemble data into analytically useful tables.
+5. (`dwh` schema): Implement dbt models to assemble data into analytically useful tables.
 
 For tables hosted by Socrata, this system reduces steps 1.1 through 1.3 to a [3 minute operation](/user_guide/adding_a_socrata_pipeline), generates a nearly ready `..._standardized.sql` stub for 2.1, and automatically produces the `..._clean.sql` file from 2.2 after the `..._standardized.sql` stub is edited.
 

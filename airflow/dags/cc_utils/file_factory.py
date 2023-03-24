@@ -103,7 +103,7 @@ def format_dbt_stub_for_data_raw_stage(table_name: str, engine: Engine) -> List[
             "-- selecting all records already in the full data_raw table",
             "WITH records_in_data_raw_table AS (",
             "    SELECT *, 1 AS retention_priority",
-            f"""    FROM {{{{ source('staging', '{table_name}') }}}}""",
+            f"""    FROM {{{{ source('data_raw', '{table_name}') }}}}""",
             "),",
             "",
             """-- selecting all distinct records from the latest data pull (in the "temp" table)""",
@@ -113,7 +113,7 @@ def format_dbt_stub_for_data_raw_stage(table_name: str, engine: Engine) -> List[
             "            {% for sc in source_cols %}{{ sc }},{% endfor %}",
             """            {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}""",
             "        ) as rn",
-            f"""    FROM {{{{ source('staging', 'temp_{table_name}') }}}}""",
+            f"""    FROM {{{{ source('data_raw', 'temp_{table_name}') }}}}""",
             "),",
             "distinct_records_in_current_pull AS (",
             "    SELECT",
@@ -173,7 +173,7 @@ def write_lines_to_file(file_lines: List[str], file_path: Path, line_sep: str = 
 
 
 def update_sources_yml(table_name: str) -> None:
-    """Updates the dbt staging sources.yml file when adding a data set to the warehouse.
+    """Updates the dbt data_raw sources.yml file when adding a data set to the warehouse.
 
     I'm not sure if this func belongs in this module; may move in the future.
     """
@@ -184,7 +184,7 @@ def update_sources_yml(table_name: str) -> None:
         def increase_indent(self, flow=False, *args, **kwargs):
             return super().increase_indent(flow=flow, indentless=False)
 
-    sources_path = Path("/opt/airflow/dbt/models/staging/sources.yml")
+    sources_path = Path("/opt/airflow/dbt/models/data_raw/sources.yml")
     if sources_path.is_file():
         with open(sources_path, "r") as sf:
             sources_list = yaml.safe_load(sf)
@@ -201,16 +201,14 @@ def update_sources_yml(table_name: str) -> None:
                 yaml.dump(sources_list, sfw, sort_keys=False, indent=2, Dumper=MySafeDumper)
 
 
-def make_dbt_data_raw_table_staging_model(table_name: str, engine: Engine) -> None:
+def make_dbt_data_raw_model_file(table_name: str, engine: Engine) -> None:
     file_lines = format_dbt_stub_for_data_raw_stage(table_name=f"temp_{table_name}", engine=engine)
-    file_path = Path(f"/opt/airflow/dbt/models/staging/{table_name}.sql")
+    file_path = Path(f"/opt/airflow/dbt/models/data_raw/{table_name}.sql")
     write_lines_to_file(file_lines=file_lines, file_path=file_path)
     update_sources_yml(table_name=table_name)
 
 
-def format_dbt_stub_for_intermediate_standardized_stage(
-    table_name: str, engine: Engine
-) -> List[str]:
+def format_dbt_stub_for_standardized_stage(table_name: str, engine: Engine) -> List[str]:
     table_cols = get_table_sqlalchemy_col_objects(
         table_name=table_name, schema_name="data_raw", engine=engine
     )
@@ -278,8 +276,8 @@ def col_type_cast_formatter(col_name: str, sqlalch_col_type) -> str:
         return f"        {col_name}::MANUALLY_REPLACE (was {str(sqlalch_col_type)}) AS {col_name},"
 
 
-def format_dbt_stub_for_intermediate_clean_stage(table_name: str) -> List[str]:
-    std_file_path = Path(f"/opt/airflow/dbt/models/intermediate/{table_name}_standardized.sql")
+def format_dbt_stub_for_clean_stage(table_name: str) -> List[str]:
+    std_file_path = Path(f"/opt/airflow/dbt/models/standardized/{table_name}_standardized.sql")
     table_cols = get_ordered_table_cols_from__standardized_model(std_file_path=std_file_path)
     record_col_el = table_cols[0]
     ck_cols_el = get_composite_key_cols_definition_line_from__standardized_model(

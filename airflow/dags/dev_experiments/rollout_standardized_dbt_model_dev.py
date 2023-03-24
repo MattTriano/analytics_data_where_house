@@ -20,8 +20,7 @@ from cc_utils.file_factory import (
     get_table_sqlalchemy_col_objects,
     write_lines_to_file,
     col_type_cast_formatter,
-    format_dbt_stub_for_intermediate_standardized_stage,
-    format_dbt_stub_for_intermediate_clean_stage,
+    format_dbt_stub_for_standardized_stage,
 )
 from sources.tables import COOK_COUNTY_NEIGHBORHOOD_BOUNDARIES as SOCRATA_TABLE
 
@@ -110,9 +109,7 @@ def get_columns_w_most_unique_vals(
 def make_dbt_standardized_model(table_name: str, conn_id: str, task_logger: Logger) -> None:
 
     engine = get_pg_engine(conn_id=conn_id)
-    std_file_lines = format_dbt_stub_for_intermediate_standardized_stage(
-        table_name=table_name, engine=engine
-    )
+    std_file_lines = format_dbt_stub_for_standardized_stage(table_name=table_name, engine=engine)
     file_path = Path(f"/opt/airflow/dbt/models/intermediate/{table_name}_standardized.sql")
     write_lines_to_file(file_lines=std_file_lines, file_path=file_path)
     task_logger.info(f"file_lines for table {table_name}")

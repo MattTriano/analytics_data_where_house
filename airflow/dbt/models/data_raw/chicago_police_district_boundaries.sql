@@ -1,20 +1,13 @@
 {{ config(materialized='table') }}
 {% set source_cols = [
-    "pin", "tax_year", "card_num", "class", "township_code", "cdu", "pin_is_multicard",
-    "pin_num_cards", "pin_is_multiland", "pin_num_landlines", "year_built", "building_sqft",
-    "land_sqft", "num_bedrooms", "num_rooms", "num_full_baths", "num_half_baths", "num_fireplaces",
-    "type_of_residence", "construction_quality", "num_apartments", "attic_finish",
-    "garage_attached", "garage_area_included", "garage_size", "garage_ext_wall_material",
-    "attic_type", "basement_type", "ext_wall_material", "central_heating", "repair_condition",
-    "basement_finish", "roof_material", "single_v_multi_family", "site_desirability",
-    "num_commercial_units", "renovation", "recent_renovation", "porch", "central_air", "design_plan"
+    "dist_label", "dist_num", "geometry"
 ] %}
 {% set metadata_cols = ["source_data_updated", "ingestion_check_time"] %}
 
 -- selecting all records already in the full data_raw table
 WITH records_in_data_raw_table AS (
     SELECT *, 1 AS retention_priority
-    FROM {{ source('staging', 'cook_county_multifam_parcel_improvements') }}
+    FROM {{ source('data_raw', 'chicago_police_district_boundaries') }}
 ),
 
 -- selecting all distinct records from the latest data pull (in the "temp" table)
@@ -24,7 +17,7 @@ current_pull_with_distinct_combos_numbered AS (
             {% for sc in source_cols %}{{ sc }},{% endfor %}
             {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
         ) as rn
-    FROM {{ source('staging', 'temp_cook_county_multifam_parcel_improvements') }}
+    FROM {{ source('data_raw', 'temp_chicago_police_district_boundaries') }}
 ),
 distinct_records_in_current_pull AS (
     SELECT

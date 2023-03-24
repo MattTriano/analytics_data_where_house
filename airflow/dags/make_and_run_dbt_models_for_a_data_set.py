@@ -14,8 +14,8 @@ from airflow.utils.trigger_rule import TriggerRule
 from cc_utils.db import get_data_table_names_in_schema, get_pg_engine
 from cc_utils.file_factory import (
     write_lines_to_file,
-    format_dbt_stub_for_intermediate_standardized_stage,
-    format_dbt_stub_for_intermediate_clean_stage,
+    format_dbt_stub_for_standardized_stage,
+    format_dbt_stub_for_clean_stage,
 )
 from tasks.socrata_tasks import highlight_unfinished_dbt_standardized_stub
 
@@ -50,7 +50,7 @@ def standardized_model_ready(table_name: str, task_logger: Logger) -> str:
     file_path = Path(airflow_home).joinpath(
         "dbt",
         "models",
-        "intermediate",
+        "standardized",
         f"{table_name}_standardized.sql",
     )
     host_file_path = str(file_path).replace(airflow_home, "/airflow")
@@ -81,10 +81,8 @@ def standardized_model_ready(table_name: str, task_logger: Logger) -> str:
 @task
 def make_standardized_dbt_model(table_name: str, conn_id: str, task_logger: Logger) -> None:
     engine = get_pg_engine(conn_id=conn_id)
-    std_file_lines = format_dbt_stub_for_intermediate_standardized_stage(
-        table_name=table_name, engine=engine
-    )
-    file_path = Path(f"/opt/airflow/dbt/models/intermediate/{table_name}_standardized.sql")
+    std_file_lines = format_dbt_stub_for_standardized_stage(table_name=table_name, engine=engine)
+    file_path = Path(f"/opt/airflow/dbt/models/standardized/{table_name}_standardized.sql")
     write_lines_to_file(file_lines=std_file_lines, file_path=file_path)
     task_logger.info(f"file_lines for table {table_name}")
     for file_line in std_file_lines:
@@ -99,7 +97,7 @@ def clean_dbt_model_ready(table_name: str, task_logger: Logger, **kwargs) -> str
     file_path = Path(airflow_home).joinpath(
         "dbt",
         "models",
-        "intermediate",
+        "clean",
         f"{table_name}_clean.sql",
     )
     if file_path.is_file():
@@ -115,10 +113,10 @@ def make_clean_dbt_model(table_name: str, task_logger: Logger) -> str:
     clean_file_path = Path(airflow_home).joinpath(
         "dbt",
         "models",
-        "intermediate",
+        "clean",
         f"{table_name}_clean.sql",
     )
-    clean_file_lines = format_dbt_stub_for_intermediate_clean_stage(table_name=table_name)
+    clean_file_lines = format_dbt_stub_for_clean_stage(table_name=table_name)
     task_logger.info(f"clean_file_lines: {clean_file_lines}")
     write_lines_to_file(file_lines=clean_file_lines, file_path=clean_file_path)
     return table_name
@@ -128,7 +126,7 @@ def make_clean_dbt_model(table_name: str, task_logger: Logger) -> str:
 def run_dbt_models_for_a_data_set(table_name: str, task_logger: Logger) -> None:
     dbt_cmd = f"""cd /opt/airflow/dbt && \
                   dbt --warn-error run --select \
-                  re_dbt.intermediate.{table_name}_standardized+"""
+                  re_dbt.standardized.{table_name}_standardized+"""
     task_logger.info(f"dbt run command: {dbt_cmd}")
     try:
         subproc_output = subprocess.run(

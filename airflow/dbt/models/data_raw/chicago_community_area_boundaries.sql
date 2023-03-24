@@ -1,16 +1,14 @@
 {{ config(materialized='table') }}
 {% set source_cols = [
-    "location_state", "location_zip", "x_coordinate", "domestic", "latitude", "updated_on",
-    "description", "location_address", "arrest", "location_city", "year", "longitude", "block",
-    "fbi_code", "ward", "id", "date", "beat", "y_coordinate", "community_area",
-    "location_description", "district", "iucr", "case_number", "primary_type", "geometry"
+    "community", "area", "shape_area", "perimeter", "area_num_1", "area_numbe", "comarea_id",
+    "comarea", "shape_len", "geometry"
 ] %}
 {% set metadata_cols = ["source_data_updated", "ingestion_check_time"] %}
 
 -- selecting all records already in the full data_raw table
 WITH records_in_data_raw_table AS (
     SELECT *, 1 AS retention_priority
-    FROM {{ source('staging', 'chicago_crimes') }}
+    FROM {{ source('data_raw', 'chicago_community_area_boundaries') }}
 ),
 
 -- selecting all distinct records from the latest data pull (in the "temp" table)
@@ -20,7 +18,7 @@ current_pull_with_distinct_combos_numbered AS (
             {% for sc in source_cols %}{{ sc }},{% endfor %}
             {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
         ) as rn
-    FROM {{ source('staging', 'temp_chicago_crimes') }}
+    FROM {{ source('data_raw', 'temp_chicago_community_area_boundaries') }}
 ),
 distinct_records_in_current_pull AS (
     SELECT

@@ -25,7 +25,7 @@ If the data source's data is fresher than the data in the local data warehouse, 
 
 2. Creates a persisting table for this data set in the `data_raw` schema if the data set is a new addition to the warehouse.
 
-3. Checks if the initial dbt staging deduplication model exists, and if not, the `make_dbt_staging_model` task automatically generates a data-set-specific dbt staging model file.
+3. Checks if the initial dbt data_raw deduplication model exists, and if not, the `make_dbt_data_raw_model` task automatically generates a data-set-specific dbt data_raw model file.
 
     ![load_data_tg TaskGroup data_raw table-maker and dbt model generator](/assets/imgs/Socrata_ELT_DAG/schema_and_file_generation_phase_of_load_data_tg.PNG)
 
