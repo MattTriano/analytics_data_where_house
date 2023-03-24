@@ -1,16 +1,19 @@
 {{ config(materialized='table') }}
 {% set source_cols = [
-    "pin", "tax_year", "class", "township_code", "township_name", "mailed_bldg", "mailed_land",
-    "mailed_tot", "certified_bldg", "certified_land", "certified_tot", "board_bldg", "board_land",
-    "board_tot"
+     "ewns_dir", "l_parity", "oneway_dir", "logiclf", "street_nam", "street_typ", "r_t_add",
+     "l_censusbl", "r_parity", "r_zip", "edit_type", "tiered", "tnode_id", "edit_date",
+     "create_tim", "suf_dir", "logicrf", "t_cross", "update_tim", "ewns", "objectid", "l_fips",
+     "pre_dir", "logicrt", "status_dat", "f_zlev", "l_f_add", "r_f_add", "streetname",
+     "flag_strin", "dir_travel", "ewns_coord", "status", "l_zip", "t_cross_st", "f_cross",
+     "l_t_add", "t_zlev", "class", "length", "f_cross_st", "fnode_id", "create_use", "logiclt",
+     "r_fips", "r_censusbl", "update_use", "shape_len", "trans_id", "geometry"
 ] %}
 {% set metadata_cols = ["source_data_updated", "ingestion_check_time"] %}
 
-
 -- selecting all records already in the full data_raw table
 WITH records_in_data_raw_table AS (
-     SELECT *, 1 AS retention_priority
-     FROM {{ source('staging', 'cook_county_parcel_value_assessments') }}
+    SELECT *, 1 AS retention_priority
+    FROM {{ source('data_raw', 'chicago_street_center_lines') }}
 ),
 
 -- selecting all distinct records from the latest data pull (in the "temp" table)
@@ -20,7 +23,7 @@ current_pull_with_distinct_combos_numbered AS (
                {% for sc in source_cols %}{{ sc }},{% endfor %}
                {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
           ) as rn
-     FROM {{ source('staging', 'temp_cook_county_parcel_value_assessments') }}
+     FROM {{ source('data_raw', 'temp_chicago_street_center_lines') }}
 ),
 distinct_records_in_current_pull AS (
      SELECT
@@ -44,7 +47,7 @@ data_raw_table_with_all_new_and_updated_records AS (
 --  when there are duplicates to chose from)
 data_raw_table_with_new_and_updated_records AS (
      SELECT *,
-      row_number() over(partition by
+     row_number() over(partition by
           {% for sc in source_cols %}{{ sc }}{{ "," if not loop.last }}{% endfor %}
           ORDER BY retention_priority
           ) as rn
@@ -60,4 +63,4 @@ distinct_records_for_data_raw_table AS (
 
 SELECT *
 FROM distinct_records_for_data_raw_table
-ORDER BY pin, tax_year, source_data_updated
+ORDER BY objectid, source_data_updated

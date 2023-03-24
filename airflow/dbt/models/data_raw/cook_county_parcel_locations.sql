@@ -14,7 +14,7 @@
 -- selecting all records already in the full data_raw table
 WITH records_in_data_raw_table AS (
      SELECT *, 1 AS retention_priority
-     FROM {{ source('staging', 'cook_county_parcel_locations') }}
+     FROM {{ source('data_raw', 'cook_county_parcel_locations') }}
 ),
 
 -- selecting all distinct records from the latest data pull (in the "temp" table)
@@ -24,7 +24,7 @@ current_pull_with_distinct_combos_numbered AS (
                {% for sc in source_cols %}{{ sc }},{% endfor %}
                {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
           ) as rn
-     FROM {{ source('staging', 'temp_cook_county_parcel_locations') }}
+     FROM {{ source('data_raw', 'temp_cook_county_parcel_locations') }}
 ),
 distinct_records_in_current_pull AS (
      SELECT

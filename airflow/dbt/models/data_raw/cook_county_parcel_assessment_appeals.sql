@@ -1,16 +1,20 @@
 {{ config(materialized='table') }}
 {% set source_cols = [
-    "location_state", "zip_code", "location_zip", "phone_number", "x_coordinate", "latitude",
-    "property_type", "location_address", "location_city", "longitude", "property_name",
-    "y_coordinate", "units", "community_area", "address", "community_area_number",
-    "management_company", "geometry"
+    "nochangereasondescription", "changereasondescription", "bor_improvementvalue", "majorclass",
+    "assessor_totalvalue", "appealseq", "appellant_zip", "pin_dash", "changereason",
+    "attorney_firmname", "tax_year", "appellant_state", "taxcode", "appellant", "bor_totalvalue",
+    "attorneycode", "rowid", "result", "attny", "ycoord_crs_3435", "bor_landvalue", "township_code",
+    "appealtrk", "pin10", "long", "vol", "assessor_improvementvalue", "appealtype",
+    "appellant_address", "class", "appealtypedescription", "appellant_city", "attorney_lastname",
+    "xcoord_crs_3435", "appealid", "pin", "nochangereason", "assessor_landvalue", "lat",
+    "attorney_firstname", "geometry"
 ] %}
 {% set metadata_cols = ["source_data_updated", "ingestion_check_time"] %}
 
 -- selecting all records already in the full data_raw table
 WITH records_in_data_raw_table AS (
     SELECT *, 1 AS retention_priority
-    FROM {{ source('staging', 'chicago_affordable_rental_housing') }}
+    FROM {{ source('data_raw', 'cook_county_parcel_assessment_appeals') }}
 ),
 
 -- selecting all distinct records from the latest data pull (in the "temp" table)
@@ -20,7 +24,7 @@ current_pull_with_distinct_combos_numbered AS (
             {% for sc in source_cols %}{{ sc }},{% endfor %}
             {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
         ) as rn
-    FROM {{ source('staging', 'temp_chicago_affordable_rental_housing') }}
+    FROM {{ source('data_raw', 'temp_cook_county_parcel_assessment_appeals') }}
 ),
 distinct_records_in_current_pull AS (
     SELECT

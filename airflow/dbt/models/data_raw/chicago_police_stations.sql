@@ -1,20 +1,15 @@
 {{ config(materialized='table') }}
 {% set source_cols = [
-    "relocated_from_street_direction", "plate", "relocated_to_address_number",
-    "relocated_to_street_name", "relocated_from_location_zip", "service_request_number",
-    "relocated_from_longitude", "state", "relocated_from_street_name", "color",
-    "relocated_from_location_address", "relocated_from_y_coordinate",
-    "relocated_from_location_state", "relocated_reason", "relocated_date",
-    "relocated_from_x_coordinate", "relocated_to_direction", "relocated_from_suffix", "make",
-    "relocated_to_suffix", "relocated_from_latitude", "relocated_from_address_number",
-    "relocated_from_location_city", "geometry"
+    "location_state", "website", "city", "location_zip", "x_coordinate", "latitude", "zip", "state",
+    "location_address", "location_city", "longitude", "fax", "y_coordinate", "address", "tty",
+    "district_name", "district", "phone", "geometry"
 ] %}
 {% set metadata_cols = ["source_data_updated", "ingestion_check_time"] %}
 
 -- selecting all records already in the full data_raw table
 WITH records_in_data_raw_table AS (
     SELECT *, 1 AS retention_priority
-    FROM {{ source('staging', 'chicago_relocated_vehicles') }}
+    FROM {{ source('data_raw', 'chicago_police_stations') }}
 ),
 
 -- selecting all distinct records from the latest data pull (in the "temp" table)
@@ -24,7 +19,7 @@ current_pull_with_distinct_combos_numbered AS (
             {% for sc in source_cols %}{{ sc }},{% endfor %}
             {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
         ) as rn
-    FROM {{ source('staging', 'temp_chicago_relocated_vehicles') }}
+    FROM {{ source('data_raw', 'temp_chicago_police_stations') }}
 ),
 distinct_records_in_current_pull AS (
     SELECT

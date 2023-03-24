@@ -1,14 +1,16 @@
 {{ config(materialized='table') }}
 {% set source_cols = [
-    "Tow_Date", "Make", "Style", "Model", "Color", "Plate", "State", "Towed_to_Address",
-    "Tow_Facility_Phone", "Inventory_Number"
+    "zip_code", "area", "illinois_senate_district", "street_outreach_organization", "latitude",
+    "day_of_week", "unique_id", "longitude", "hour", "rounds", "block", "ward",
+    "incident_type_description", "date", "beat", "community_area", "district",
+    "illinois_house_district", "month", "geometry"
 ] %}
 {% set metadata_cols = ["source_data_updated", "ingestion_check_time"] %}
 
 -- selecting all records already in the full data_raw table
 WITH records_in_data_raw_table AS (
     SELECT *, 1 AS retention_priority
-    FROM {{ source('staging', 'chicago_towed_vehicles') }}
+    FROM {{ source('data_raw', 'chicago_shotspotter_alerts') }}
 ),
 
 -- selecting all distinct records from the latest data pull (in the "temp" table)
@@ -18,7 +20,7 @@ current_pull_with_distinct_combos_numbered AS (
             {% for sc in source_cols %}{{ sc }},{% endfor %}
             {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
         ) as rn
-    FROM {{ source('staging', 'temp_chicago_towed_vehicles') }}
+    FROM {{ source('data_raw', 'temp_chicago_shotspotter_alerts') }}
 ),
 distinct_records_in_current_pull AS (
     SELECT
@@ -58,3 +60,4 @@ distinct_records_for_data_raw_table AS (
 
 SELECT *
 FROM distinct_records_for_data_raw_table
+ORDER BY unique_id, source_data_updated
