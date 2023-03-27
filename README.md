@@ -1,5 +1,9 @@
 # Analytics Data Where House
 
+**Analytics Data Where House** (or **ADWH**) is a data engineering and analytics engineering project that implements an open-source modern data platform and analyzes public data related to the housing market in Cook County, Illinois.
+
+# Features
+
 This platform automates curating a local data warehouse of interesting, up-to-date public data sets. It enables users (well, mainly one user, me) to easily add data sets to the warehouse, build analyses that explore and answer questions with current data, and discover existing assets to accelerate exploring new questions.
 
 At present, it uses docker to provision and run:
@@ -10,7 +14,24 @@ At present, it uses docker to provision and run:
 * great_expectations to ensure data meets  and
 * custom python code that makes it easy to implement an ELT pipeline for [any other table hosted by Socrata](http://www.opendatanetwork.com/).
 
+<p align="center" width="100%">
+ <img src="docs/assets/imgs/superset/Chicago_Single-parcel_sales_dashboard.png" width="80%" alt="Local data is fresh so we will note that and end"/>
+</p>
+
 ## Motivation
+
+Data only creates value when it enables you to make better decisions or ask better questions, and it can take an overwhelming amount of work before you can start creating value from a new raw data set. To create value from a data set:
+* the data set must be relevant to questions of interest
+* you must understand the data set's features/columns that are relevant to your questions,
+* 
+
+This project seeks to capture 
+
+Data analysis can create value, The data set's features (or columns) must be understood Insights must be timely, 
+
+Chicago and Cook County publish thousands of interesting data sets to their Socrata data portals, , and there are many pitfalls that can negate 
+ Converting public data into actionable,  
+
 I like to research before I buy anything, especially if it's a big-ticket item. I've been considering buying a house for a while, but the methods I use for answering questions like "what phone should I buy?" or "how can I make my apartment less drafty in winter" haven't been adequate to answer questions I have about real estate. Fortunately, the real estate market I've grown fond of has the richest public data culture in the US (that I, a data scientist focused on Chicago-related issues, am aware of). This market's Assessor's Office regularly [publishes data](https://datacatalog.cookcountyil.gov/browse?tags=cook%20county%20assessor) I can mine for answers to some of my biggest questions.
 
 # Documentation
