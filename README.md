@@ -20,7 +20,7 @@ At present, it uses docker to provision and run:
 
 ## Motivation
 
-Data only creates value when it enables you to make better decisions or ask better questions, and it can take an overwhelming amount of work before you can start creating value from a new raw data set. To create value from a data set:
+It takes a tremendous amount of work to create value from data.  Creating value from data is Data only creates value when it enables you to make better decisions or ask better questions, and it can take an overwhelming amount of work before you can start creating value from a new raw data set. To create value from a data set:
 * the data set must be relevant to questions of interest
 * you must understand the data set's features/columns that are relevant to your questions,
 * 
@@ -177,12 +177,6 @@ This query shows the count of new or updated records grouped by the data-publica
  <img src="docs/assets/imgs/Socrata_ELT_DAG/Count_of_records_after_update.PNG" width="80%" alt="Counts of distinct records in data_raw table by when the source published that data set version"/>
 </p>
 
-
-### Developing DAGs
-
-DAGs put or developed in the `/<repo>/airflow/dags/` directory will quickly be available through the web UI and can be manually triggered or run there.
-
-At present, a local mount is created at `/<repo>/data_raw` (host-side) to `/opt/airflow/data_raw` (container-side), so changes you make to a DAG from your host machine will be (nearly immediately) available you can develop.
 
 ### Serving dbt Data Documentation and Discovery UI 
 
