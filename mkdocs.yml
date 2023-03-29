@@ -59,6 +59,9 @@ nav:
       - user_guide/visualization/index.md
       - "Making Charts": user_guide/visualization/visualization.md
     - "Accessing Systems": user_guide/accessing_resources.md
+  - "Developer's Guide":
+    - dev_guide/index.md
+    - "Adding a Socrata Pipeline": dev_guide/adding_a_socrata_pipeline.md
   - "Data Sources":
     - 'Socrata ELT': data_sources/socrata.md
   - "Overview":

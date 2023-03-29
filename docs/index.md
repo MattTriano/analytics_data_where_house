@@ -4,7 +4,8 @@
 
 1. [**System setup**](setup/getting_started.md)
 2. [**User's Guide**](user_guide/index.md)
-3. [**Data Sources**](data_sources/socrata.md)
+3. [**Developer's Guide**](dev_guide/index.md)
+4. [**Data Sources**](data_sources/socrata.md)
 
 ## Platform Overview
 
