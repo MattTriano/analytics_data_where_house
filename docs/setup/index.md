@@ -1,11 +1,19 @@
 # Setup Overview
 
-This platform was designed to be easy to setup while still being secure enough that the code can be open source without compromising keys and credentials.
+This platform is easy to setup while still being secure enough to open source the code without exposing keys or credentials.
 
-To use the system, you will need to have [docker](https://docs.docker.com/get-docker/) installed on your host machine, and setup will be much easier if your system also has python (for running the script to set up credentials) and **GNU make** (for running recipes that set up infrastructure).
+## System Requirements
 
-Assuming these are installed on your machine, you should be able to set up the system in around 10 minutes and about as many commands by following the instrctions on these pages. you can set up the system by following the 
+* [Docker](https://docs.docker.com/get-docker/) with `Compose` v2.0 or higher.
+* a basic system install of python (for running the script to set up credentials).
+* Optional (but recommended): **GNU make** (for running recipes that set up infrastructure).
 
-1. [Set up your credentials and build the images](/setup/getting_started),
-2. [Configure database connections for pgAdmin4](/setup/pgAdmin4), and
-3. [Configure database connections for Superset](/setup/superset_setup)
+Note: keep an eye on system storage. This platform automates collection and does not automatically purge old data files.
+
+## Setup Steps
+
+Work through these steps to set up all ADWH credentials and services. It should take around 10 minutes.
+
+1. [Set up your credentials and build the images](/setup/getting_started)
+2. [Configure database connections for Superset](/setup/superset_setup)
+3. [Configure database connections for pgAdmin4](/setup/pgAdmin4)

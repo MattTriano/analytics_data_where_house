@@ -38,27 +38,31 @@ nav:
   - Setup:
     - "Overview": setup/index.md
     - 'Getting Started': setup/getting_started.md
-    - 'Configure pgAdmin4': setup/pgAdmin4.md
     - 'Configure Superset': setup/superset_setup.md
+    - 'Configure pgAdmin4': setup/pgAdmin4.md
   - "User's Guide":
     - user_guide/index.md
-    - "Adding a Socrata Pipeline": user_guide/adding_a_socrata_pipeline.md
-    - "Validating Data":
-      - user_guide/validation/index.md
-      - "Defining a Datasource": user_guide/validation/data_source_setup.md
-      - "Setting (data) Expectations":
-        - "Manual Workflow": user_guide/validation/manually_setting_expectations.md
-        - "Data Assistant Workflow": user_guide/validation/data_assistant_workflow.md
-      - "Setting Checkpoints": user_guide/making_expectation_suites.md
-    - "Standardizing Columns": user_guide/standardizing_columns.md
-    - "Engineering Features":
-      - user_guide/feature_engineering/index.md
-      - "Geospatial Features": user_guide/feature_engineering/geospatial.md
-      - "Time Series Features": user_guide/feature_engineering/time_series.md
+    - "Starting up the System": user_guide/system_startup.md
+    - "Running a Pipeline": user_guide/running_a_pipeline.md
     - "Visualization and EDA":
       - user_guide/visualization/index.md
       - "Making Charts": user_guide/visualization/visualization.md
     - "Accessing Systems": user_guide/accessing_resources.md
+  - "Developer's Guide":
+    - dev_guide/index.md
+    - "Adding a Socrata Pipeline": dev_guide/adding_a_socrata_pipeline.md
+    - "Standardizing Columns": dev_guide/standardizing_columns.md
+    - "Validating Data":
+      - dev_guide/validation/index.md
+      - "Defining a Datasource": dev_guide/validation/data_source_setup.md
+      - "Setting (data) Expectations":
+        - "Manual Workflow": dev_guide/validation/manually_setting_expectations.md
+        - "Data Assistant Workflow": dev_guide/validation/data_assistant_workflow.md
+      - "Setting Checkpoints": dev_guide/making_expectation_suites.md
+    - "Engineering Features":
+      - dev_guide/feature_engineering/index.md
+      - "Geospatial Features": dev_guide/feature_engineering/geospatial.md
+      - "Time Series Features": dev_guide/feature_engineering/time_series.md
   - "Data Sources":
     - 'Socrata ELT': data_sources/socrata.md
   - "Overview":
