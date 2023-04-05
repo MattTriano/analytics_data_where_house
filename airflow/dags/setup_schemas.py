@@ -43,6 +43,7 @@ def create_schema(schema_name: str, conn_id: str, task_logger: Logger) -> None:
             """,
             engine=engine,
         )
+        return True
     except Exception as e:
         print(f"Failed to create '{schema_name}' schema. Error: {e}, {type(e)}")
 
@@ -58,9 +59,9 @@ def data_raw_schema_exists(conn_id: str, task_logger: Logger) -> str:
     return does_schema_exist
 
 
-@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS, retries=2)
 def create_data_raw_schema(conn_id: str, task_logger: Logger) -> None:
-    create_schema(schema_name="data_raw", conn_id=conn_id, task_logger=task_logger)
+    return create_schema(schema_name="data_raw", conn_id=conn_id, task_logger=task_logger)
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -74,9 +75,9 @@ def standardized_schema_exists(conn_id: str, task_logger: Logger) -> str:
     return does_schema_exist
 
 
-@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS, retries=2)
 def create_standardized_schema(conn_id: str, task_logger: Logger) -> None:
-    create_schema(schema_name="standardized", conn_id=conn_id, task_logger=task_logger)
+    return create_schema(schema_name="standardized", conn_id=conn_id, task_logger=task_logger)
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -90,9 +91,9 @@ def clean_schema_exists(conn_id: str, task_logger: Logger) -> str:
     return does_schema_exist
 
 
-@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS, retries=2)
 def create_clean_schema(conn_id: str, task_logger: Logger) -> None:
-    create_schema(schema_name="clean", conn_id=conn_id, task_logger=task_logger)
+    return create_schema(schema_name="clean", conn_id=conn_id, task_logger=task_logger)
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -106,9 +107,9 @@ def feature_schema_exists(conn_id: str, task_logger: Logger) -> str:
     return does_schema_exist
 
 
-@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS, retries=2)
 def create_feature_schema(conn_id: str, task_logger: Logger) -> None:
-    create_schema(schema_name="feature", conn_id=conn_id, task_logger=task_logger)
+    return create_schema(schema_name="feature", conn_id=conn_id, task_logger=task_logger)
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -122,9 +123,9 @@ def dwh_schema_exists(conn_id: str, task_logger: Logger) -> str:
     return does_schema_exist
 
 
-@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS, retries=2)
 def create_dwh_schema(conn_id: str, task_logger: Logger) -> None:
-    create_schema(schema_name="dwh", conn_id=conn_id, task_logger=task_logger)
+    return create_schema(schema_name="dwh", conn_id=conn_id, task_logger=task_logger)
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -138,9 +139,9 @@ def report_schema_exists(conn_id: str, task_logger: Logger) -> str:
     return does_schema_exist
 
 
-@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS, retries=2)
 def create_report_schema(conn_id: str, task_logger: Logger) -> None:
-    create_schema(schema_name="report", conn_id=conn_id, task_logger=task_logger)
+    return create_schema(schema_name="report", conn_id=conn_id, task_logger=task_logger)
 
 
 @dag(
