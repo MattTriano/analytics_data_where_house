@@ -10,10 +10,12 @@ System services will begin spinning up and you will see a significant amount of 
 
 Now you can access Airflow and Superset (and any other services with a web UI) in a browser.
 
-Access Airflow at [http://localhost:8080](http://localhost:8080)
+### Access Airflow at [http://localhost:8080](http://localhost:8080)
+
 * Username: _AIRFLOW_WWW_USER_USERNAME value (from your `.env` file)
 * Password: _AIRFLOW_WWW_USER_PASSWORD value (from your `.env` file)
 
-Access Superset at [http://localhost:8088](http://localhost:8088)
+### Access Superset at [http://localhost:8088](http://localhost:8088)
+
 * Username: ADMIN_USERNAME value (from your `.env.superset` file)
 * Password: ADMIN_PASSWORD value (from your `.env.superset` file)
