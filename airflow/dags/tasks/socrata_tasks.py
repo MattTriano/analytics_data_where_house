@@ -414,11 +414,11 @@ def create_temp_data_raw_table(conn_id: str, task_logger: Logger, **kwargs) -> N
         if socrata_metadata.download_format == "csv":
             import pandas as pd
 
-            df_subset = pd.read_csv(local_file_path, nrows=2000000)
+            df_subset = pd.read_csv(local_file_path, nrows=2500000)
         elif socrata_metadata.is_geospatial:
             import geopandas as gpd
 
-            df_subset = gpd.read_file(local_file_path, rows=2000000)
+            df_subset = gpd.read_file(local_file_path, rows=2500000)
         df_subset = standardize_column_names(df=df_subset)
         a_table = SQLTable(
             frame=df_subset,
@@ -533,7 +533,9 @@ def load_data_tg(
     update_data_raw_table_1 = BashOperator(
         task_id="update_data_raw_table",
         bash_command=f"""cd /opt/airflow/dbt && \
-            dbt --warn-error run --select re_dbt.data_raw.{socrata_table.table_name}""",
+            dbt --warn-error-options \
+                    '{{"include": "all", "exclude": [UnusedResourceConfigPath]}}' \
+            run --select re_dbt.data_raw.{socrata_table.table_name}""",
         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
     update_metadata_true_1 = update_result_of_check_in_metadata_table(
@@ -738,8 +740,9 @@ def run_dbt_models__standardized_onward(task_logger: Logger, **kwargs) -> Socrat
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
     dbt_cmd = f"""cd /opt/airflow/dbt && \
-                  dbt --warn-error run --select \
-                  re_dbt.standardized.{socrata_metadata.table_name}_standardized+"""
+                  dbt --warn-error-options \
+                        '{{"include": "all", "exclude": [UnusedResourceConfigPath]}}' \
+                  run --select re_dbt.standardized.{socrata_metadata.table_name}_standardized+"""
     task_logger.info(f"dbt run command: {dbt_cmd}")
     subproc_output = subprocess.run(dbt_cmd, shell=True, capture_output=True, text=True)
     for el in subproc_output.stdout.split("\n"):
