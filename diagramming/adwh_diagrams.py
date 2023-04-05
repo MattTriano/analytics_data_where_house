@@ -20,7 +20,7 @@ graph_attr = {
     # "bgcolor": "transparent"
 }
 
-with Diagram(name="ADWH", show=False, filename="adwh_services", graph_attr=graph_attr, direction="LR", outformat="png"):
+with Diagram(name="Analytics Data Warehouse", show=False, filename="adwh_services", graph_attr=graph_attr, direction="LR", outformat="png"):
     with Cluster("Containerized Services"):
         docker = Docker()
         data_warehouse = Postgresql("Data Warehouse")

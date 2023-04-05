@@ -70,25 +70,15 @@ To get the system up and running:
     make create_warehouse_infra
     ```
 
-5. Set up a connection between superset and your data warehouse TODO
+5. Set up a connection between superset and your data warehouse as shown [here](https://docs.analytics-data-where-house.dev/setup/superset_setup/).
 
-A more detailed walkthrough of setup instructions is available [here](https://docs.analytics-data-where-house.dev/setup/getting_started/), but the 
+A more complete walkthrough of setup instructions is available [here](https://docs.analytics-data-where-house.dev/setup/getting_started/), but the steps above are sufficent to start collecting and then visualizing and exploring data in this system.
 
 ## Usage
 
-After the [system is set up](https://docs.analytics-data-where-house.dev/setup/getting_started/), you can start up your system, unpause DAGs in the Airflow UI, and start adding Socrata data sets to the warehouse.
+After the system is set up, refer to the [User's Guide](https://docs.analytics-data-where-house.dev/user_guide/) for instructions on starting up the system (essentially run `docker compose up`), [running](https://docs.analytics-data-where-house.dev/user_guide/running_a_pipeline/) existing data collection and ELT pipelines, and [creating charts and dashboards](https://docs.analytics-data-where-house.dev/user_guide/visualization/) from data in your warehouse.
 
+## Development and Extension
 
-### Serving dbt Data Documentation and Discovery UI 
+To extend the system or build out new Socrata data sets, see the [Developer's Guide](https://docs.analytics-data-where-house.dev/dev_guide/).
 
-To generate and serve documentation for the data transformations executed by dbt, run the command below, and after the doc server has started up, go to [http://localhost:18080](http://localhost:18080) to explore the documentation UI.
-
-The documentation will be mainly based on the sources, column names, and descriptions recorded in the `.yml` file in the `.../dbt/models/...` directories with table-or-view-producing dbt scripts.
-
-```bash
-user@host:.../your_local_repo$ make serve_dbt_docs
-
-```
-<p align="center" width="100%">
-  <img src="docs/assets/imgs/dbt/dbt_doc_sample_page_w_lineage_graph.PNG" width="90%" alt="dbt documentation page with table lineage graph"/>
-</p>
