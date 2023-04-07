@@ -18,7 +18,6 @@ from urllib.request import urlretrieve
 
 from airflow.decorators import task, task_group
 from airflow.models.baseoperator import chain
-from airflow.operators.bash import BashOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
@@ -185,80 +184,6 @@ def download_fresh_data(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
     urlretrieve(url=socrata_metadata.data_download_url, filename=output_file_path)
     task_logger.info(f"Finished downloading data at {dt.datetime.utcnow()} UTC")
     return socrata_metadata
-
-
-# @task.branch(trigger_rule=TriggerRule.NONE_FAILED)
-# def fresher_source_data_available(
-#     socrata_metadata: SocrataTableMetadata, task_logger: Logger, **kwargs
-# ) -> str:
-#     task_logger.info(f"In fresher_source_data_available, here's what kwargs looks like {kwargs}")
-#     if socrata_metadata.data_freshness_check["updated_data_available"]:
-#         task_logger.info(f"Fresh data available, entering extract-load branch")
-#         return "update_socrata_table.extract_load_task_group.download_fresh_data"
-#     else:
-#         return "update_socrata_table.update_result_of_check_in_metadata_table"
-
-
-# @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-# def table_exists_in_warehouse(socrata_metadata: SocrataTableMetadata, conn_id: str) -> str:
-#     tables_in_data_raw_schema = get_data_table_names_in_schema(
-#         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
-#     )
-#     if socrata_metadata.table_name not in tables_in_data_raw_schema:
-#         return "update_socrata_table.extract_load_task_group.ingest_into_new_table_in_data_raw"
-#     else:
-#         return "update_socrata_table.extract_load_task_group.ingest_into_temporary_table"
-
-
-# @task
-# def ingest_into_new_table_in_data_raw(
-#     conn_id: str, task_logger: Logger, **kwargs
-# ) -> SocrataTableMetadata:
-#     ti = kwargs["ti"]
-#     socrata_metadata = ti.xcom_pull(
-#         task_ids="update_socrata_table.extract_load_task_group.download_fresh_data"
-#     )
-#     ingest_into_table(
-#         socrata_metadata=socrata_metadata,
-#         conn_id=conn_id,
-#         task_logger=task_logger,
-#         temp_table=False,
-#     )
-#     return socrata_metadata
-
-
-# @task
-# def ingest_into_temporary_table(
-#     conn_id: str, task_logger: Logger, **kwargs
-# ) -> SocrataTableMetadata:
-#     ti = kwargs["ti"]
-#     socrata_metadata = ti.xcom_pull(
-#         task_ids="update_socrata_table.extract_load_task_group.download_fresh_data"
-#     )
-#     ingest_into_table(
-#         socrata_metadata=socrata_metadata,
-#         conn_id=conn_id,
-#         task_logger=task_logger,
-#         temp_table=True,
-#     )
-#     return socrata_metadata
-
-
-# @task(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
-# def update_table_metadata_in_db(
-#     conn_id: str, task_logger: Logger, **kwargs
-# ) -> SocrataTableMetadata:
-#     ti = kwargs["ti"]
-#     socrata_metadata = ti.xcom_pull(
-#         task_ids="update_socrata_table.extract_load_task_group.download_fresh_data"
-#     )
-#     task_logger.info(f"Updating table_metadata record id #{socrata_metadata.freshness_check_id}.")
-#     socrata_metadata.update_current_freshness_check_in_db(
-#         engine=get_pg_engine(conn_id=conn_id),
-#         update_payload={"data_pulled_this_check": True},
-#         logger=task_logger,
-#     )
-#     return socrata_metadata
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
@@ -517,18 +442,6 @@ def run_socrata_checkpoint(task_logger: Logger, **kwargs) -> SocrataTableMetadat
     return socrata_metadata
 
 
-# @task
-# def run_ge_validation_checkpoint(
-#     socrata_table: SocrataTable, schema_name: str, task_logger: Logger
-# ):
-#     checkpoint_name = f"{schema_name}.{socrata_table.table_name}"
-#     checkpoint_results = run_checkpoint(checkpoint_name=checkpoint_name, task_logger=task_logger)
-#     if checkpoint_results.success:
-#         task_logger.info("Validation successful!")
-#     else:
-#         task_logger.info("Validation Failed! Check data docs to find failed validations")
-
-
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def validation_endpoint(**kwargs) -> SocrataTableMetadata:
     ti = kwargs["ti"]
@@ -678,59 +591,6 @@ def persist_new_raw_data_tg(conn_id: str, task_logger: Logger) -> None:
     )
 
 
-# @task_group
-# def load_data_tg(
-#     socrata_metadata: SocrataTableMetadata,
-#     socrata_table: SocrataTable,
-#     conn_id: str,
-#     task_logger: Logger,
-# ) -> SocrataTableMetadata:
-#     task_logger.info(f"Entered load_data_tg task_group")
-#     file_ext_route_1 = file_ext_branch_router(socrata_metadata=socrata_metadata)
-
-#     geojson_route_1 = load_geojson_data(
-#         route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
-#     )
-#     csv_route_1 = load_csv_data(
-#         route_str=file_ext_route_1, conn_id=conn_id, task_logger=task_logger
-#     )
-#     checkpoint_exists_1 = socrata_table_checkpoint_exists(task_logger=task_logger)
-#     checkpoint_1 = run_socrata_checkpoint(task_logger=task_logger)
-#     table_exists_1 = table_exists_in_data_raw(conn_id=conn_id, task_logger=task_logger)
-#     create_data_raw_table_1 = create_table_in_data_raw(
-#         conn_id=conn_id, task_logger=task_logger, temp_table=False
-#     )
-#     dbt_data_raw_model_exists_1 = dbt_data_raw_model_exists(
-#         task_logger=task_logger, temp_table=False
-#     )
-#     make_dbt_data_raw_model_1 = make_dbt_data_raw_model(conn_id=conn_id, task_logger=task_logger)
-#     update_data_raw_table_1 = update_data_raw_table(task_logger=task_logger)
-#     # update_data_raw_table_1 = BashOperator(
-#         # task_id="update_data_raw_table",
-#         # bash_command=f"""cd /opt/airflow/dbt && \
-#             # dbt --warn-error-options \
-#                     # '{{"include": "all", "exclude": [UnusedResourceConfigPath]}}' \
-#             # run --select re_dbt.data_raw.{socrata_table.table_name}""",
-#         # trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
-#     # )
-#     update_metadata_true_1 = update_result_of_check_in_metadata_table(
-#         conn_id=conn_id, task_logger=task_logger, data_updated=True
-#     )
-
-#     chain(
-#         file_ext_route_1,
-#         [geojson_route_1, csv_route_1],
-#         checkpoint_exists_1,
-#         [Label("Checkpoint Doesn't Exist"), checkpoint_1],
-#         table_exists_1,
-#         [Label("Table Exists"), create_data_raw_table_1],
-#         dbt_data_raw_model_exists_1,
-#         [Label("dbt data_raw Model Exists"), make_dbt_data_raw_model_1],
-#         update_data_raw_table_1,
-#         update_metadata_true_1,
-#     )
-
-
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def dbt_standardized_model_ready(task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
@@ -877,43 +737,6 @@ def transform_data_tg(conn_id: str, task_logger: Logger):
         endpoint_1,
     )
 
-    # clean_model_ready_1 = dbt_clean_model_ready(task_logger=task_logger)
-    # make_clean_model_1 = dbt_make_clean_model(task_logger=task_logger)
-    # run_dbt_models_1 = run_dbt_models__standardized_onward(task_logger=task_logger)
-    # endpoint_1 = endpoint(task_logger=task_logger)
-    # update_metadata_false_1 = update_result_of_check_in_metadata_table(
-    #     conn_id=conn_id, task_logger=task_logger, data_updated=False
-    # )
-    # short_circuit_update_1 = short_circuit_downstream()
-
-    # chain(
-    #     metadata_1,
-    #     fresh_source_data_available_1,
-    #     Label("Fresher data available"),
-    #     extract_data_1,
-    #     load_data_tg_1,
-    #     raw_data_validation_tg_1,
-    #     persist_new_raw_data_tg_1,
-    #     std_model_ready_1,
-    # )
-    # chain(
-    #     std_model_ready_1,
-
-    #     [
-    #         make_standardized_stage_1,
-    #         std_model_unfinished_1,
-    #     ],
-    #     endpoint_1,
-    # )
-    # chain(
-    #     std_model_ready_1,
-    #     Label("dbt _standardized model looks good"),
-    #     clean_model_ready_1,
-    #     [Label("dbt _clean model looks good!"), make_clean_model_1],
-    #     run_dbt_models_1,
-    #     endpoint_1,
-    # )
-
 
 @task.short_circuit(ignore_downstream_trigger_rules=True)
 def short_circuit_downstream():
@@ -945,20 +768,6 @@ def update_socrata_table(
     raw_data_validation_tg_1 = raw_data_validation_tg(task_logger=task_logger)
     persist_new_raw_data_tg_1 = persist_new_raw_data_tg(conn_id=conn_id, task_logger=task_logger)
     transform_data_1 = transform_data_tg(conn_id=conn_id, task_logger=task_logger)
-
-    # std_model_ready_1 = dbt_standardized_model_ready(
-    #     socrata_metadata=load_data_tg_1, task_logger=task_logger
-    # )
-    # std_model_unfinished_1 = highlight_unfinished_dbt_standardized_stub(task_logger=task_logger)
-    # make_standardized_stage_1 = make_dbt_standardized_model(
-    #     conn_id="dwh_db_conn",
-    #     task_logger=task_logger,
-    # )
-    # clean_model_ready_1 = dbt_clean_model_ready(task_logger=task_logger)
-    # make_clean_model_1 = dbt_make_clean_model(task_logger=task_logger)
-    # run_dbt_models_1 = run_dbt_models__standardized_onward(task_logger=task_logger)
-
-    # endpoint_1 = endpoint(task_logger=task_logger)
     update_metadata_false_1 = update_result_of_check_in_metadata_table(
         conn_id=conn_id, task_logger=task_logger, data_updated=False
     )
@@ -974,26 +783,6 @@ def update_socrata_table(
         persist_new_raw_data_tg_1,
         transform_data_1,
     )
-    # chain(
-    #     std_model_ready_1,
-    #     [
-    #         Label("No dbt _standardized model found"),
-    #         Label("dbt _standardized model needs review"),
-    #     ],
-    #     [
-    #         make_standardized_stage_1,
-    #         std_model_unfinished_1,
-    #     ],
-    #     endpoint_1,
-    # )
-    # chain(
-    #     std_model_ready_1,
-    #     Label("dbt _standardized model looks good"),
-    #     clean_model_ready_1,
-    #     [Label("dbt _clean model looks good!"), make_clean_model_1],
-    #     run_dbt_models_1,
-    #     endpoint_1,
-    # )
     chain(
         metadata_1,
         fresh_source_data_available_1,

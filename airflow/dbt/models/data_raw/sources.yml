@@ -24,6 +24,7 @@ sources:
       - name: chicago_street_center_lines
       - name: chicago_towed_vehicles
       - name: chicago_traffic_crashes
+      - name: chicago_vacant_and_abandoned_buildings
       - name: cook_county_multifam_parcel_improvements
       - name: cook_county_neighborhood_boundaries
       - name: cook_county_parcel_assessment_appeals
@@ -49,6 +50,7 @@ sources:
       - name: temp_chicago_street_center_lines
       - name: temp_chicago_towed_vehicles
       - name: temp_chicago_traffic_crashes
+      - name: temp_chicago_vacant_and_abandoned_buildings
       - name: temp_cook_county_multifam_parcel_improvements
       - name: temp_cook_county_neighborhood_boundaries
       - name: temp_cook_county_parcel_assessment_appeals
