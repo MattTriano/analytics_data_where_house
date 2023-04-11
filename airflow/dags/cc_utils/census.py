@@ -1,5 +1,7 @@
 import datetime as dt
+from random import random
 import re
+from time import sleep
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -12,6 +14,26 @@ from cc_utils.db import (
     get_reflected_db_table,
     execute_result_returning_orm_query,
 )
+
+
+def check_for_updated_census_table_metadata(engine: Engine):
+    page_obj = CensusTableMetadata(metadata_url="https://www2.census.gov/")
+    update_df = page_obj.check_warehouse_data_freshness(engine=engine)
+    _ = page_obj.insert_current_metadata_freshness_check(engine=engine)
+    to_check_mask = update_df["is_dir"] & update_df["updated_metadata_available"]
+
+    metadata_urls_to_check = []
+    metadata_urls_to_check.extend(list(update_df.loc[to_check_mask, "metadata_url"]))
+    while len(metadata_urls_to_check) > 0:
+        metadata_url = metadata_urls_to_check.pop()
+        print(f"Checking {metadata_url}")
+        sleep_time = 0.5 * random() + 0.5
+        sleep(sleep_time)
+        page_obj = CensusTableMetadata(metadata_url=metadata_url)
+        update_df = page_obj.check_warehouse_data_freshness(engine=engine)
+        _ = page_obj.insert_current_metadata_freshness_check(engine=engine)
+        to_check_mask = update_df["is_dir"] & update_df["updated_metadata_available"]
+        metadata_urls_to_check.extend(list(update_df.loc[to_check_mask, "metadata_url"]))
 
 
 class CensusTableMetadata:
@@ -91,11 +113,14 @@ class CensusTableMetadata:
         return df
 
     def get_prior_metadata_checks_from_db(self, engine: Engine) -> pd.DataFrame:
+        metadata_urls = f"""{"', '".join([
+            el.replace("'", "''") for el in list(self.data_freshness_check["metadata_url"])
+        ])}"""
         results_df = execute_result_returning_query(
             query=f"""
                 SELECT *
                 FROM metadata.census_metadata
-                WHERE metadata_url IN {tuple(self.data_freshness_check["metadata_url"])};
+                WHERE metadata_url IN ('{metadata_urls}');
             """,
             engine=engine,
         )
@@ -139,3 +164,4 @@ class CensusTableMetadata:
             result_df = execute_result_returning_orm_query(
                 engine=engine, select_query=insert_statement
             )
+            return result_df
