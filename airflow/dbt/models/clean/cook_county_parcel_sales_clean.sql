@@ -1,4 +1,4 @@
-{{ config(materialized='table') }}
+{{ config(materialized='view') }}
 {% set ck_cols = ["pin", "sale_document_num", "sale_date", "sale_price"] %}
 {% set record_id = "parcel_sale_id" %}
 {% set base_cols = [
@@ -21,22 +21,22 @@ std_records_numbered_latest_first AS (
     FROM std_data
 ),
 most_current_records AS (
-     SELECT * 
-     FROM std_records_numbered_latest_first
-     WHERE rn = 1
+    SELECT *
+    FROM std_records_numbered_latest_first
+    WHERE rn = 1
 ),
 
--- selects the source_data_updated (ie the date of publication) value from each record's first
---   ingestion into the local data warehouse 
+-- selects the source_data_updated (ie the date of publication) value from each record's
+--   first ingestion into the local data warehouse
 std_records_numbered_earliest_first AS (
-    SELECT *, 
+    SELECT *,
         row_number() over(partition by {{record_id}} ORDER BY source_data_updated ASC) as rn
-    FROM std_data
+FROM std_data
 ),
 records_first_ingested_pub_date AS (
-     SELECT {{record_id}}, source_data_updated AS first_ingested_pub_date
-     FROM std_records_numbered_earliest_first
-     WHERE rn = 1
+    SELECT {{record_id}}, source_data_updated AS first_ingested_pub_date
+    FROM std_records_numbered_earliest_first
+    WHERE rn = 1
 )
 
 SELECT

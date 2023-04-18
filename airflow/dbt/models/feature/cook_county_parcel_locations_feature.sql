@@ -2,7 +2,6 @@
 
 WITH parcel_loc_features AS (
     SELECT
-        parcel_location_id,
         pin,
         property_city,
         CONCAT(township, nbhd)                              AS town_nbhd,
@@ -55,7 +54,6 @@ chicago_areas AS (
 )
 
 SELECT
-    lf.parcel_location_id,
     lf.pin,
     lf.town_nbhd,
     lf.owner_occupied,
