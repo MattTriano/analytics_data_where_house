@@ -1,10 +1,9 @@
 {{ config(materialized='view') }}
 {% set ck_cols = ["pin"] %}
-{% set record_id = "parcel_location_id" %}
+{% set record_id = "pin" %}
 
 WITH records_with_basic_cleaning AS (
     SELECT
-        {{ dbt_utils.generate_surrogate_key(ck_cols) }}   AS {{ record_id }},
         pin::bigint                                       AS pin,
         upper(property_address::text)                     AS property_address,
         upper(property_apt_no::text)                      AS property_apt_no,
@@ -54,6 +53,10 @@ WITH records_with_basic_cleaning AS (
 )
 
 
-SELECT *
-FROM records_with_basic_cleaning
+SELECT
+    {% if ck_cols|length > 1 %}
+        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
+    {% endif %}
+    a.*
+FROM records_with_basic_cleaning AS a
 ORDER BY {% for ck in ck_cols %}{{ ck }},{% endfor %} source_data_updated

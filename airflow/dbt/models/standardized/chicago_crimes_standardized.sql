@@ -1,10 +1,9 @@
 {{ config(materialized='view') }}
 {% set ck_cols = ["id"] %}
-{% set record_id = "crime_id" %}
+{% set record_id = "id" %}
 
 WITH records_with_basic_cleaning AS (
     SELECT
-        {{ dbt_utils.generate_surrogate_key(ck_cols) }}      AS {{ record_id }},
         id::bigint                                           AS id,
         upper(case_number::text)                             AS case_number,
         date::timestamp AT TIME ZONE 'America/Chicago'       AS date,
@@ -33,6 +32,10 @@ WITH records_with_basic_cleaning AS (
 )
 
 
-SELECT *
-FROM records_with_basic_cleaning
+SELECT
+    {% if ck_cols|length > 1 %}
+        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
+    {% endif %}
+    a.*
+FROM records_with_basic_cleaning AS a
 ORDER BY {% for ck in ck_cols %}{{ ck }},{% endfor %} source_data_updated

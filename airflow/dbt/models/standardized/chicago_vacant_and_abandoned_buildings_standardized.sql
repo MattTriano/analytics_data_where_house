@@ -1,10 +1,9 @@
 {{ config(materialized='view') }}
-{% set ck_cols = ["violation_number, "property_address", "entity_or_person_s_"] %}
+{% set ck_cols = ["violation_number", "property_address", "entity_or_person_s_"] %}
 {% set record_id = "vacant_bldg_violation_id" %}
 
 WITH records_with_basic_cleaning AS (
     SELECT
-        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
         upper(violation_number::text)                   AS violation_number,
         upper(property_address::text)                   AS property_address,
         upper(entity_or_person_s_::text)                AS entity_or_persons,
@@ -32,6 +31,10 @@ WITH records_with_basic_cleaning AS (
 )
 
 
-SELECT *
-FROM records_with_basic_cleaning
+SELECT
+    {% if ck_cols|length > 1 %}
+        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
+    {% endif %}
+    a.*
+FROM records_with_basic_cleaning AS a
 ORDER BY {% for ck in ck_cols %}{{ ck }},{% endfor %} source_data_updated

@@ -2,7 +2,6 @@
 
 WITH owner_features AS (
     SELECT
-        parcel_location_id,
         pin,
         owner_occupied,
         owner_name
@@ -10,7 +9,6 @@ WITH owner_features AS (
 )
 
 SELECT 
-    of.parcel_location_id,
     of.pin,
     of.owner_occupied,
     pl.mailing_address,
@@ -19,4 +17,4 @@ SELECT
     pl.mailing_state
 FROM owner_features AS of
 INNER JOIN {{ ref('cook_county_parcel_locations_clean') }} AS pl
-ON of.parcel_location_id = pl.parcel_location_id
+ON of.pin = pl.pin

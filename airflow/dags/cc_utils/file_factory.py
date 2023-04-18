@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import textwrap
 from typing import List
 import yaml
@@ -38,33 +39,6 @@ def get_table_sqlalchemy_col_objects(table_name: str, schema_name: str, engine: 
     return table_cols
 
 
-def get_ordered_table_cols_from__standardized_model(std_file_path: Path) -> List[str]:
-    if std_file_path.is_file():
-        with open(std_file_path, "r") as f:
-            std_file_lines = f.readlines()
-    else:
-        raise Exception(f"No file found at the expected location, {std_file_path}.")
-
-    record_index = [
-        std_file_lines.index(el) for el in std_file_lines if el.startswith("{% set record_id")
-    ][0]
-    record_id = std_file_lines[record_index].split('"')[1]
-    table_cols = [record_id]
-
-    select_index = std_file_lines.index("    SELECT\n") + 2
-    end_index = [std_file_lines.index(el) for el in std_file_lines if el.startswith("    FROM")][0]
-    col_containing_lines = std_file_lines[select_index:end_index]
-    table_cols.extend(
-        [
-            line.split(" AS ")[1].split(",")[0].replace("\n", "")
-            for line in col_containing_lines
-            if " AS " in line
-        ]
-    )
-    print(col_containing_lines)
-    return table_cols
-
-
 def get_composite_key_cols_definition_line_from__standardized_model(
     std_file_path: Path,
 ) -> str:
@@ -74,6 +48,41 @@ def get_composite_key_cols_definition_line_from__standardized_model(
         0
     ]
     return ck_cols_el
+
+
+def get_composite_key_cols(std_file_path: Path) -> List:
+    ck_cols_el = get_composite_key_cols_definition_line_from__standardized_model(std_file_path)
+    ck_cols = re.findall("\[(.*?)\]", "".join(ck_cols_el))[0]
+    return ck_cols.replace('"', "").split(",")
+
+
+def get_ordered_table_cols_from__standardized_model(std_file_path: Path) -> List[str]:
+    if std_file_path.is_file():
+        with open(std_file_path, "r") as f:
+            std_file_lines = f.readlines()
+    else:
+        raise Exception(f"No file found at the expected location, {std_file_path}.")
+    ck_cols = get_composite_key_cols(std_file_path=std_file_path)
+    record_index = [
+        std_file_lines.index(el) for el in std_file_lines if el.startswith("{% set record_id")
+    ][0]
+    record_id = std_file_lines[record_index].split('"')[1]
+    table_cols = [record_id]
+    if len(ck_cols) == 1:
+        select_index = std_file_lines.index("    SELECT\n") + 2
+    else:
+        select_index = std_file_lines.index("    SELECT\n") + 1
+    end_index = [std_file_lines.index(el) for el in std_file_lines if el.startswith("    FROM")][0]
+    col_containing_lines = std_file_lines[select_index:end_index]
+    table_cols.extend(
+        [
+            line.split(" AS ")[1].split(",")[0].replace("\n", "")
+            for line in col_containing_lines
+            if " AS " in line
+        ]
+    )
+    # print(col_containing_lines)
+    return table_cols
 
 
 def format_dbt_stub_for_data_raw_stage(table_name: str, engine: Engine) -> List[str]:
@@ -220,7 +229,6 @@ def format_dbt_stub_for_standardized_stage(table_name: str, engine: Engine) -> L
         "",
         "WITH records_with_basic_cleaning AS (",
         "    SELECT",
-        "        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},",
     ]
 
     col_lines = []
@@ -241,8 +249,12 @@ def format_dbt_stub_for_standardized_stage(table_name: str, engine: Engine) -> L
             ")",
             "",
             "",
-            "SELECT *",
-            "FROM records_with_basic_cleaning",
+            "SELECT",
+            "    {% if ck_cols|length > 1 %}",
+            "        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},",
+            "    {% endif %}",
+            "    a.*",
+            "FROM records_with_basic_cleaning AS a",
             "ORDER BY {% for ck in ck_cols %}{{ ck }},{% endfor %} source_data_updated",
         ]
     )

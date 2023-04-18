@@ -2,7 +2,6 @@
 
 WITH clean_cols AS (
     SELECT
-        parcel_location_id,
         pin,
         property_address,
         property_apt_no,
@@ -28,7 +27,6 @@ WITH clean_cols AS (
 ),
 feature_cols AS (
     SELECT
-        parcel_location_id,
         pin,
         town_nbhd,
         owner_occupied,
@@ -41,7 +39,6 @@ feature_cols AS (
 )
 
 SELECT
-    cc.parcel_location_id,
     cc.pin,
     fc.town_nbhd,
     cc.property_address,
@@ -71,4 +68,4 @@ SELECT
     fc.geometry
 FROM clean_cols AS cc
 INNER JOIN feature_cols AS fc
-ON cc.parcel_location_id = fc.parcel_location_id
+ON cc.pin = fc.pin
