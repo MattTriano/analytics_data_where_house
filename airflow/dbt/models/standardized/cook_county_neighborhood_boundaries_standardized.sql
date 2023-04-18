@@ -4,7 +4,6 @@
 
 WITH records_with_basic_cleaning AS (
     SELECT
-        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
         upper(town_nbhd::text)                          AS town_nbhd,
         upper(triad_code::char(1))                      AS triad_code,
         upper(triad_name::text)                         AS triad_name, 
@@ -19,6 +18,10 @@ WITH records_with_basic_cleaning AS (
 )
 
 
-SELECT *
-FROM records_with_basic_cleaning
+SELECT
+    {% if ck_cols|length > 1 %}
+        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
+    {% endif %}
+    a.*
+FROM records_with_basic_cleaning AS a
 ORDER BY {% for ck in ck_cols %}{{ ck }},{% endfor %} source_data_updated

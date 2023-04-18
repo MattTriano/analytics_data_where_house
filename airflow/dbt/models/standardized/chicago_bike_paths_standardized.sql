@@ -4,7 +4,6 @@
 
 WITH records_with_basic_cleaning AS (
     SELECT
-        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
        	upper(st_name::text)                      AS st_name,
         upper(f_street::text)                     AS f_street,
         upper(t_street::text)                     AS t_street,
@@ -23,6 +22,10 @@ WITH records_with_basic_cleaning AS (
 )
 
 
-SELECT *
-FROM records_with_basic_cleaning
+SELECT
+    {% if ck_cols|length > 1 %}
+        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
+    {% endif %}
+    a.*
+FROM records_with_basic_cleaning AS a
 ORDER BY {% for ck in ck_cols %}{{ ck }},{% endfor %} source_data_updated

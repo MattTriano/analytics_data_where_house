@@ -120,6 +120,12 @@ CHICAGO_RELOCATED_VEHICLES = SocrataTable(
     schedule="35 11,23 * * *",
 )
 
+CHICAGO_SIDEWALK_CAFE_PERMITS = SocrataTable(
+    table_id="nxj5-ix6z",
+    table_name="chicago_sidewalk_cafe_permits",
+    schedule="50 3 * * *",
+)
+
 CHICAGO_SHOTSPOTTER_ALERTS = SocrataTable(
     table_id="3h7q-7mdb",
     table_name="chicago_shotspotter_alerts",

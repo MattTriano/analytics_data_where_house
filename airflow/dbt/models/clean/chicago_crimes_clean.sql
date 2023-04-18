@@ -1,10 +1,10 @@
 {{ config(materialized='view') }}
 {% set ck_cols = ["id"] %}
-{% set record_id = "crime_id" %}
+{% set record_id = "id" %}
 {% set base_cols = [
-    "crime_id", "id", "case_number", "date", "updated_on", "primary_type", "description", "iucr",
-    "fbi_code", "location_description", "domestic", "arrest", "district", "ward", "beat",
-    "community_area", "block", "latitude", "longitude", "x_coordinate", "y_coordinate", "geometry",
+    "id", "case_number", "date", "updated_on", "primary_type", "description", "iucr", "fbi_code",
+    "location_description", "domestic", "arrest", "district", "ward", "beat", "community_area",
+    "block", "latitude", "longitude", "x_coordinate", "y_coordinate", "geometry",
     "source_data_updated", "ingestion_check_time"
 ] %}
 

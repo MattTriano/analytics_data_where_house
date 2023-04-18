@@ -1,5 +1,5 @@
 {{ config(materialized='view') }}
-{% set ck_cols = ["violation_number, "property_address", "entity_or_person_s_"] %}
+{% set ck_cols = ["violation_number", "property_address", "entity_or_person_s_"] %}
 {% set record_id = "vacant_bldg_violation_id" %}
 {% set base_cols = [
     "vacant_bldg_violation_id", "violation_number", "property_address", "entity_or_persons",

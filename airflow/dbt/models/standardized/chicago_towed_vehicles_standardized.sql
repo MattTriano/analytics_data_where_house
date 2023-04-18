@@ -4,7 +4,6 @@
 
 WITH records_with_basic_cleaning AS (
     SELECT
-        {{ dbt_utils.generate_surrogate_key(ck_cols) }}                    AS {{ record_id }},
         upper(inventory_number::text)                                      AS inventory_number,
         to_date(upper(tow_date::text), 'MM/DD/YYYY')                       AS tow_date,
         upper(make::varchar(4))                                            AS make,
@@ -22,6 +21,10 @@ WITH records_with_basic_cleaning AS (
 )
 
 
-SELECT *
-FROM records_with_basic_cleaning
+SELECT
+    {% if ck_cols|length > 1 %}
+        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
+    {% endif %}
+    a.*
+FROM records_with_basic_cleaning AS a
 ORDER BY {% for ck in ck_cols %}{{ ck }},{% endfor %} source_data_updated

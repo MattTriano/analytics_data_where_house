@@ -4,7 +4,6 @@
 
 WITH records_with_basic_cleaning AS (
     SELECT
-        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
         request_date::timestamp                         AS request_date,
         completion_date::timestamp                      AS completion_date,
         upper(address::text)                            AS address,
@@ -19,6 +18,10 @@ WITH records_with_basic_cleaning AS (
 )
 
 
-SELECT *
-FROM records_with_basic_cleaning
+SELECT
+    {% if ck_cols|length > 1 %}
+        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
+    {% endif %}
+    a.*
+FROM records_with_basic_cleaning AS a
 ORDER BY {% for ck in ck_cols %}{{ ck }},{% endfor %} source_data_updated
