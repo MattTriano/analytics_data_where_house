@@ -252,6 +252,8 @@ services:
       timeout: 10s
       retries: 5
     restart: always
+    ports:
+      - "18888:18888"
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
