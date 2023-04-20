@@ -87,6 +87,14 @@
     "user_input": false,
     "dependant_on_other_env_vars": false
   },
+  ".env::JUPYTER_DATA_DIR": {
+    "file": ".env",
+    "name": "JUPYTER_DATA_DIR",
+    "group": "Airflow",
+    "default_value": "/opt/airflow/.jupyter/share/jupyter",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
   ".env::JUPYTER_RUNTIME_DIR": {
     "file": ".env",
     "name": "JUPYTER_RUNTIME_DIR",

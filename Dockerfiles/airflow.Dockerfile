@@ -5,6 +5,7 @@ RUN apt-get update \
   jq \
   postgresql-client \
   libpq-dev \
+  bash-completion \
   git \
   && apt-get autoremove -yqq --purge \
   && apt-get clean \
