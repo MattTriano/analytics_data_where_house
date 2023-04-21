@@ -48,3 +48,41 @@ Enter this command to generate a notebook that will help edit expectations. Use 
 ```bash
 default@cfade96635e4:/opt/airflow/great_expectations$ great_expectations suite edit data_raw.temp_chicago_homicide_and_shooting_victimizations.warning -nj
 ```
+
+In the suite editor notebook, each expectation in the suite will have its own cell that you can run, inspect, and edit. At the end of the notebook, expectations in the `validator` object will be written to file.
+
+#### Removing an expectation
+
+While reviewing expectations, you may find an expectation you want to just remove. You can delete such expectations via the `validator` object's `.remove_expectation()` method, but you have to pass in the expectation that is to be removed from the suite. You can access the expectation by accessing the `.expectation_config` attr of the `ExpectationValidationResult`.
+
+
+```python
+expectation_validation_result = validator.expect_column_values_to_match_regex(
+    column='victimization_fbi_cd',
+    mostly=1.0,
+    regex='-?\d+',
+    meta={
+        'profiler_details': {
+            'evaluated_regexes': {
+                '(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})(?:.(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})){3}': 0.0,
+                '-?\\d+': 1.0, '-?\\d+(?:\\.\\d*)?': 1.0, '<\\/?(?:p|a|b|img)(?: \\/)?>': 0.0,
+                '[A-Za-z0-9\\.,;:!?()\\"\'%\\-]+': 1.0,
+                '\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-5][0-9a-fA-F]{3}-[089ab][0-9a-fA-F]{3}-\\b[0-9a-fA-F]{12}\\b ': 0.0,
+                '\\d+': 1.0,
+                '\\s+$': 0.0,
+                '^\\s+': 0.0,
+                'https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,255}\\.[a-z]{2,6}\\b(?:[-a-zA-Z0-9@:%_\\+.~#()?&//=]*)': 0.0
+            },
+            'success_ratio': 1.0
+        }
+    }
+)
+```
+
+To confirm that you've removed that expectation, check the length of the expectation suite (via the command below) before and after removing the expectation.
+
+```python
+print(f"Number of expectations pre-removal: {len(validator.expectation_suite.expectations)}")
+validator.remove_expectation(expectation_validation_result.expectation_config)
+print(f"Number of expectations after-removal: {len(validator.expectation_suite.expectations)}")
+```
