@@ -96,3 +96,9 @@ get_py_utils_shell: start_python_container
 run_tests:
 	docker compose exec airflow-scheduler /bin/bash -c \
 		"cd /opt/airflow && python -m pytest -s"
+
+serve_great_expectations_jupyterlab:
+	docker compose exec airflow-scheduler /bin/bash -c \
+		"mkdir -p /opt/airflow/.jupyter/share/jupyter/runtime &&\
+		cd /opt/airflow/great_expectations/ &&\
+		jupyter lab --ip 0.0.0.0 --port 18888"
