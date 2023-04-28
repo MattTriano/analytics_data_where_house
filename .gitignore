@@ -4,6 +4,9 @@
 .env*
 .venv
 .vscode
+dev_utils/
+airflow/dags/dev_experiments/
+
 
 notes/
 sandbox/
