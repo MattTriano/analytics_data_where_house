@@ -204,6 +204,26 @@ COOK_COUNTY_CONDO_PARCEL_IMPROVEMENTS = SocrataTable(
     schedule="20 3 * * 3",
 )
 
+COOK_COUNTY_SAO_CASE_INTAKE_DATA = SocrataTable(
+    table_id="3k7z-hchi", table_name="cook_county_sao_case_intake_data", schedule="11 1 11 * *"
+)
+
+COOK_COUNTY_SAO_CASE_INITIATION_DATA = SocrataTable(
+    table_id="7mck-ehwz", table_name="cook_county_sao_case_initiation_data", schedule="31 1 11 * *"
+)
+
+COOK_COUNTY_SAO_CASE_DISPOSITION_DATA = SocrataTable(
+    table_id="apwk-dzx8", table_name="cook_county_sao_case_disposition_data", schedule="51 1 11 * *"
+)
+
+COOK_COUNTY_SAO_CASE_DIVERSION_DATA = SocrataTable(
+    table_id="gpu3-5dfh", table_name="cook_county_sao_case_diversion_data", schedule="11 2 11 * *"
+)
+
+COOK_COUNTY_SAO_CASE_SENTENCING_DATA = SocrataTable(
+    table_id="tg8v-tm6u", table_name="cook_county_sao_case_sentencing_data", schedule="31 2 11 * *"
+)
+
 NYC_PARCEL_SALES = SocrataTable(
     table_id="usep-8jbt",
     table_name="nyc_parcel_sales",
