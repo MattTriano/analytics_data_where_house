@@ -197,7 +197,7 @@ services:
       - re_etl_admin:/var/lib/pgadmin
 
   dbt_proj:
-    image: adwh_dbt:1.4.1
+    image: adwh_dbt:1.5.0
     build:
       context: ./
       dockerfile: ./Dockerfiles/dbt.Dockerfile
@@ -217,7 +217,7 @@ services:
 
   airflow-webserver:
     <<: *airflow-common
-    image: adwh_airflow_webserver:2.5.3
+    image: adwh_airflow_webserver:2.6.0
     command: webserver
     ports:
       - "8080:8080"
@@ -240,7 +240,7 @@ services:
 
   airflow-scheduler:
     <<: *airflow-common
-    image: adwh_airflow_scheduler:2.5.3
+    image: adwh_airflow_scheduler:2.6.0
     command: scheduler
     healthcheck:
       test:
@@ -261,7 +261,7 @@ services:
 
   airflow-triggerer:
     <<: *airflow-common
-    image: adwh_airflow_triggerer:2.5.3
+    image: adwh_airflow_triggerer:2.6.0
     command: triggerer
     healthcheck:
       test:
@@ -280,7 +280,7 @@ services:
 
   airflow-init:
     <<: *airflow-common
-    image: adwh_airflow_init:2.5.3
+    image: adwh_airflow_init:2.6.0
     entrypoint: /bin/bash
     # yamllint disable rule:line-length
     command:
@@ -307,7 +307,7 @@ services:
 
   airflow-cli:
     <<: *airflow-common
-    image: adwh_airflow_cli:2.5.3
+    image: adwh_airflow_cli:2.6.0
     profiles:
       - debug
     environment:
