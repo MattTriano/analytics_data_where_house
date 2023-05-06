@@ -17,10 +17,10 @@ task_logger = logging.getLogger("airflow.task")
 # dbt_cmd = f"""cd /opt/airflow/dbt && \
 #   dbt --warn-error run --select \
 #   re_dbt.dwh.{table_name}_fact+"""
-# Running all models in the `report` level
+# Running all models in the `dwh` level
 # dbt_cmd = f"""cd /opt/airflow/dbt &&
 #                   dbt --warn-error run --select
-#                   re_dbt.report.*"""
+#                   re_dbt.dwh.*"""
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)

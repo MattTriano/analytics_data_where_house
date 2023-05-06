@@ -49,6 +49,3 @@ models:
     dwh:
       +materialized: table
       +schema: dwh
-    report:
-      +materialized: table
-      +schema: report
