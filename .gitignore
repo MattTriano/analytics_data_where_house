@@ -12,3 +12,4 @@ notes/
 sandbox/
 **/logs
 airflow/data_raw
+airflow/backups
