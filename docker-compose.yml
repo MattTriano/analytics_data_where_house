@@ -20,6 +20,7 @@ x-airflow-common:
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/data_raw:/opt/airflow/data_raw
+    - ./airflow/backups:/opt/airflow/backups
     - ./airflow/dbt:/opt/airflow/dbt
     - ./airflow/great_expectations:/opt/airflow/great_expectations
     - ./airflow/tests:/opt/airflow/tests
@@ -290,8 +291,9 @@ services:
           printf "%04d%04d%04d%04d" $${1//./ }
         }
         mkdir -p /sources/logs /sources/dags /sources/plugins /sources/data_raw /sources/dbt
-        mkdir -p /sources/great_expectations
-        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins,data_raw,dbt,great_expectations}
+        mkdir -p /sources/great_expectations /sources/backups
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins,data_raw,dbt}
+        chown -R "${AIRFLOW_UID}:0" /sources/{great_expectations,backups}
         exec /entrypoint airflow version
     # yamllint enable rule:line-length
     environment:

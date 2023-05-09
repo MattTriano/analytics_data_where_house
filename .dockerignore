@@ -5,6 +5,7 @@
 .venv
 .vscode/
 airflow/data_raw*
+airflow/backups*
 airflow/logs*
 docs/
 notes/*
