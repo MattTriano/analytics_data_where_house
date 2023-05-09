@@ -5,8 +5,7 @@ import subprocess
 
 from airflow.decorators import dag, task
 from airflow.models.baseoperator import chain
-from airflow.utils.edgemodifier import Label
-from airflow.utils.trigger_rule import TriggerRule
+
 
 task_logger = logging.getLogger("airflow.task")
 
