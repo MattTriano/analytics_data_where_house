@@ -15,27 +15,28 @@ config_version: 3.0
 # add a new datasource. Read more at https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/connect_to_data_overview
 datasources:
   where_house_source:
+    class_name: Datasource
     data_connectors:
       default_runtime_data_connector_name:
+        class_name: RuntimeDataConnector
+        name: default_runtime_data_connector_name
         batch_identifiers:
           - default_identifier_name
-        name: default_runtime_data_connector_name
         module_name: great_expectations.datasource.data_connector
-        class_name: RuntimeDataConnector
       data_raw_inferred_data_connector_name:
-        introspection_directives:
-          schema_name: data_raw
+        class_name: InferredAssetSqlDataConnector
         name: data_raw_inferred_data_connector_name
         module_name: great_expectations.datasource.data_connector
-        class_name: InferredAssetSqlDataConnector
         include_schema_name: true
-      dwh_inferred_data_connector_name:
         introspection_directives:
-          schema_name: dwh
+          schema_name: data_raw
+      dwh_inferred_data_connector_name:
+        class_name: InferredAssetSqlDataConnector
         name: dwh_inferred_data_connector_name
         module_name: great_expectations.datasource.data_connector
-        class_name: InferredAssetSqlDataConnector
         include_schema_name: true
+        introspection_directives:
+          schema_name: dwh
     execution_engine:
       module_name: great_expectations.execution_engine
       class_name: SqlAlchemyExecutionEngine
@@ -47,7 +48,6 @@ datasources:
         database: ${DWH_POSTGRES_DB}
         drivername: postgresql
     module_name: great_expectations.datasource
-    class_name: Datasource
 config_variables_file_path: uncommitted/config_variables.yml
 
 # The plugins_directory will be added to your python path for custom modules
@@ -110,12 +110,12 @@ data_docs_sites:
       class_name: DefaultSiteIndexBuilder
 
 anonymous_usage_statistics:
-  enabled: true
   data_context_id: b25cb2e2-4999-427c-93b4-7597f9e172a9
+  enabled: true
 include_rendered_content:
+  expectation_suite: false
   globally: false
   expectation_validation_result: false
-  expectation_suite: false
 notebooks:
 fluent_datasources:
   fluent_dwh_source:
