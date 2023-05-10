@@ -15,29 +15,27 @@ config_version: 3.0
 # add a new datasource. Read more at https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/connect_to_data_overview
 datasources:
   where_house_source:
-    class_name: Datasource
-    module_name: great_expectations.datasource
     data_connectors:
       default_runtime_data_connector_name:
-        class_name: RuntimeDataConnector
-        module_name: great_expectations.datasource.data_connector
-        name: default_runtime_data_connector_name
         batch_identifiers:
           - default_identifier_name
-      data_raw_inferred_data_connector_name:
-        class_name: InferredAssetSqlDataConnector
-        include_schema_name: true
+        name: default_runtime_data_connector_name
         module_name: great_expectations.datasource.data_connector
-        name: data_raw_inferred_data_connector_name
+        class_name: RuntimeDataConnector
+      data_raw_inferred_data_connector_name:
         introspection_directives:
           schema_name: data_raw
-      dwh_inferred_data_connector_name:
+        name: data_raw_inferred_data_connector_name
+        module_name: great_expectations.datasource.data_connector
         class_name: InferredAssetSqlDataConnector
         include_schema_name: true
-        module_name: great_expectations.datasource.data_connector
-        name: dwh_inferred_data_connector_name
+      dwh_inferred_data_connector_name:
         introspection_directives:
           schema_name: dwh
+        name: dwh_inferred_data_connector_name
+        module_name: great_expectations.datasource.data_connector
+        class_name: InferredAssetSqlDataConnector
+        include_schema_name: true
     execution_engine:
       module_name: great_expectations.execution_engine
       class_name: SqlAlchemyExecutionEngine
@@ -48,6 +46,8 @@ datasources:
         password: ${DWH_POSTGRES_PASSWORD}
         database: ${DWH_POSTGRES_DB}
         drivername: postgresql
+    module_name: great_expectations.datasource
+    class_name: Datasource
 config_variables_file_path: uncommitted/config_variables.yml
 
 # The plugins_directory will be added to your python path for custom modules
