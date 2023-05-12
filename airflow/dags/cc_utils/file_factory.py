@@ -44,16 +44,27 @@ def get_composite_key_cols_definition_line_from__standardized_model(
 ) -> str:
     with open(std_file_path, "r") as f:
         std_file_lines = f.readlines()
-    ck_cols_el = [ln.replace("\n", "") for ln in std_file_lines if ln.startswith("{% set ck_cols")][
-        0
-    ]
+    ck_cols_start_ind = [
+        i for i, line in enumerate(std_file_lines) if line.startswith("{% set ck_cols")
+    ][0]
+    if not std_file_lines[ck_cols_start_ind].endswith("%}\n"):
+        ck_cols_end_ind = [i for i, line in enumerate(std_file_lines) if line.endswith("%}\n")][
+            0
+        ] + 1
+    else:
+        ck_cols_end_ind = ck_cols_start_ind + 1
+    ck_cols_el = "".join(
+        [el.replace("\n", "") for el in std_file_lines[ck_cols_start_ind:ck_cols_end_ind]]
+    )
+    ck_cols_el = " ".join(ck_cols_el.split())
     return ck_cols_el
 
 
 def get_composite_key_cols(std_file_path: Path) -> List:
     ck_cols_el = get_composite_key_cols_definition_line_from__standardized_model(std_file_path)
     ck_cols = re.findall("\[(.*?)\]", "".join(ck_cols_el))[0]
-    return ck_cols.replace('"', "").split(",")
+    ck_cols = [el.strip().replace('"', "") for el in ck_cols.split(",")]
+    return ck_cols
 
 
 def get_ordered_table_cols_from__standardized_model(std_file_path: Path) -> List[str]:

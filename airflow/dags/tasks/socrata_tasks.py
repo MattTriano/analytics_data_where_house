@@ -29,7 +29,12 @@ from cc_utils.utils import (
     get_lines_in_geojson_file,
     produce_slice_indices_for_gpd_read_file,
 )
-from cc_utils.validation import run_checkpoint, check_if_checkpoint_exists
+from cc_utils.validation import (
+    run_checkpoint,
+    check_if_checkpoint_exists,
+    get_datasource,
+    register_data_asset,
+)
 
 
 def get_local_file_path(socrata_metadata: SocrataTableMetadata) -> Path:
@@ -402,6 +407,20 @@ def load_data_tg(
     )
 
 
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def register_temp_table_asset(datasource_name: str, task_logger: Logger, **kwargs) -> str:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
+    datasource = get_datasource(datasource_name=datasource_name, task_logger=task_logger)
+    register_data_asset(
+        schema_name="data_raw",
+        table_name=f"temp_{socrata_metadata.socrata_table.table_name}",
+        datasource=datasource,
+        task_logger=task_logger,
+    )
+    return True
+
+
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def socrata_table_checkpoint_exists(task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
@@ -440,15 +459,24 @@ def validation_endpoint(**kwargs) -> SocrataTableMetadata:
 
 @task_group
 def raw_data_validation_tg(
+    datasource_name: str,
     task_logger: Logger,
 ) -> SocrataTableMetadata:
     task_logger.info(f"Entered raw_data_validation_tg task_group")
 
+    register_temp_table_1 = register_temp_table_asset(
+        datasource_name=datasource_name, task_logger=task_logger
+    )
     checkpoint_exists_1 = socrata_table_checkpoint_exists(task_logger=task_logger)
     checkpoint_1 = run_socrata_checkpoint(task_logger=task_logger)
     end_validation_1 = validation_endpoint()
 
-    chain(checkpoint_exists_1, [Label("Checkpoint Doesn't Exist"), checkpoint_1], end_validation_1)
+    chain(
+        register_temp_table_1,
+        checkpoint_exists_1,
+        [Label("Checkpoint Doesn't Exist"), checkpoint_1],
+        end_validation_1,
+    )
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -540,6 +568,20 @@ def update_data_raw_table(task_logger: Logger, **kwargs) -> SocrataTableMetadata
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def register_data_raw_table_asset(datasource_name: str, task_logger: Logger, **kwargs) -> str:
+    ti = kwargs["ti"]
+    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
+    datasource = get_datasource(datasource_name=datasource_name, task_logger=task_logger)
+    register_data_asset(
+        schema_name="data_raw",
+        table_name=f"{socrata_metadata.socrata_table.table_name}",
+        datasource=datasource,
+        task_logger=task_logger,
+    )
+    return True
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def update_result_of_check_in_metadata_table(
     conn_id: str, task_logger: Logger, data_updated: bool, **kwargs
 ) -> SocrataTableMetadata:
@@ -557,7 +599,7 @@ def update_result_of_check_in_metadata_table(
 
 
 @task_group
-def persist_new_raw_data_tg(conn_id: str, task_logger: Logger) -> None:
+def persist_new_raw_data_tg(conn_id: str, datasource_name: str, task_logger: Logger) -> None:
     task_logger.info(f"Entered persist_new_raw_data_tg task_group")
     table_exists_1 = table_exists_in_data_raw(conn_id=conn_id, task_logger=task_logger)
     create_data_raw_table_1 = create_table_in_data_raw(conn_id=conn_id, task_logger=task_logger)
@@ -566,6 +608,9 @@ def persist_new_raw_data_tg(conn_id: str, task_logger: Logger) -> None:
     )
     make_dbt_data_raw_model_1 = make_dbt_data_raw_model(conn_id=conn_id, task_logger=task_logger)
     update_data_raw_table_1 = update_data_raw_table(task_logger=task_logger)
+    register_data_raw_asset_1 = register_data_raw_table_asset(
+        datasource_name=datasource_name, task_logger=task_logger
+    )
     update_metadata_true_1 = update_result_of_check_in_metadata_table(
         conn_id=conn_id, task_logger=task_logger, data_updated=True
     )
@@ -576,6 +621,7 @@ def persist_new_raw_data_tg(conn_id: str, task_logger: Logger) -> None:
         dbt_data_raw_model_exists_1,
         [Label("dbt data_raw Model Exists"), make_dbt_data_raw_model_1],
         update_data_raw_table_1,
+        register_data_raw_asset_1,
         update_metadata_true_1,
     )
 
@@ -738,6 +784,7 @@ def short_circuit_downstream():
 def update_socrata_table(
     socrata_table: SocrataTable,
     conn_id: str,
+    datasource_name: str,
     task_logger: Logger,
 ) -> SocrataTableMetadata:
     task_logger.info(f"Updating Socrata table {socrata_table.table_name}")
@@ -754,8 +801,12 @@ def update_socrata_table(
         conn_id=conn_id,
         task_logger=task_logger,
     )
-    raw_data_validation_tg_1 = raw_data_validation_tg(task_logger=task_logger)
-    persist_new_raw_data_tg_1 = persist_new_raw_data_tg(conn_id=conn_id, task_logger=task_logger)
+    raw_data_validation_tg_1 = raw_data_validation_tg(
+        datasource_name=datasource_name, task_logger=task_logger
+    )
+    persist_new_raw_data_tg_1 = persist_new_raw_data_tg(
+        conn_id=conn_id, datasource_name=datasource_name, task_logger=task_logger
+    )
     transform_data_1 = transform_data_tg(conn_id=conn_id, task_logger=task_logger)
     update_metadata_false_1 = update_result_of_check_in_metadata_table(
         conn_id=conn_id, task_logger=task_logger, data_updated=False

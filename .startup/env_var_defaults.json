@@ -165,6 +165,20 @@
       "<DWH_POSTGRES_DB>": ".env::DWH_POSTGRES_DB"
     }
   },
+  ".env::GX_DWH_DB_CONN": {
+    "file": ".env",
+    "name": "GX_DWH_DB_CONN",
+    "group": "Airflow",
+    "default_value": "postgresql+psycopg2://<DWH_POSTGRES_USER>:<DWH_POSTGRES_PASSWORD>@dwh_db:5432/<DWH_POSTGRES_DB>",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "is_uri": true,
+    "env_var_mappings": {
+      "<DWH_POSTGRES_USER>": ".env::DWH_POSTGRES_USER",
+      "<DWH_POSTGRES_PASSWORD>": ".env::DWH_POSTGRES_PASSWORD",
+      "<DWH_POSTGRES_DB>": ".env::DWH_POSTGRES_DB"
+    }
+  },
   ".env.dwh::POSTGRES_USER": {
     "file": ".env.dwh",
     "name": "POSTGRES_USER",

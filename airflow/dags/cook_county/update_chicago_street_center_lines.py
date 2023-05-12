@@ -21,6 +21,7 @@ def update_chicago_street_center_lines():
     update_1 = update_socrata_table(
         socrata_table=SOCRATA_TABLE,
         conn_id="dwh_db_conn",
+        datasource_name="fluent_dwh_source",
         task_logger=task_logger,
     )
     update_1
