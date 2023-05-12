@@ -127,4 +127,16 @@ fluent_datasources:
         batch_metadata: {}
         table_name: cook_county_sao_case_intake_data
         schema_name: data_raw
+      data_raw.temp_cook_county_sao_case_sentencing_data:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_cook_county_sao_case_sentencing_data
+        schema_name: data_raw
+      data_raw.cook_county_sao_case_sentencing_data:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: cook_county_sao_case_sentencing_data
+        schema_name: data_raw
     connection_string: ${GX_DWH_DB_CONN}

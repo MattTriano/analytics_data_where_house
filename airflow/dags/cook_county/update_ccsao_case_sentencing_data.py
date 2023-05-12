@@ -756,7 +756,6 @@ def endpoint(task_logger: Logger) -> None:
     return "end"
 
 
-
 @task_group
 def transform_data_tg(conn_id: str, task_logger: Logger):
     std_model_ready_1 = dbt_standardized_model_ready(task_logger=task_logger)

@@ -34,6 +34,7 @@ sources:
       - name: cook_county_parcel_value_assessments
       - name: cook_county_sao_case_initiation_data
       - name: cook_county_sao_case_intake_data
+      - name: cook_county_sao_case_sentencing_data
       - name: nyc_parcel_sales
       - name: temp_chicago_affordable_rental_housing
       - name: temp_chicago_bike_paths
@@ -63,4 +64,5 @@ sources:
       - name: temp_cook_county_parcel_value_assessments
       - name: temp_cook_county_sao_case_initiation_data
       - name: temp_cook_county_sao_case_intake_data
+      - name: temp_cook_county_sao_case_sentencing_data
       - name: temp_nyc_parcel_sales
