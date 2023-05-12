@@ -4,7 +4,7 @@ import logging
 from airflow.decorators import dag
 
 from tasks.socrata_tasks import update_socrata_table
-from sources.tables import CHICAGO_POLICE_STATIONS as SOCRATA_TABLE
+from sources.tables import COOK_COUNTY_SAO_CASE_DISPOSITION_DATA as SOCRATA_TABLE
 
 task_logger = logging.getLogger("airflow.task")
 
@@ -13,9 +13,9 @@ task_logger = logging.getLogger("airflow.task")
     schedule=SOCRATA_TABLE.schedule,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["chicago", "cook_county", "public_safety", "geospatial"],
+    tags=["cook_county", "sao", "fact_table"],
 )
-def update_chicago_police_stations():
+def update_ccsao_case_disposition_data():
     update_1 = update_socrata_table(
         socrata_table=SOCRATA_TABLE,
         conn_id="dwh_db_conn",
@@ -25,4 +25,4 @@ def update_chicago_police_stations():
     update_1
 
 
-update_chicago_police_stations()
+update_ccsao_case_disposition_data()
