@@ -151,4 +151,112 @@ fluent_datasources:
         batch_metadata: {}
         table_name: cook_county_sao_case_disposition_data
         schema_name: data_raw
+      data_raw.temp_chicago_vacant_and_abandoned_buildings:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_vacant_and_abandoned_buildings
+        schema_name: data_raw
+      data_raw.chicago_vacant_and_abandoned_buildings:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_vacant_and_abandoned_buildings
+        schema_name: data_raw
+      data_raw.temp_chicago_shotspotter_alerts:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_shotspotter_alerts
+        schema_name: data_raw
+      data_raw.chicago_shotspotter_alerts:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_shotspotter_alerts
+        schema_name: data_raw
+      data_raw.temp_chicago_homicide_and_shooting_victimizations:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_homicide_and_shooting_victimizations
+        schema_name: data_raw
+      data_raw.chicago_homicide_and_shooting_victimizations:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_homicide_and_shooting_victimizations
+        schema_name: data_raw
+      data_raw.temp_chicago_towed_vehicles:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_towed_vehicles
+        schema_name: data_raw
+      data_raw.chicago_towed_vehicles:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_towed_vehicles
+        schema_name: data_raw
+      data_raw.temp_chicago_relocated_vehicles:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_relocated_vehicles
+        schema_name: data_raw
+      data_raw.chicago_relocated_vehicles:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_relocated_vehicles
+        schema_name: data_raw
+      data_raw.temp_chicago_traffic_crashes:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_traffic_crashes
+        schema_name: data_raw
+      data_raw.chicago_traffic_crashes:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_traffic_crashes
+        schema_name: data_raw
+      data_raw.temp_chicago_sidewalk_cafe_permits:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_sidewalk_cafe_permits
+        schema_name: data_raw
+      data_raw.chicago_sidewalk_cafe_permits:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_sidewalk_cafe_permits
+        schema_name: data_raw
+      data_raw.temp_chicago_crimes:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_crimes
+        schema_name: data_raw
+      data_raw.chicago_crimes:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_crimes
+        schema_name: data_raw
+      data_raw.temp_chicago_potholes_patched:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_potholes_patched
+        schema_name: data_raw
+      data_raw.chicago_potholes_patched:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_potholes_patched
+        schema_name: data_raw
     connection_string: ${GX_DWH_DB_CONN}
