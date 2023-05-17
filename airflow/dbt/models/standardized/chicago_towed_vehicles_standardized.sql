@@ -14,8 +14,10 @@ WITH records_with_basic_cleaning AS (
         upper(state::char(2))                                              AS state,
         upper(towed_to_address::text)                                      AS towed_to_address,
         regexp_replace(upper(tow_facility_phone::text), '[^0-9]', '', 'g') AS tow_facility_phone,
-        source_data_updated::timestamptz                                   AS source_data_updated,
-        ingestion_check_time::timestamptz                                  AS ingestion_check_time
+        source_data_updated::timestamptz
+            AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago'              AS source_data_updated,
+        ingestion_check_time::timestamptz
+            AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago'              AS ingestion_check_time
     FROM {{ ref('chicago_towed_vehicles') }}
     ORDER BY {% for ck in ck_cols %}{{ ck }}{{ "," if not loop.last }}{% endfor %}
 )

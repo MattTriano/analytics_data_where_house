@@ -23,9 +23,11 @@ WITH records_with_basic_cleaning AS (
         total_units::smallint                                     AS total_units,
         regexp_replace(land_square_feet::text, ',', '', 'g')::int AS land_square_feet,
         gross_square_feet::int                                    AS gross_square_feet,
-        to_date(year_built::VARCHAR, 'yyyy')                      AS year_built,
-        source_data_updated::timestamptz                          AS source_data_updated,
-        ingestion_check_time::timestamptz                         AS ingestion_check_time
+        to_date(year_built::text, 'yyyy')                         AS year_built,
+        source_data_updated::timestamptz
+            AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago'     AS source_data_updated,
+        ingestion_check_time::timestamptz
+            AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago'     AS ingestion_check_time
     FROM {{ ref('nyc_parcel_sales') }}
     ORDER BY {% for ck in ck_cols %}{{ ck }}{{ "," if not loop.last }}{% endfor %}
 )

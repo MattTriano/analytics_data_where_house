@@ -9,8 +9,10 @@ WITH records_with_basic_cleaning AS (
         upper(district::char(2))               AS district,
         upper(sector::char(1))                 AS sector,
         geometry::GEOMETRY(MULTIPOLYGON, 4326) AS geometry,
-        source_data_updated::timestamptz       AS source_data_updated,
-        ingestion_check_time::timestamptz      AS ingestion_check_time
+        source_data_updated::timestamptz
+            AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS source_data_updated,
+        ingestion_check_time::timestamptz
+            AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS ingestion_check_time
     FROM {{ ref('chicago_police_beat_boundaries') }}
     ORDER BY {% for ck in ck_cols %}{{ ck }}{{ "," if not loop.last }}{% endfor %}
 )
