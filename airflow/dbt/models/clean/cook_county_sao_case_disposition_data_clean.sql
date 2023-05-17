@@ -1,25 +1,22 @@
 {{ config(materialized='view') }}
-{% set ck_cols = ["crash_record_id"] %}
-{% set record_id = "crash_record_id" %}
+{% set ck_cols = ["case_participant_id", "charge_id"] %}
+{% set record_id = "charge_disposition_id" %}
 {% set base_cols = [
-    "crash_record_id", "crash_date", "rd_no", "street_no", "street_direction", "street_name",
-    "crash_month", "crash_day_of_week", "crash_hour", "date_police_notified", "injuries_fatal",
-    "injuries_non_incapacitating", "injuries_incapacitating", "injuries_no_indication",
-    "injuries_unknown", "injuries_reported_not_evident", "injuries_total", "most_severe_injury",
-    "damage", "num_units", "work_zone_type", "workers_present_i", "crash_date_est_i",
-    "photos_taken_i", "private_property_i", "intersection_related_i", "statements_taken_i",
-    "hit_and_run_i", "work_zone_i", "dooring_i", "lane_cnt", "trafficway_type",
-    "traffic_control_device", "road_defect", "lighting_condition", "device_condition",
-    "weather_condition", "alignment", "roadway_surface_cond", "posted_speed_limit",
-    "first_crash_type", "prim_contributory_cause", "sec_contributory_cause", "beat_of_occurrence",
-    "report_type", "crash_type", "latitude", "longitude", "geometry", "source_data_updated",
-    "ingestion_check_time"
+    "charge_disposition_id", "case_participant_id", "charge_id", "charge_version_id",
+    "charge_count", "case_id", "received_date", "offense_category", "primary_charge_flag",
+    "disposition_charged_offense_title", "disposition_date", "disposition_charged_chapter",
+    "disposition_charged_act", "disposition_charged_section", "disposition_charged_class",
+    "disposition_charged_aoic", "charge_disposition", "charge_disposition_reason", "judge",
+    "disposition_court_name", "disposition_court_facility", "age_at_incident", "race", "gender",
+    "incident_city", "incident_begin_date", "incident_end_date", "law_enforcement_agency",
+    "law_enforcement_unit", "arrest_date", "felony_review_date", "felony_review_result",
+    "arraignment_date", "updated_offense_category", "source_data_updated", "ingestion_check_time"
 ] %}
 
 -- selects all records from the standardized view of this data
 WITH std_data AS (
     SELECT *
-    FROM {{ ref('chicago_traffic_crashes_standardized') }}
+    FROM {{ ref('cook_county_sao_case_disposition_data_standardized') }}
 ),
 
 -- keeps the most recently updated version of each record 

@@ -33,6 +33,7 @@ sources:
       - name: cook_county_parcel_sales
       - name: cook_county_parcel_value_assessments
       - name: cook_county_sao_case_disposition_data
+      - name: cook_county_sao_case_diversion_data
       - name: cook_county_sao_case_initiation_data
       - name: cook_county_sao_case_intake_data
       - name: cook_county_sao_case_sentencing_data
@@ -64,6 +65,7 @@ sources:
       - name: temp_cook_county_parcel_sales
       - name: temp_cook_county_parcel_value_assessments
       - name: temp_cook_county_sao_case_disposition_data
+      - name: temp_cook_county_sao_case_diversion_data
       - name: temp_cook_county_sao_case_initiation_data
       - name: temp_cook_county_sao_case_intake_data
       - name: temp_cook_county_sao_case_sentencing_data

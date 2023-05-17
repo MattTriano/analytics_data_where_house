@@ -228,7 +228,9 @@ def make_dbt_data_raw_model_file(table_name: str, engine: Engine) -> None:
     update_sources_yml(table_name=table_name)
 
 
-def format_dbt_stub_for_standardized_stage(table_name: str, engine: Engine) -> List[str]:
+def format_dbt_stub_for_standardized_stage(
+    table_name: str, engine: Engine, default_tz: str = "America/Chicago"
+) -> List[str]:
     table_cols = get_table_sqlalchemy_col_objects(
         table_name=table_name, schema_name="data_raw", engine=engine
     )
@@ -247,9 +249,15 @@ def format_dbt_stub_for_standardized_stage(table_name: str, engine: Engine) -> L
         col_type = table_col_deet["type"]
         col_name = table_col_deet["name"]
         if col_name == "source_data_updated":
-            col_lines.append(f"        {col_name}::timestamptz AS {col_name},")
+            col_lines.append(f"        {col_name}::timestamptz")
+            col_lines.append(
+                f"            AT TIME ZONE 'UTC' AT TIME ZONE '{default_tz}' AS {col_name},"
+            )
         elif col_name == "ingestion_check_time":
-            col_lines.append(f"        {col_name}::timestamptz AS {col_name}")
+            col_lines.append(f"        {col_name}::timestamptz")
+            col_lines.append(
+                f"            AT TIME ZONE 'UTC' AT TIME ZONE '{default_tz}' AS {col_name}"
+            )
         else:
             col_lines.append(col_type_cast_formatter(col_name=col_name, sqlalch_col_type=col_type))
     file_lines.extend(col_lines)

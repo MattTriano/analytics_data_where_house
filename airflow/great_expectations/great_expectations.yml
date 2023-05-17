@@ -17,7 +17,6 @@ datasources:
   where_house_source:
     class_name: Datasource
     execution_engine:
-      module_name: great_expectations.execution_engine
       credentials:
         host: dwh_db
         port: '5432'
@@ -26,26 +25,27 @@ datasources:
         database: ${DWH_POSTGRES_DB}
         drivername: postgresql
       class_name: SqlAlchemyExecutionEngine
+      module_name: great_expectations.execution_engine
     module_name: great_expectations.datasource
     data_connectors:
       default_runtime_data_connector_name:
+        name: default_runtime_data_connector_name
         class_name: RuntimeDataConnector
         module_name: great_expectations.datasource.data_connector
-        name: default_runtime_data_connector_name
         batch_identifiers:
           - default_identifier_name
       data_raw_inferred_data_connector_name:
+        name: data_raw_inferred_data_connector_name
         class_name: InferredAssetSqlDataConnector
         include_schema_name: true
         module_name: great_expectations.datasource.data_connector
-        name: data_raw_inferred_data_connector_name
         introspection_directives:
           schema_name: data_raw
       dwh_inferred_data_connector_name:
+        name: dwh_inferred_data_connector_name
         class_name: InferredAssetSqlDataConnector
         include_schema_name: true
         module_name: great_expectations.datasource.data_connector
-        name: dwh_inferred_data_connector_name
         introspection_directives:
           schema_name: dwh
 config_variables_file_path: uncommitted/config_variables.yml
@@ -114,8 +114,8 @@ anonymous_usage_statistics:
   enabled: true
 include_rendered_content:
   globally: false
-  expectation_suite: false
   expectation_validation_result: false
+  expectation_suite: false
 notebooks:
 fluent_datasources:
   fluent_dwh_source:
@@ -258,5 +258,17 @@ fluent_datasources:
         order_by: []
         batch_metadata: {}
         table_name: chicago_potholes_patched
+        schema_name: data_raw
+      data_raw.temp_cook_county_sao_case_diversion_data:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_cook_county_sao_case_diversion_data
+        schema_name: data_raw
+      data_raw.cook_county_sao_case_diversion_data:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: cook_county_sao_case_diversion_data
         schema_name: data_raw
     connection_string: ${GX_DWH_DB_CONN}
