@@ -63,7 +63,11 @@ def a_dev_create_census_metadata_table():
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger
     )
     metadata_table_exists_1 = metadata_table_exists(
-        table_name="census_metadata", conn_id=POSTGRES_CONN_ID, task_logger=task_logger
+        table_name="census_metadata",
+        conn_id=POSTGRES_CONN_ID,
+        task_logger=task_logger,
+        create_route="create_metadata_table",
+        exists_route="end",
     )
     create_metadata_table_1 = create_metadata_table(
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger
