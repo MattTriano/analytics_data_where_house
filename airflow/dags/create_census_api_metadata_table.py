@@ -122,7 +122,7 @@ def api_metadata_table_endpoint() -> str:
     schedule=None,
     start_date=dt.datetime(2022, 11, 1),
     catchup=False,
-    tags=["metadata"],
+    tags=["metadata", "census"],
 )
 def create_census_api_metadata_table():
 

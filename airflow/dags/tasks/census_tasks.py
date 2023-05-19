@@ -1,28 +1,17 @@
-import datetime as dt
-import logging
 from logging import Logger
 
-from airflow.decorators import dag, task
-from airflow.models.baseoperator import chain
-from airflow.utils.trigger_rule import TriggerRule
-import pandas as pd
-from sqlalchemy import select, insert, update
+from airflow.decorators import task, task_group
 
-from cc_utils.census import (
-    CensusAPICatalog,
-    CensusAPIHandler,
-)
+import pandas as pd
+from sqlalchemy import insert
+
+from cc_utils.census import CensusAPIHandler
 from cc_utils.db import (
     get_pg_engine,
     execute_result_returning_query,
     get_reflected_db_table,
     execute_result_returning_orm_query,
-    # execute_dml_orm_query,
 )
-
-task_logger = logging.getLogger("airflow.task")
-pd.set_option("display.max_columns", 200)
-
 
 @task
 def get_census_api_data_handler(task_logger: Logger) -> CensusAPIHandler:
@@ -58,13 +47,11 @@ def get_latest_catalog_freshness_from_db(conn_id: str, task_logger: Logger) -> p
     task_logger.info(f"Distinct datasets in census_api_metadata table {n_datasets}.")
     return local_api_catalog_metadata_df
 
-
 @task
-def check_warehouse_dataset_freshness(task_logger: Logger, **kwargs) -> pd.DataFrame:
-    ti = kwargs["ti"]
-    api_handler = ti.xcom_pull(task_ids="get_census_api_data_handler")
+def check_warehouse_dataset_freshness(
+    api_handler: CensusAPIHandler, local_metadata_df: pd.DataFrame, task_logger: Logger
+) -> pd.DataFrame:
     source_metadata_df = api_handler.metadata_df.copy()
-    local_metadata_df = ti.xcom_pull(task_ids="get_latest_catalog_freshness_from_db")
     n_src_datasets = source_metadata_df["identifier"].nunique()
     n_local_datasets = local_metadata_df["identifier"].nunique()
     task_logger.info(f"Distinct datasets in source census_api_metadata table: {n_src_datasets}.")
@@ -77,7 +64,6 @@ def check_warehouse_dataset_freshness(task_logger: Logger, **kwargs) -> pd.DataF
         on="identifier",
         suffixes=("_src", "_local"),
     )
-    check_cols = ["identifier", "modified_local", "modified_src"]
     not_in_local_mask = dset_freshness_df["modified_local"].isnull()
     not_in_source_mask = dset_freshness_df["modified_src"].isnull()
     in_both_mask = ~not_in_source_mask & ~not_in_local_mask
@@ -85,7 +71,6 @@ def check_warehouse_dataset_freshness(task_logger: Logger, **kwargs) -> pd.DataF
         dset_freshness_df["modified_src"], errors="coerce"
     ) > pd.to_datetime(dset_freshness_df["modified_local"], errors="coerce")
     task_logger.info(f"dset_freshness_df.shape:          {dset_freshness_df.shape}")
-    task_logger.info(f"dset_freshness_df.head(2):        {dset_freshness_df[check_cols].head(2)}")
     task_logger.info(f"Datasets in source but not local: {not_in_local_mask.sum()}")
     task_logger.info(f"Datasets in local but not source: {not_in_source_mask.sum()}")
     task_logger.info(f"Source is fresher (and dset in both): {source_fresher_mask.sum()}")
@@ -99,42 +84,43 @@ def check_warehouse_dataset_freshness(task_logger: Logger, **kwargs) -> pd.DataF
     return dset_freshness_df
 
 
-# @task
-# def ingest_api_dataset_freshness_check(conn_id: str, task_logger: Logger, **kwargs) -> str:
-#     ti = kwargs["ti"]
-#     dset_freshness_df = ti.xcom_pull(task_ids="check_warehouse_dataset_freshness")
-#     dset_source_freshness_df = dset_freshness_df.loc[
-#         dset_freshness_df["modified_src"].notnull()
-#     ].copy()
-#     dset_source_freshness_df = dset_source_freshness_df.reset_index(drop=True)
-#     dset_source_freshness_df = dset_source_freshness_df.drop(columns="modified_local")
-#     dset_source_freshness_df = dset_source_freshness_df.rename(columns={"modified_src": "modified"})
-#     engine = get_pg_engine(conn_id=conn_id)
-#     api_dataset_metadata_table = get_reflected_db_table(
-#         engine=engine, table_name="census_api_metadata", schema_name="metadata"
-#     )
-#     insert_statement = (
-#         insert(api_dataset_metadata_table)
-#         .values(self.data_freshness_check)
-#         .returning(api_dataset_metadata_table)
-#     )
-#     result_df = execute_result_returning_orm_query(engine=engine, select_query=insert_statement)
-
-
-@dag(
-    schedule=None,
-    start_date=dt.datetime(2022, 11, 1),
-    catchup=False,
-    tags=["census", "metadata"],
-)
-def dev_ingest_census_api_metadata():
-    get_handler_1 = get_census_api_data_handler(task_logger=task_logger)
-    latest_metadata_1 = get_latest_catalog_freshness_from_db(
-        conn_id="dwh_db_conn", task_logger=task_logger
+@task
+def ingest_api_dataset_freshness_check(
+    freshness_df: pd.DataFrame, conn_id: str, task_logger: Logger
+) -> pd.DataFrame:
+    source_freshness_df = freshness_df.loc[freshness_df["modified_src"].notnull()].copy()
+    source_freshness_df = source_freshness_df.reset_index(drop=True)
+    source_freshness_df = source_freshness_df.drop(columns="modified_local")
+    source_freshness_df = source_freshness_df.rename(columns={"modified_src": "modified"})
+    engine = get_pg_engine(conn_id=conn_id)
+    api_dataset_metadata_table = get_reflected_db_table(
+        engine=engine, table_name="census_api_metadata", schema_name="metadata"
     )
-    freshness_check_1 = check_warehouse_dataset_freshness(task_logger=task_logger)
+    insert_statement = (
+        insert(api_dataset_metadata_table)
+        .values(source_freshness_df.to_dict(orient="records"))
+        .returning(api_dataset_metadata_table)
+    )
+    ingested_api_datasets_df = execute_result_returning_orm_query(
+        engine=engine, select_query=insert_statement
+    )
+    task_logger.info(
+        f"Max census_api_metadata id value after ingestion: {ingested_api_datasets_df['id'].max()}"
+    )
+    return ingested_api_datasets_df
 
-    chain(get_handler_1, latest_metadata_1, freshness_check_1)
-
-
-dev_ingest_census_api_metadata()
+@task_group
+def check_api_dataset_freshness(conn_id: str, task_logger: Logger) -> pd.DataFrame:
+    get_handler_1 = get_census_api_data_handler(task_logger=task_logger)
+    latest_local_metadata_1 = get_latest_catalog_freshness_from_db(
+        conn_id=conn_id, task_logger=task_logger
+    )
+    freshness_check_1 = check_warehouse_dataset_freshness(
+        api_handler=get_handler_1,
+        local_metadata_df=latest_local_metadata_1,
+        task_logger=task_logger,
+    )
+    ingest_check_1 = ingest_api_dataset_freshness_check(
+        freshness_df=freshness_check_1, conn_id=conn_id, task_logger=task_logger
+    )
+    return ingest_check_1
