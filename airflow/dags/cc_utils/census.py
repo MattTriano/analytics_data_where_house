@@ -5,7 +5,7 @@ from random import random
 import re
 import requests
 from time import sleep
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -358,8 +358,8 @@ class CensusAPIHandler:
             "c_dataset": "dataset",
             "spatial": "spatial",
             "temporal": "temporal",
-            "bureauCode": "bureauCode",
-            "programCode": "programCode",
+            "bureauCode": "bureau_code",
+            "programCode": "program_code",
             "keyword": "keyword",
             "c_isMicrodata": "is_microdata",
             "c_isAggregate": "is_aggregate",
@@ -375,7 +375,7 @@ class CensusAPIHandler:
             "contactPoint.hasEmail": "contact_point_email",
             "distribution_type": "distribution_type",
             "distribution_mediaType": "distribution_media_type",
-            "references": "references",
+            "references": "reference_docs",
             "c_documentationLink": "documentation_link",
         }
         metadata_df = metadata_df[colname_fixes.keys()].copy()
