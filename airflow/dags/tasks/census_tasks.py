@@ -13,6 +13,7 @@ from cc_utils.db import (
     execute_result_returning_orm_query,
 )
 
+
 @task
 def get_census_api_data_handler(task_logger: Logger) -> CensusAPIHandler:
     api_handler = CensusAPIHandler()
@@ -46,6 +47,7 @@ def get_latest_catalog_freshness_from_db(conn_id: str, task_logger: Logger) -> p
     n_datasets = local_api_catalog_metadata_df["identifier"].nunique()
     task_logger.info(f"Distinct datasets in census_api_metadata table {n_datasets}.")
     return local_api_catalog_metadata_df
+
 
 @task
 def check_warehouse_dataset_freshness(
@@ -108,6 +110,7 @@ def ingest_api_dataset_freshness_check(
         f"Max census_api_metadata id value after ingestion: {ingested_api_datasets_df['id'].max()}"
     )
     return ingested_api_datasets_df
+
 
 @task_group
 def check_api_dataset_freshness(conn_id: str, task_logger: Logger) -> pd.DataFrame:

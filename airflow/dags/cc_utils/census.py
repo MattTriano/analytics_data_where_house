@@ -171,7 +171,8 @@ class CensusTableMetadata:
 
 
 class CensusDatasetSource:
-    def __init__(self, base_api_call: str, media_type: str = "json"):
+    def __init__(self, identifier: str, base_api_call: str, media_type: str = "json"):
+        self.identifier = identifier
         self.base_api_call = base_api_call
         self.media_type = media_type
 
@@ -218,8 +219,30 @@ class CensusDatasetSource:
         variables_df = pd.DataFrame(variables_resp_json["variables"]).T
         variables_df.index.name = "variable"
         variables_df = variables_df.reset_index()
-        variables_df["predicateOnly"] = variables_df["predicateOnly"].fillna(False)
-        variables_df["values"] = variables_df["values"].fillna({})
+        variables_df["identifier"] = self.identifier
+        var_col_namemap = {
+            "identifier": "identifier",
+            "variable": "variable",
+            "label": "label",
+            "concept": "concept",
+            "predicateType": "predicate_type",
+            "group": "dataset_group",
+            "limit": "limit",
+            "predicateOnly": "predicate_only",
+            "hasGeoCollectionSupport": "has_geo_collection_support",
+            "attributes": "attributes",
+            "required": "required",
+            "values": "values",
+            "datetime": "datetime",
+            "is-weight": "is_weight",
+            "suggested-weight": "suggested_weight",
+        }
+        variables_df = variables_df.rename(columns=var_col_namemap)
+        if "values" in variables_df.columns:
+            variables_df["values"] = variables_df["values"].fillna({})
+        variables_df["predicate_only"] = variables_df["predicate_only"].fillna(False)
+        col_order = [col for col in var_col_namemap.values() if col in variables_df.columns]
+        variables_df = variables_df[col_order].copy()
         return variables_df
 
     @property
@@ -232,7 +255,7 @@ class CensusDatasetSource:
     def groups_df(self) -> None:
         groups_resp_json = self.get_url_response(self.groups_url)
         groups_df = pd.DataFrame(groups_resp_json["groups"])
-        return
+        return groups_df
 
 
 class CensusAPICatalog:
@@ -263,55 +286,59 @@ class CensusAPICatalog:
             full_df = pd.concat(df_list)
             full_df = full_df.reset_index(drop=True)
             full_df["modified"] = pd.to_datetime(full_df["modified"])
-
-            col_order = [
-                "title",
-                "identifier",
-                "modified",
-                "temporal",
-                "bureauCode",
-                "programCode",
-                "description",
-                "keyword",
-                "spatial",
-                "c_vintage",
-                "c_dataset",
-                "c_geographyLink",
-                "c_variablesLink",
-                "c_tagsLink",
-                "c_examplesLink",
-                "c_groupsLink",
-                "c_sorts_url",
-                "c_documentationLink",
-                "c_isAggregate",
-                "c_isCube",
-                "c_isAvailable",
-                "c_isTimeseries",
-                "c_isMicrodata",
-                "@type",
-                "accessLevel",
-                "distribution",
-                "license",
-                "references",
-                "contactPoint.fn",
-                "contactPoint.hasEmail",
-                "publisher.@type",
-                "publisher.name",
-                "publisher.subOrganizationOf.@type",
-                "publisher.subOrganizationOf.name",
-                "publisher.subOrganizationOf.subOrganizationOf.@type",
-                "publisher.subOrganizationOf.subOrganizationOf.name",
-            ]
-            full_df = full_df[col_order].copy()
             distribution_df = pd.json_normalize(full_df["distribution"].str[0])
             distribution_df.columns = [f"distribution_{col}" for col in distribution_df.columns]
             full_df = pd.merge(
                 left=full_df, right=distribution_df, how="left", left_index=True, right_index=True
             )
             full_df = full_df.sort_values(by="modified", ascending=False, ignore_index=True)
-            col_fix_map = {el: el.replace("@", "") for el in full_df.columns}
-            full_df = full_df.rename(columns=col_fix_map)
-            self.dataset_metadata = full_df
+            colname_fixes = {
+                "identifier": "identifier",
+                "title": "title",
+                "description": "description",
+                "modified": "modified",
+                "c_vintage": "vintage",
+                "distribution_accessURL": "distribution_access_url",
+                "c_geographyLink": "geography_link",
+                "c_variablesLink": "variables_link",
+                "c_tagsLink": "tags_link",
+                "c_examplesLink": "examples_link",
+                "c_groupsLink": "groups_link",
+                "c_sorts_url": "sorts_url",
+                "c_dataset": "dataset",
+                "spatial": "spatial",
+                "temporal": "temporal",
+                "bureauCode": "bureau_code",
+                "programCode": "program_code",
+                "keyword": "keyword",
+                "c_isMicrodata": "is_microdata",
+                "c_isAggregate": "is_aggregate",
+                "c_isCube": "is_cube",
+                "c_isAvailable": "is_available",
+                "c_isTimeseries": "is_timeseries",
+                "accessLevel": "access_level",
+                "license": "license",
+                "@type": "type",
+                "publisher.name": "publisher_name",
+                "publisher.@type": "publisher_type",
+                "contactPoint.fn": "contact_point_fn",
+                "contactPoint.hasEmail": "contact_point_email",
+                "distribution_@type": "distribution_type",
+                "distribution_mediaType": "distribution_media_type",
+                "references": "reference_docs",
+                "c_documentationLink": "documentation_link",
+                "distribution": "distribution",
+                "distribution_description": "distribution_description",
+                "distribution_format": "distribution_format",
+                "distribution_title": "distribution_title",
+                "publisher.subOrganizationOf.@type": "publisher_suborg_of_type",
+                "publisher.subOrganizationOf.name": "publisher_suborg_of_name",
+                "publisher.subOrganizationOf.subOrganizationOf.@type": "publisher_suborg_of_suborg_of_type",
+                "publisher.subOrganizationOf.subOrganizationOf.name": "publisher_suborg_of_suborg_of_name",
+            }
+            dataset_metadata = full_df[colname_fixes.keys()].copy()
+            dataset_metadata = dataset_metadata.rename(columns=colname_fixes)
+            self.dataset_metadata = dataset_metadata
         else:
             raise Exception(f"field 'dataset' not found in data_catalog response")
 
@@ -324,9 +351,11 @@ class CensusAPICatalog:
 
     def get_dataset_source(self, identifier: str, media_type: str = "json") -> CensusDatasetSource:
         base_api_call = self.dataset_metadata.loc[
-            self.dataset_metadata["identifier"] == identifier, "distribution_accessURL"
+            self.dataset_metadata["identifier"] == identifier, "distribution_access_url"
         ].values[0]
-        return CensusDatasetSource(base_api_call=base_api_call, media_type=media_type)
+        return CensusDatasetSource(
+            identifier=identifier, base_api_call=base_api_call, media_type=media_type
+        )
 
     def standardize_datetime_str_repr(self, datetime_obj: Union[str, dt.datetime]) -> str:
         if isinstance(datetime_obj, str):
@@ -342,44 +371,17 @@ class CensusAPIHandler:
 
     def prepare_dataset_metadata_df(self):
         metadata_df = self.catalog.dataset_metadata.copy()
-        colname_fixes = {
-            "identifier": "identifier",
-            "title": "title",
-            "description": "description",
-            "modified": "modified",
-            "c_vintage": "vintage",
-            "distribution_accessURL": "distribution_access_url",
-            "c_geographyLink": "geography_link",
-            "c_variablesLink": "variables_link",
-            "c_tagsLink": "tags_link",
-            "c_examplesLink": "examples_link",
-            "c_groupsLink": "groups_link",
-            "c_sorts_url": "sorts_url",
-            "c_dataset": "dataset",
-            "spatial": "spatial",
-            "temporal": "temporal",
-            "bureauCode": "bureau_code",
-            "programCode": "program_code",
-            "keyword": "keyword",
-            "c_isMicrodata": "is_microdata",
-            "c_isAggregate": "is_aggregate",
-            "c_isCube": "is_cube",
-            "c_isAvailable": "is_available",
-            "c_isTimeseries": "is_timeseries",
-            "accessLevel": "access_level",
-            "license": "license",
-            "type": "type",
-            "publisher.name": "publisher_name",
-            "publisher.type": "publisher_type",
-            "contactPoint.fn": "contact_point_fn",
-            "contactPoint.hasEmail": "contact_point_email",
-            "distribution_type": "distribution_type",
-            "distribution_mediaType": "distribution_media_type",
-            "references": "reference_docs",
-            "c_documentationLink": "documentation_link",
-        }
-        metadata_df = metadata_df[colname_fixes.keys()].copy()
-        metadata_df = metadata_df.rename(columns=colname_fixes)
+        drop_cols = [
+            "distribution",
+            "distribution_description",
+            "distribution_format",
+            "distribution_title",
+            "publisher_suborg_of_type",
+            "publisher_suborg_of_name",
+            "publisher_suborg_of_suborg_of_type",
+            "publisher_suborg_of_suborg_of_name",
+        ]
+        metadata_df = metadata_df.drop(columns=drop_cols)
 
         bool_cols = ["is_microdata", "is_aggregate", "is_cube", "is_timeseries", "is_available"]
         for bool_col in bool_cols:
