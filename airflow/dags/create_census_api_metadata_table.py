@@ -113,13 +113,49 @@ def create_api_variables_metadata_table(conn_id: str, task_logger: Logger):
         conn.commit()
         return "success"
     except Exception as e:
-        print(f"Failed to create table metadata.census_api_metadata. Error: {e}, {type(e)}")
+        print(
+            f"Failed to create table metadata.census_api_variables_metadata. Error: {e}, {type(e)}"
+        )
+        raise
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def create_api_geographies_metadata_table(conn_id: str, task_logger: Logger):
+    try:
+        task_logger.info(f"Creating table metadata.census_api_geographies_metadata")
+        postgres_hook = PostgresHook(postgres_conn_id=conn_id)
+        conn = postgres_hook.get_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"""CREATE TABLE IF NOT EXISTS metadata.census_api_geographies_metadata (
+                    id SERIAL PRIMARY KEY,
+                    identifier TEXT,
+                    name TEXT,
+                    geo_level TEXT,
+                    reference_date DATE,
+                    requires TEXT,
+                    wildcard TEXT,
+                    optional_with_wildcard_for TEXT,
+                    time_of_check TIMESTAMP WITH TIME ZONE NOT NULL
+                );"""
+        )
+        conn.commit()
+        return "success"
+    except Exception as e:
+        print(
+            f"Failed to create table metadata.census_api_geographies_metadata. Error: {e}, {type(e)}"
+        )
         raise
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def api_metadata_table_endpoint() -> str:
     return "success with api_metadata_table creation"
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def api_variables_table_endpoint() -> str:
+    return "success with api_variables_table creation"
 
 
 @dag(
@@ -152,9 +188,20 @@ def create_census_api_metadata_table():
         conn_id=POSTGRES_CONN_ID,
         task_logger=task_logger,
         create_route="create_api_variables_metadata_table",
-        exists_route="end",
+        exists_route="api_variables_table_endpoint",
     )
     create_api_variables_metadata_table_1 = create_api_variables_metadata_table(
+        conn_id=POSTGRES_CONN_ID, task_logger=task_logger
+    )
+    api_variables_table_endpoint_1 = api_variables_table_endpoint()
+    metadata_geographies_table_exists_1 = metadata_table_exists(
+        table_name="census_api_geographies_metadata",
+        conn_id=POSTGRES_CONN_ID,
+        task_logger=task_logger,
+        create_route="create_api_geographies_metadata_table",
+        exists_route="end",
+    )
+    create_api_geographies_metadata_table_1 = create_api_geographies_metadata_table(
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger
     )
     end_1 = EmptyOperator(task_id="end", trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -170,6 +217,12 @@ def create_census_api_metadata_table():
         metadata_variables_table_exists_1,
         [
             create_api_variables_metadata_table_1,
+            Label("Census API variables metadata table exists"),
+        ],
+        api_variables_table_endpoint_1,
+        metadata_geographies_table_exists_1,
+        [
+            create_api_geographies_metadata_table_1,
             Label("Census API variables metadata table exists"),
         ],
         end_1,

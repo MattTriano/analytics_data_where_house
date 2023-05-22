@@ -227,7 +227,7 @@ class CensusDatasetSource:
             "concept": "concept",
             "predicateType": "predicate_type",
             "group": "dataset_group",
-            "limit": "limit",
+            "limit": "limit_call",
             "predicateOnly": "predicate_only",
             "hasGeoCollectionSupport": "has_geo_collection_support",
             "attributes": "attributes",
@@ -249,6 +249,15 @@ class CensusDatasetSource:
     def geographies_df(self) -> None:
         geo_resp_json = self.get_url_response(self.geographies_url)
         geographies_df = pd.DataFrame(geo_resp_json["fips"])
+        geo_col_namemap = {
+            "name": "name",
+            "geoLevelDisplay": "geo_level",
+            "referenceDate": "reference_date",
+            "requires": "requires",
+            "wildcard": "wildcard",
+            "optionalWithWCFor": "optional_with_wildcard_for",
+        }
+        geographies_df = geographies_df.rename(columns=geo_col_namemap)
         return geographies_df
 
     @property
