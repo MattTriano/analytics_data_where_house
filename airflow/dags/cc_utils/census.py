@@ -5,7 +5,7 @@ from random import random
 import re
 import requests
 from time import sleep
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Optional
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -268,9 +268,11 @@ class CensusDatasetSource:
 
 
 class CensusAPICatalog:
-    def __init__(self):
-        self.set_data_catalog_json()
-        self.set_dataset_metadata()
+    def __init__(self, metadata_df: Optional[pd.DataFrame] = None):
+        if metadata_df is not None:
+            self.validate_reloaded_dataset_metadata(metadata_df=metadata_df)
+        else:
+            self.set_dataset_metadata()
 
     def set_data_catalog_json(self) -> pd.DataFrame:
         url = "https://api.census.gov/data.json"
@@ -283,6 +285,7 @@ class CensusAPICatalog:
             raise Exception(f"Failed to get a valid response; status_code: {resp.status_code}")
 
     def set_dataset_metadata(self) -> None:
+        self.set_data_catalog_json()
         if "dataset" in self.data_catalog_json.keys():
             datasets = self.data_catalog_json["dataset"]
             print(f"Elements in Census data catalog datasets attr: {len(datasets)} ")
@@ -351,10 +354,40 @@ class CensusAPICatalog:
         else:
             raise Exception(f"field 'dataset' not found in data_catalog response")
 
-    def get_counts_of_nested_data_elements(self, key: str) -> List[Tuple]:
-        datasets = self.data_catalog_json["dataset"]
-        labels = [d[key] for d in datasets]
-        label_counts = Counter(chain.from_iterable(labels))
+    def validate_reloaded_dataset_metadata(self, metadata_df: pd.DataFrame) -> None:
+        essential_cols = [
+            "identifier",
+            "title",
+            "description",
+            "modified",
+            "vintage",
+            "distribution_access_url",
+            "geography_link",
+            "variables_link",
+            "tags_link",
+            "examples_link",
+            "groups_link",
+            "sorts_url",
+            "dataset",
+            "spatial",
+            "temporal",
+            "bureau_code",
+            "program_code",
+            "keyword",
+            "is_microdata",
+            "is_aggregate",
+            "is_cube",
+            "is_available",
+            "is_timeseries",
+            "time_of_check",
+        ]
+        if all(col in metadata_df.columns for col in essential_cols):
+            self.dataset_metadata = metadata_df
+        else:
+            raise Exception(f"field 'dataset' not found in data_catalog response")
+
+    def get_counts_of_nested_data_elements(self, key: str = "dataset") -> List[Tuple]:
+        label_counts = Counter(chain.from_iterable(self.dataset_metadata[key]))
         label_counts = sorted(label_counts.items(), key=lambda x: x[1], reverse=True)
         return label_counts
 
@@ -373,10 +406,11 @@ class CensusAPICatalog:
 
 
 class CensusAPIHandler:
-    def __init__(self):
-        self.catalog = CensusAPICatalog()
-        self.time_of_check = dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        self.prepare_dataset_metadata_df()
+    def __init__(self, metadata_df: Optional[pd.DataFrame] = None):
+        self.catalog = CensusAPICatalog(metadata_df=metadata_df)
+        if metadata_df is None:
+            self.time_of_check = dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            self.prepare_dataset_metadata_df()
 
     def prepare_dataset_metadata_df(self):
         metadata_df = self.catalog.dataset_metadata.copy()
