@@ -435,3 +435,22 @@ class CensusAPIHandler:
         metadata_df.loc[mask, "vintage"] = None
         metadata_df["time_of_check"] = self.time_of_check
         self.metadata_df = metadata_df.copy()
+
+    def prepare_dataset_variables_metadata_df(self, identifier: str) -> pd.DataFrame:
+        dataset_source = self.catalog.get_dataset_source(identifier=identifier)
+        variables_df = dataset_source.variables_df.copy()
+        col_order = ["dataset_id"]
+        col_order.extend(list(variables_df.columns))
+        col_order.extend(["dataset_last_modified", "time_of_check"])
+        dataset_metadata_df = self.catalog.dataset_metadata.loc[
+            self.catalog.dataset_metadata["identifier"] == identifier
+        ].copy()
+        dataset_metadata_df = dataset_metadata_df.sort_values(by="time_of_check", ascending=False)
+        variables_df["dataset_id"] = dataset_metadata_df["id"].values[0]
+        variables_df["dataset_last_modified"] = pd.Timestamp(
+            dataset_metadata_df["modified"].values[0]
+        )
+        variables_df["time_of_check"] = pd.Timestamp(dataset_metadata_df["time_of_check"].values[0])
+        variables_df = variables_df[col_order].copy()
+        variables_df = variables_df.where(pd.notnull(variables_df), None)
+        return variables_df

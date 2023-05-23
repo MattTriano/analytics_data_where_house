@@ -3,8 +3,10 @@ import logging
 from logging import Logger
 
 from airflow.decorators import dag, task
+from airflow.models.baseoperator import chain
 from airflow.utils.trigger_rule import TriggerRule
 import pandas as pd
+from sqlalchemy import insert
 
 from cc_utils.census import CensusAPIHandler, CensusDatasetSource
 from tasks.census_tasks import (
@@ -113,34 +115,57 @@ def get_fresh_enough_api_handler(
 
 @task
 def update_api_dataset_variables_metadata(
-    identifier: str, api_handler: CensusAPIHandler, task_logger: Logger
+    identifier: str, api_handler: CensusAPIHandler, conn_id: str, task_logger: Logger
 ) -> CensusDatasetSource:
-    dataset_source = api_handler.catalog.get_dataset_source(identifier=identifier)
-    dataset_source = api_handler.catalog.get_dataset_source(identifier=identifier)
-    variables_df = dataset_source.variables_df.copy()
-    col_order = ["dataset_id"]
-    col_order.extend(list(variables_df.columns))
-    col_order.extend(["dataset_last_modified", "time_of_check"])
-    dataset_metadata_df = api_handler.catalog.dataset_metadata.loc[api_handler.catalog.dataset_metadata["identifier"] == identifier].copy()
-    dataset_metadata_df = dataset_metadata_df.sort_values(by="time_of_check", ascending=False)
-    variables_df["dataset_id"] = dataset_metadata_df["id"].values[0]
-    variables_df["dataset_last_modified"] = pd.Timestamp(dataset_metadata_df["modified"].values[0])
-    variables_df["time_of_check"] = pd.Timestamp(dataset_metadata_df["time_of_check"].values[0])
-    variables_df = variables_df[col_order].copy()
+    variables_df = api_handler.prepare_dataset_variables_metadata_df(identifier=identifier)
+    engine = get_pg_engine(conn_id=conn_id)
+    api_dataset_variables_metadata_table = get_reflected_db_table(
+        engine=engine, table_name="census_api_variables_metadata", schema_name="metadata"
+    )
+    insert_statement = (
+        insert(api_dataset_variables_metadata_table)
+        .values(variables_df.to_dict(orient="records"))
+        .returning(api_dataset_variables_metadata_table)
+    )
+    ingested_api_dataset_variables_df = execute_result_returning_orm_query(
+        engine=engine, select_query=insert_statement
+    )
 
-    # This task isn't complete and will probably be split into multiple tasks.
 
-    # api_dataset_variables_metadata_table = get_reflected_db_table(
-    #     engine=engine, table_name="census_api_variables_metadata", schema_name="metadata"
-    # )
-    # insert_statement = (
-    #     insert(api_dataset_variables_metadata_table)
-    #     .values(variables_df.to_dict(orient="records"))
-    #     .returning(api_dataset_variables_metadata_table)
-    # )
-    # ingested_api_dataset_variables_df = execute_result_returning_orm_query(
-    #     engine=engine, select_query=insert_statement
-    # )
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+def fresher_dataset_variables_metadata_available(
+    days_since_refresh: int,
+    local_metadata_df: pd.DataFrame,
+    local_variables_metadata_df: pd.DataFrame,
+    max_days_before_refresh: int,
+    task_logger: Logger,
+) -> str:
+    if days_since_refresh > max_days_before_refresh:
+        task_logger.info(
+            f"Census API Dataset Metadata was last pulled over {days_since_refresh} days ago,\n"
+            + f"which is over the threshold of {max_days_before_refresh} days.\nConsider running"
+            + f"the refresh_census_api_metadata DAG before checking further API variables."
+        )
+    else:
+        task_logger.info(f"\nlocal_metadata_df: {local_metadata_df}\n")
+        task_logger.info(f"\nlocal_variables_metadata_df: {local_variables_metadata_df}\n")
+        dataset_last_modified = local_metadata_df["modified"].values[0]
+        dataset_variables_last_modified = local_variables_metadata_df[
+            "dataset_last_modified"
+        ].values[0]
+        task_logger.info(f"\n\n  dataset_last_modified: {dataset_last_modified}\n\n")
+        task_logger.info(
+            f"  dataset_variables_last_modified: {dataset_variables_last_modified}\n\n"
+        )
+        if dataset_last_modified > dataset_variables_last_modified:
+            return "update_api_dataset_variables_metadata"
+        else:
+            return "dataset_variables_metadata_are_fresh"
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def dataset_variables_metadata_are_fresh() -> str:
+    return "variables_metadata_are_fresh"
 
 
 @dag(
@@ -153,9 +178,6 @@ def refresh_census_api_dataset_variables_metadata():
     local_freshness_1 = get_latest_catalog_freshness_from_db(
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger
     )
-    # latest_check_time = get_date_of_latest_api_catalog_check(
-    #     freshness_df=local_freshness_1, task_logger=task_logger
-    # )
     days_since_last_check = get_days_since_last_api_catalog_freshness_check(
         freshness_df=local_freshness_1, task_logger=task_logger
     )
@@ -165,17 +187,28 @@ def refresh_census_api_dataset_variables_metadata():
     single_dataset_check_1 = get_latest_dateset_variables_from_db(
         identifier=DATASET_IDENTIFIER, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
     )
+    fresher_variables_metadata_exists_1 = fresher_dataset_variables_metadata_available(
+        days_since_refresh=days_since_last_check,
+        local_metadata_df=local_dataset_freshness_1,
+        local_variables_metadata_df=single_dataset_check_1,
+        max_days_before_refresh=MAX_DAYS_BEFORE_REFRESH,
+        task_logger=task_logger,
+    )
     api_handler = get_fresh_enough_api_handler(
         days_since_refresh=days_since_last_check,
         max_days_before_refresh=MAX_DAYS_BEFORE_REFRESH,
         task_logger=task_logger,
     )
-    # get_handler_1 = get_census_api_data_handler(task_logger=task_logger)
-    # check_api_dataset_freshness_1 = check_api_dataset_freshness(
-    # conn_id=POSTGRES_CONN_ID, task_logger=task_logger
-    # )
+    update_variables_metadata_1 = update_api_dataset_variables_metadata(
+        identifier=DATASET_IDENTIFIER,
+        api_handler=api_handler,
+        conn_id=POSTGRES_CONN_ID,
+        task_logger=task_logger,
+    )
+    already_fresh = dataset_variables_metadata_are_fresh()
 
-    # check_api_dataset_freshness_1
+    chain(fresher_variables_metadata_exists_1, [already_fresh, api_handler])
+    chain(api_handler, update_variables_metadata_1, already_fresh)
 
 
 refresh_census_api_dataset_variables_metadata()
