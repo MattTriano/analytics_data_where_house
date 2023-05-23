@@ -46,7 +46,9 @@ def create_metadata_schema(conn_id: str, task_logger: Logger) -> None:
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def metadata_table_exists(table_name: str, conn_id: str, task_logger: Logger) -> str:
+def metadata_table_exists(
+    table_name: str, conn_id: str, task_logger: Logger, create_route: str, exists_route: str
+) -> str:
     schema_name = "metadata"
     tables_in_metadata_schema = get_data_table_names_in_schema(
         engine=get_pg_engine(conn_id=conn_id), schema_name=schema_name
@@ -54,7 +56,7 @@ def metadata_table_exists(table_name: str, conn_id: str, task_logger: Logger) ->
     if table_name not in tables_in_metadata_schema:
         task_logger.info(f"Table {table_name} not found in schema {schema_name}. Creating")
         task_logger.info(f"tables_in_metadata_schema: {tables_in_metadata_schema}")
-        return "create_metadata_table"
+        return create_route
     else:
         task_logger.info(f"Table {table_name} found in schema {schema_name}.")
-        return "end"
+        return exists_route
