@@ -89,6 +89,7 @@ def create_api_variables_metadata_table(conn_id: str, task_logger: Logger):
         cur.execute(
             f"""CREATE TABLE IF NOT EXISTS metadata.census_api_variables_metadata (
                     id SERIAL PRIMARY KEY,
+                    dataset_id INT,
                     identifier TEXT,
                     variable TEXT,
                     label TEXT,
@@ -104,7 +105,7 @@ def create_api_variables_metadata_table(conn_id: str, task_logger: Logger):
                     datetime JSONB,
                     is_weight BOOLEAN,
                     suggested_weight TEXT,
-                    dataset_last_modified TEXT,
+                    dataset_last_modified TIMESTAMP WITHOUT TIME ZONE NOT NULL,
                     updated_data_available BOOLEAN DEFAULT NULL,
                     data_pulled_this_check BOOLEAN DEFAULT NULL,
                     time_of_check TIMESTAMP WITH TIME ZONE NOT NULL
@@ -129,6 +130,7 @@ def create_api_geographies_metadata_table(conn_id: str, task_logger: Logger):
         cur.execute(
             f"""CREATE TABLE IF NOT EXISTS metadata.census_api_geographies_metadata (
                     id SERIAL PRIMARY KEY,
+                    dataset_id INT,
                     identifier TEXT,
                     name TEXT,
                     geo_level TEXT,
