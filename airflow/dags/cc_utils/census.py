@@ -424,7 +424,9 @@ class CensusAPIHandler:
             "publisher_suborg_of_suborg_of_type",
             "publisher_suborg_of_suborg_of_name",
         ]
-        metadata_df = metadata_df.drop(columns=drop_cols)
+        drop_cols = [col for col in drop_cols if col in metadata_df.columns]
+        if len(drop_cols) > 0:
+            metadata_df = metadata_df.drop(columns=drop_cols)
 
         bool_cols = ["is_microdata", "is_aggregate", "is_cube", "is_timeseries", "is_available"]
         for bool_col in bool_cols:
@@ -454,3 +456,27 @@ class CensusAPIHandler:
         variables_df = variables_df[col_order].copy()
         variables_df = variables_df.where(pd.notnull(variables_df), None)
         return variables_df
+
+    def prepare_dataset_geographies_metadata_df(self, identifier: str) -> pd.DataFrame:
+        identifier_mask = self.catalog.dataset_metadata["identifier"] == identifier
+        if not any(identifier_mask):
+            raise Exception(f"No dataset with identifier {identifier} found in metadata.")
+        dataset_source = self.catalog.get_dataset_source(identifier=identifier)
+        geographies_df = dataset_source.geographies_df.copy()
+        col_order = ["dataset_id", "identifier"]
+        col_order.extend(list(geographies_df.columns))
+        col_order.extend(["dataset_last_modified", "time_of_check"])
+        dataset_metadata_df = self.catalog.dataset_metadata.loc[
+            self.catalog.dataset_metadata["identifier"] == identifier
+        ].copy()
+        geographies_df["dataset_id"] = dataset_metadata_df["id"].values[0]
+        geographies_df["identifier"] = identifier
+        geographies_df["dataset_last_modified"] = pd.Timestamp(
+            dataset_metadata_df["modified"].values[0]
+        )
+        geographies_df["time_of_check"] = pd.Timestamp(
+            dataset_metadata_df["time_of_check"].values[0]
+        )
+        geographies_df = geographies_df[col_order].copy()
+        geographies_df = geographies_df.where(pd.notnull(geographies_df), None)
+        return geographies_df
