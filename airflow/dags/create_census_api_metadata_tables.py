@@ -167,7 +167,7 @@ def api_variables_table_endpoint() -> str:
     catchup=False,
     tags=["metadata", "census"],
 )
-def create_census_api_metadata_table():
+def create_census_api_metadata_tables():
 
     metadata_schema_exists_branch_1 = metadata_schema_exists(
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger
@@ -233,4 +233,4 @@ def create_census_api_metadata_table():
     chain(create_metadata_schema_1, create_api_metadata_table_1)
 
 
-create_census_api_metadata_table()
+create_census_api_metadata_tables()

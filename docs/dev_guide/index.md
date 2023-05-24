@@ -1,6 +1,6 @@
 # Using the system
 
-## Adding a new pipeline
+## Adding a new pipeline of a Socrata Data Asset
 
 The [Socrata platform](https://www.opendatanetwork.com/) is a wealth of public data and this system only requires a few manual steps to set up an ELT pipeline that adds a data set to your local warehouse.  
 
@@ -47,3 +47,24 @@ For tables hosted by Socrata, this system reduces steps 1.1 through 1.3 to a [3 
 
 ![check_table_metadata TaskGroup](/assets/imgs/Socrata_ELT_DAG/dbt_intermediate_model_generation_tasks.png)
 
+# Census Data Sources
+
+## Adding a new pipelines for a Census API Data Set
+
+!!! note
+
+    This workflow is under active development and may change as new functionality is added.
+
+1. Retrieve or refresh the catalog of Census API Datasets by running the `refresh_census_api_metadata` DAG.
+
+2. Identify a dataset of interest in the `metadata.census_api_metadata` table in the `re_dwh` database.
+
+3. Collect metadata on the dataset of interest's variables and geographies.
+
+    3.1. Copy the `identifier` url for a dataset of interest.
+
+    3.2. Paste that `identifier` url into the `DATASET_IDENTIFIER` variable near the top of the DAG file `/airflow/dags/refresh_census_api_dataset_variables_metadata.py`
+
+    3.3. Run the `refresh_census_api_dataset_variables_metadata` DAG
+
+3. To be developed
