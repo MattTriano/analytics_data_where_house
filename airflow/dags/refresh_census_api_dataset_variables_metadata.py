@@ -26,7 +26,7 @@ task_logger = logging.getLogger("airflow.task")
 pd.options.display.max_columns = None
 
 POSTGRES_CONN_ID = "dwh_db_conn"
-DATASET_IDENTIFIER = "https://api.census.gov/data/id/ACSPUMS5Y2021"
+DATASET_IDENTIFIER = "https://api.census.gov/data/id/ACSDT1Y2021"
 MAX_DAYS_BEFORE_REFRESH = 30
 
 
@@ -95,6 +95,8 @@ def get_days_since_last_api_catalog_freshness_check(
 def get_fresh_enough_api_handler(
     days_since_refresh: int, max_days_before_refresh: int, task_logger: Logger, **kwargs
 ) -> CensusAPIHandler:
+    task_logger.info(f"days_since_refresh: {days_since_refresh}")
+    task_logger.info(f"max_days_before_refresh: {max_days_before_refresh}")
     if days_since_refresh > max_days_before_refresh:
         task_logger.info(
             f"Census API Dataset Metadata was last pulled over {days_since_refresh} days ago,\n"
@@ -103,8 +105,10 @@ def get_fresh_enough_api_handler(
         )
         return get_census_api_data_handler(task_logger=task_logger)
     else:
+        task_logger.info(f"In else block pre ti: {days_since_refresh}")
         ti = kwargs["ti"]
         metadata_df = ti.xcom_pull(task_ids="get_latest_catalog_freshness_from_db")
+        task_logger.info(f"In else block metadata_df.shape: {metadata_df.shape}")
         api_handler = CensusAPIHandler(metadata_df=metadata_df)
         task_logger.info(
             f"Local census API Dataset Metadata is fresh enough. Returning CensusAPIHandler "
@@ -130,6 +134,27 @@ def update_api_dataset_variables_metadata(
     ingested_api_dataset_variables_df = execute_result_returning_orm_query(
         engine=engine, select_query=insert_statement
     )
+    return ingested_api_dataset_variables_df
+
+
+@task
+def update_api_dataset_geographies_metadata(
+    identifier: str, api_handler: CensusAPIHandler, conn_id: str, task_logger: Logger
+) -> CensusDatasetSource:
+    geographies_df = api_handler.prepare_dataset_geographies_metadata_df(identifier=identifier)
+    engine = get_pg_engine(conn_id=conn_id)
+    api_dataset_geographies_metadata_table = get_reflected_db_table(
+        engine=engine, table_name="census_api_geographies_metadata", schema_name="metadata"
+    )
+    insert_statement = (
+        insert(api_dataset_geographies_metadata_table)
+        .values(geographies_df.to_dict(orient="records"))
+        .returning(api_dataset_geographies_metadata_table)
+    )
+    ingested_api_dataset_geographies_df = execute_result_returning_orm_query(
+        engine=engine, select_query=insert_statement
+    )
+    return ingested_api_dataset_geographies_df
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
@@ -150,6 +175,8 @@ def fresher_dataset_variables_metadata_available(
         task_logger.info(f"\nlocal_metadata_df: {local_metadata_df}\n")
         task_logger.info(f"\nlocal_variables_metadata_df: {local_variables_metadata_df}\n")
         dataset_last_modified = local_metadata_df["modified"].values[0]
+        if len(local_variables_metadata_df) == 0:
+            return "get_fresh_enough_api_handler"
         dataset_variables_last_modified = local_variables_metadata_df[
             "dataset_last_modified"
         ].values[0]
@@ -158,7 +185,7 @@ def fresher_dataset_variables_metadata_available(
             f"  dataset_variables_last_modified: {dataset_variables_last_modified}\n\n"
         )
         if dataset_last_modified > dataset_variables_last_modified:
-            return "update_api_dataset_variables_metadata"
+            return "get_fresh_enough_api_handler"
         else:
             return "dataset_variables_metadata_are_fresh"
 
@@ -205,10 +232,16 @@ def refresh_census_api_dataset_variables_metadata():
         conn_id=POSTGRES_CONN_ID,
         task_logger=task_logger,
     )
+    update_geographies_metadata_1 = update_api_dataset_geographies_metadata(
+        identifier=DATASET_IDENTIFIER,
+        api_handler=api_handler,
+        conn_id=POSTGRES_CONN_ID,
+        task_logger=task_logger,
+    )
     already_fresh = dataset_variables_metadata_are_fresh()
 
     chain(fresher_variables_metadata_exists_1, [already_fresh, api_handler])
-    chain(api_handler, update_variables_metadata_1, already_fresh)
+    chain(api_handler, [update_variables_metadata_1, update_geographies_metadata_1], already_fresh)
 
 
 refresh_census_api_dataset_variables_metadata()

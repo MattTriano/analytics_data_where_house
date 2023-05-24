@@ -78,6 +78,8 @@ create_warehouse_infra:
 		 airflow dags trigger ensure_metadata_table_exists &&\
 		 airflow dags unpause setup_schemas &&\
 		 airflow dags trigger setup_schemas &&\
+		 airflow dags unpause create_census_api_metadata_tables &&\
+		 airflow dags trigger create_census_api_metadata_tables &&\
 		 cd /opt/airflow/dbt && dbt deps &&\
 		 mkdir -p /opt/airflow/dbt/models/intermediate &&\
 		 mkdir -p /opt/airflow/dbt/models/feature &&\

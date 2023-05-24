@@ -12,7 +12,7 @@ SAMPLE_DATA_SET = SocrataTable(
     table_id="wvhk-k5uv",             # (1)
     table_name="sample_data_set",   # (2)
     schedule="0 6 4 * *",             # (3)
-    )
+)
 ```
 
 1. A Socrata table's `table_id` will always be 9 characters long and consist of two blocks of 4 characters (numbers or lowercase letters) separated by a hyphen. You can find the `table_id` in the data documentation URL or export link for the data set.

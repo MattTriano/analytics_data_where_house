@@ -44,12 +44,12 @@ def create_api_metadata_table(conn_id: str, task_logger: Logger):
                     examples_link TEXT,
                     groups_link TEXT,
                     sorts_url TEXT,
-                    dataset TEXT,
+                    dataset TEXT ARRAY,
                     spatial TEXT,
                     temporal TEXT,
-                    bureau_code TEXT NOT NULL,
-                    program_code TEXT NOT NULL,
-                    keyword TEXT NOT NULL,
+                    bureau_code TEXT ARRAY NOT NULL,
+                    program_code TEXT ARRAY NOT NULL,
+                    keyword TEXT ARRAY NOT NULL,
                     is_microdata BOOLEAN,
                     is_aggregate BOOLEAN,
                     is_cube BOOLEAN,
@@ -64,7 +64,7 @@ def create_api_metadata_table(conn_id: str, task_logger: Logger):
                     contact_point_email TEXT NOT NULL,
                     distribution_type TEXT,
                     distribution_media_type TEXT,
-                    reference_docs TEXT,
+                    reference_docs TEXT ARRAY,
                     documentation_link TEXT,
                     time_of_check TIMESTAMP WITH TIME ZONE NOT NULL,
                     modified_since_last_check BOOLEAN DEFAULT NULL,
@@ -135,9 +135,10 @@ def create_api_geographies_metadata_table(conn_id: str, task_logger: Logger):
                     name TEXT,
                     geo_level TEXT,
                     reference_date DATE,
-                    requires TEXT,
-                    wildcard TEXT,
+                    requires TEXT ARRAY,
+                    wildcard TEXT ARRAY,
                     optional_with_wildcard_for TEXT,
+                    dataset_last_modified TIMESTAMP WITHOUT TIME ZONE NOT NULL,
                     time_of_check TIMESTAMP WITH TIME ZONE NOT NULL
                 );"""
         )
@@ -166,7 +167,7 @@ def api_variables_table_endpoint() -> str:
     catchup=False,
     tags=["metadata", "census"],
 )
-def create_census_api_metadata_table():
+def create_census_api_metadata_tables():
 
     metadata_schema_exists_branch_1 = metadata_schema_exists(
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger
@@ -232,4 +233,4 @@ def create_census_api_metadata_table():
     chain(create_metadata_schema_1, create_api_metadata_table_1)
 
 
-create_census_api_metadata_table()
+create_census_api_metadata_tables()
