@@ -3,9 +3,9 @@ dbt-core==1.5.0
 dbt-extractor==0.4.1
 dbt-postgres==1.5.0
 Fiona==1.9.3
-GeoAlchemy2==0.13.2
-geopandas==0.12.2
-great-expectations==0.16.11
+GeoAlchemy2==0.13.3
+geopandas==0.13.0
+great-expectations==0.16.14
 jupyterlab
 jupyterlab-pygments==0.2.2
 jupyterlab-widgets==3.0.7
