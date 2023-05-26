@@ -7,10 +7,10 @@ from airflow.models.baseoperator import chain
 from airflow.utils.trigger_rule import TriggerRule
 import pandas as pd
 from sqlalchemy import insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from cc_utils.census import CensusAPIHandler, CensusDatasetSource
 from tasks.census_tasks import (
-    check_api_dataset_freshness,
     get_census_api_data_handler,
     get_latest_catalog_freshness_from_db,
 )
@@ -26,8 +26,20 @@ task_logger = logging.getLogger("airflow.task")
 pd.options.display.max_columns = None
 
 POSTGRES_CONN_ID = "dwh_db_conn"
-DATASET_IDENTIFIER = "https://api.census.gov/data/id/ACSDT1Y2021"
+DATASET_IDENTIFIER = "https://api.census.gov/data/id/PDBTRACT2022"
 MAX_DAYS_BEFORE_REFRESH = 30
+
+
+def get_days_since_last_api_catalog_freshness_check(
+    freshness_df: pd.DataFrame, task_logger: Logger
+) -> pd.DataFrame:
+    time_of_last_check = freshness_df["time_of_check"].max()
+    time_since_last_check = (
+        pd.Timestamp.now(tz=time_of_last_check.tz) - freshness_df["time_of_check"].max()
+    )
+    task_logger.info(f"Time of most recent Census API Data Catalog check: {time_of_last_check}")
+    task_logger.info(f"Time since the last check: {time_since_last_check}")
+    return time_since_last_check.days
 
 
 @task
@@ -79,22 +91,12 @@ def get_latest_dateset_variables_from_db(
 
 
 @task
-def get_days_since_last_api_catalog_freshness_check(
-    freshness_df: pd.DataFrame, task_logger: Logger
-) -> pd.DataFrame:
-    time_of_last_check = freshness_df["time_of_check"].max()
-    time_since_last_check = (
-        pd.Timestamp.now(tz=time_of_last_check.tz) - freshness_df["time_of_check"].max()
-    )
-    task_logger.info(f"Time of most recent Census API Data Catalog check: {time_of_last_check}")
-    task_logger.info(f"Time since the last check: {time_since_last_check}")
-    return time_since_last_check.days
-
-
-@task
 def get_fresh_enough_api_handler(
-    days_since_refresh: int, max_days_before_refresh: int, task_logger: Logger, **kwargs
+    local_metadata_df: pd.DataFrame, max_days_before_refresh: int, task_logger: Logger, **kwargs
 ) -> CensusAPIHandler:
+    days_since_refresh = get_days_since_last_api_catalog_freshness_check(
+        freshness_df=local_metadata_df, task_logger=task_logger
+    )
     task_logger.info(f"days_since_refresh: {days_since_refresh}")
     task_logger.info(f"max_days_before_refresh: {max_days_before_refresh}")
     if days_since_refresh > max_days_before_refresh:
@@ -122,9 +124,12 @@ def update_api_dataset_variables_metadata(
     identifier: str, api_handler: CensusAPIHandler, conn_id: str, task_logger: Logger
 ) -> CensusDatasetSource:
     variables_df = api_handler.prepare_dataset_variables_metadata_df(identifier=identifier)
+    task_logger.info(f"Dataset variables in the searched Census dataset: {len(variables_df)}")
     engine = get_pg_engine(conn_id=conn_id)
     api_dataset_variables_metadata_table = get_reflected_db_table(
-        engine=engine, table_name="census_api_variables_metadata", schema_name="metadata"
+        engine=engine,
+        table_name="census_api_variables_metadata",
+        schema_name="metadata",
     )
     insert_statement = (
         insert(api_dataset_variables_metadata_table)
@@ -144,7 +149,9 @@ def update_api_dataset_geographies_metadata(
     geographies_df = api_handler.prepare_dataset_geographies_metadata_df(identifier=identifier)
     engine = get_pg_engine(conn_id=conn_id)
     api_dataset_geographies_metadata_table = get_reflected_db_table(
-        engine=engine, table_name="census_api_geographies_metadata", schema_name="metadata"
+        engine=engine,
+        table_name="census_api_geographies_metadata",
+        schema_name="metadata",
     )
     insert_statement = (
         insert(api_dataset_geographies_metadata_table)
@@ -157,14 +164,47 @@ def update_api_dataset_geographies_metadata(
     return ingested_api_dataset_geographies_df
 
 
+@task
+def update_api_dataset_groups_metadata(
+    identifier: str, api_handler: CensusAPIHandler, conn_id: str, task_logger: Logger
+) -> str:
+    groups_df = api_handler.prepare_dataset_groups_metadata_df(identifier=identifier)
+    if (groups_df is not None) and (len(groups_df) > 0):
+        engine = get_pg_engine(conn_id=conn_id)
+        api_dataset_groups_metadata_table = get_reflected_db_table(
+            engine=engine,
+            table_name="census_api_groups_metadata",
+            schema_name="metadata",
+        )
+        task_logger.info(f"Dataset groups in the searched Census dataset: {len(groups_df)}")
+        insert_statement = (
+            pg_insert(api_dataset_groups_metadata_table)
+            .values(groups_df.to_dict(orient="records"))
+            .on_conflict_do_nothing()
+            .returning(api_dataset_groups_metadata_table)
+        )
+        ingested_api_dataset_groups_df = execute_result_returning_orm_query(
+            engine=engine, select_query=insert_statement
+        )
+        task_logger.info(
+            f"New dataset groups added to group metadata table: "
+            + f"{len(ingested_api_dataset_groups_df)}"
+        )
+        return "Successfully_ingested_groups_metadata"
+    else:
+        return "No_groups_metadata_to_ingest"
+
+
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
 def fresher_dataset_variables_metadata_available(
-    days_since_refresh: int,
     local_metadata_df: pd.DataFrame,
     local_variables_metadata_df: pd.DataFrame,
     max_days_before_refresh: int,
     task_logger: Logger,
 ) -> str:
+    days_since_refresh = get_days_since_last_api_catalog_freshness_check(
+        freshness_df=local_metadata_df, task_logger=task_logger
+    )
     if days_since_refresh > max_days_before_refresh:
         task_logger.info(
             f"Census API Dataset Metadata was last pulled over {days_since_refresh} days ago,\n"
@@ -205,24 +245,22 @@ def refresh_census_api_dataset_variables_metadata():
     local_freshness_1 = get_latest_catalog_freshness_from_db(
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger
     )
-    days_since_last_check = get_days_since_last_api_catalog_freshness_check(
-        freshness_df=local_freshness_1, task_logger=task_logger
-    )
     local_dataset_freshness_1 = get_latest_dataset_freshness_from_db(
-        freshness_df=local_freshness_1, identifier=DATASET_IDENTIFIER, task_logger=task_logger
+        freshness_df=local_freshness_1,
+        identifier=DATASET_IDENTIFIER,
+        task_logger=task_logger,
     )
     single_dataset_check_1 = get_latest_dateset_variables_from_db(
         identifier=DATASET_IDENTIFIER, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
     )
     fresher_variables_metadata_exists_1 = fresher_dataset_variables_metadata_available(
-        days_since_refresh=days_since_last_check,
         local_metadata_df=local_dataset_freshness_1,
         local_variables_metadata_df=single_dataset_check_1,
         max_days_before_refresh=MAX_DAYS_BEFORE_REFRESH,
         task_logger=task_logger,
     )
     api_handler = get_fresh_enough_api_handler(
-        days_since_refresh=days_since_last_check,
+        local_metadata_df=local_dataset_freshness_1,
         max_days_before_refresh=MAX_DAYS_BEFORE_REFRESH,
         task_logger=task_logger,
     )
@@ -238,10 +276,24 @@ def refresh_census_api_dataset_variables_metadata():
         conn_id=POSTGRES_CONN_ID,
         task_logger=task_logger,
     )
+    update_groups_metadata_1 = update_api_dataset_groups_metadata(
+        identifier=DATASET_IDENTIFIER,
+        api_handler=api_handler,
+        conn_id=POSTGRES_CONN_ID,
+        task_logger=task_logger,
+    )
     already_fresh = dataset_variables_metadata_are_fresh()
 
     chain(fresher_variables_metadata_exists_1, [already_fresh, api_handler])
-    chain(api_handler, [update_variables_metadata_1, update_geographies_metadata_1], already_fresh)
+    chain(
+        api_handler,
+        [
+            update_variables_metadata_1,
+            update_geographies_metadata_1,
+            update_groups_metadata_1,
+        ],
+        already_fresh,
+    )
 
 
 refresh_census_api_dataset_variables_metadata()

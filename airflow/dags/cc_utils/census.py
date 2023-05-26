@@ -108,7 +108,14 @@ class CensusTableMetadata:
         return self.page_metadata["last_modified"].max()
 
     def initialize_data_freshness_check(self) -> pd.DataFrame:
-        col_order = ["metadata_url", "last_modified", "size", "description", "is_dir", "is_file"]
+        col_order = [
+            "metadata_url",
+            "last_modified",
+            "size",
+            "description",
+            "is_dir",
+            "is_file",
+        ]
         df = self.page_metadata[col_order].copy()
         df["time_of_check"] = self.time_of_check
         df = df.loc[df["metadata_url"].notnull()].copy()
@@ -132,7 +139,9 @@ class CensusTableMetadata:
     def check_warehouse_data_freshness(self, engine: Engine):
         check_df = self.get_prior_metadata_checks_from_db(engine=engine)
         check_df = check_df.sort_values(
-            by=["metadata_url", "last_modified"], ascending=[True, True], ignore_index=True
+            by=["metadata_url", "last_modified"],
+            ascending=[True, True],
+            ignore_index=True,
         )
         check_df = check_df.drop_duplicates(subset="metadata_url", keep="last", ignore_index=True)
         output_cols = list(self.data_freshness_check.columns)
@@ -264,6 +273,14 @@ class CensusDatasetSource:
     def groups_df(self) -> None:
         groups_resp_json = self.get_url_response(self.groups_url)
         groups_df = pd.DataFrame(groups_resp_json["groups"])
+        groups_df.columns = [col.strip() for col in groups_df.columns]
+        groups_df = groups_df.rename(
+            columns={
+                "name": "group_name",
+                "description": "group_description",
+                "variables": "group_variables",
+            }
+        )
         return groups_df
 
 
@@ -408,7 +425,9 @@ class CensusAPICatalog:
 class CensusAPIHandler:
     def __init__(self, metadata_df: Optional[pd.DataFrame] = None):
         self.catalog = CensusAPICatalog(metadata_df=metadata_df)
-        if metadata_df is None:
+        if metadata_df is not None:
+            self.metadata_df = metadata_df.copy()
+        else:
             self.time_of_check = dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
             self.prepare_dataset_metadata_df()
 
@@ -480,3 +499,19 @@ class CensusAPIHandler:
         geographies_df = geographies_df[col_order].copy()
         geographies_df = geographies_df.where(pd.notnull(geographies_df), None)
         return geographies_df
+
+    def prepare_dataset_groups_metadata_df(self, identifier: str) -> pd.DataFrame:
+        identifier_mask = self.catalog.dataset_metadata["identifier"] == identifier
+        if not any(identifier_mask):
+            raise Exception(f"No dataset with identifier {identifier} found in metadata.")
+        dataset_source = self.catalog.get_dataset_source(identifier=identifier)
+        groups_df = dataset_source.groups_df.copy()
+        col_order = [col.strip() for col in groups_df.columns]
+        col_order.extend(["time_of_check"])
+        dataset_metadata_df = self.catalog.dataset_metadata.loc[
+            self.catalog.dataset_metadata["identifier"] == identifier
+        ].copy()
+        groups_df["time_of_check"] = pd.Timestamp(dataset_metadata_df["time_of_check"].values[0])
+        groups_df = groups_df[col_order].copy()
+        groups_df = groups_df.where(pd.notnull(groups_df), None)
+        return groups_df
