@@ -7,6 +7,7 @@ from airflow.models.baseoperator import chain
 from airflow.utils.trigger_rule import TriggerRule
 import pandas as pd
 from sqlalchemy import insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from cc_utils.census import CensusAPIHandler, CensusDatasetSource
 from tasks.census_tasks import (
@@ -26,7 +27,7 @@ task_logger = logging.getLogger("airflow.task")
 pd.options.display.max_columns = None
 
 POSTGRES_CONN_ID = "dwh_db_conn"
-DATASET_IDENTIFIER = "https://api.census.gov/data/id/ACSDT1Y2021"
+DATASET_IDENTIFIER = "https://api.census.gov/data/id/ECNSIZE2017"
 MAX_DAYS_BEFORE_REFRESH = 30
 
 
@@ -124,7 +125,9 @@ def update_api_dataset_variables_metadata(
     variables_df = api_handler.prepare_dataset_variables_metadata_df(identifier=identifier)
     engine = get_pg_engine(conn_id=conn_id)
     api_dataset_variables_metadata_table = get_reflected_db_table(
-        engine=engine, table_name="census_api_variables_metadata", schema_name="metadata"
+        engine=engine,
+        table_name="census_api_variables_metadata",
+        schema_name="metadata",
     )
     insert_statement = (
         insert(api_dataset_variables_metadata_table)
@@ -144,7 +147,9 @@ def update_api_dataset_geographies_metadata(
     geographies_df = api_handler.prepare_dataset_geographies_metadata_df(identifier=identifier)
     engine = get_pg_engine(conn_id=conn_id)
     api_dataset_geographies_metadata_table = get_reflected_db_table(
-        engine=engine, table_name="census_api_geographies_metadata", schema_name="metadata"
+        engine=engine,
+        table_name="census_api_geographies_metadata",
+        schema_name="metadata",
     )
     insert_statement = (
         insert(api_dataset_geographies_metadata_table)
@@ -155,6 +160,35 @@ def update_api_dataset_geographies_metadata(
         engine=engine, select_query=insert_statement
     )
     return ingested_api_dataset_geographies_df
+
+
+@task
+def update_api_dataset_groups_metadata(
+    identifier: str, api_handler: CensusAPIHandler, conn_id: str, task_logger: Logger
+) -> CensusDatasetSource:
+    groups_df = api_handler.prepare_dataset_groups_metadata_df(identifier=identifier)
+    if groups_df is not None:
+        engine = get_pg_engine(conn_id=conn_id)
+        api_dataset_groups_metadata_table = get_reflected_db_table(
+            engine=engine,
+            table_name="census_api_groups_metadata",
+            schema_name="metadata",
+        )
+        task_logger.info(f"Dataset groups in the searched Census dataset: {len(groups_df)}")
+        insert_statement = (
+            pg_insert(api_dataset_groups_metadata_table)
+            .values(groups_df.to_dict(orient="records"))
+            .on_conflict_do_nothing()
+            .returning(api_dataset_groups_metadata_table)
+        )
+        ingested_api_dataset_groups_df = execute_result_returning_orm_query(
+            engine=engine, select_query=insert_statement
+        )
+        task_logger.info(
+            f"New dataset groups added to group metadata table: "
+            + f"{len(ingested_api_dataset_groups_df)}"
+        )
+        return ingested_api_dataset_groups_df
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
@@ -209,7 +243,9 @@ def refresh_census_api_dataset_variables_metadata():
         freshness_df=local_freshness_1, task_logger=task_logger
     )
     local_dataset_freshness_1 = get_latest_dataset_freshness_from_db(
-        freshness_df=local_freshness_1, identifier=DATASET_IDENTIFIER, task_logger=task_logger
+        freshness_df=local_freshness_1,
+        identifier=DATASET_IDENTIFIER,
+        task_logger=task_logger,
     )
     single_dataset_check_1 = get_latest_dateset_variables_from_db(
         identifier=DATASET_IDENTIFIER, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
@@ -238,10 +274,24 @@ def refresh_census_api_dataset_variables_metadata():
         conn_id=POSTGRES_CONN_ID,
         task_logger=task_logger,
     )
+    update_groups_metadata_1 = update_api_dataset_groups_metadata(
+        identifier=DATASET_IDENTIFIER,
+        api_handler=api_handler,
+        conn_id=POSTGRES_CONN_ID,
+        task_logger=task_logger,
+    )
     already_fresh = dataset_variables_metadata_are_fresh()
 
     chain(fresher_variables_metadata_exists_1, [already_fresh, api_handler])
-    chain(api_handler, [update_variables_metadata_1, update_geographies_metadata_1], already_fresh)
+    chain(
+        api_handler,
+        [
+            update_variables_metadata_1,
+            update_geographies_metadata_1,
+            update_groups_metadata_1,
+        ],
+        already_fresh,
+    )
 
 
 refresh_census_api_dataset_variables_metadata()
