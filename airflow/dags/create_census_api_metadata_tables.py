@@ -160,12 +160,14 @@ def create_api_groups_metadata_table(conn_id: str, task_logger: Logger):
         cur.execute(
             f"""CREATE TABLE IF NOT EXISTS metadata.census_api_groups_metadata (
                     id SERIAL PRIMARY KEY,
+                    dataset_id INT,
+                    identifier TEXT,
                     group_name TEXT NOT NULL,
                     group_description TEXT,
                     group_variables TEXT,
                     universe TEXT,
                     time_of_check TIMESTAMP WITH TIME ZONE NOT NULL,
-                    UNIQUE (group_name, time_of_check)
+                    UNIQUE (identifier, group_name, time_of_check)
                 );"""
         )
         conn.commit()

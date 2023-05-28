@@ -506,11 +506,14 @@ class CensusAPIHandler:
             raise Exception(f"No dataset with identifier {identifier} found in metadata.")
         dataset_source = self.catalog.get_dataset_source(identifier=identifier)
         groups_df = dataset_source.groups_df.copy()
-        col_order = [col.strip() for col in groups_df.columns]
+        col_order = ["dataset_id", "identifier"]
+        col_order.extend([col.strip() for col in groups_df.columns])
         col_order.extend(["time_of_check"])
         dataset_metadata_df = self.catalog.dataset_metadata.loc[
             self.catalog.dataset_metadata["identifier"] == identifier
         ].copy()
+        groups_df["dataset_id"] = dataset_metadata_df["id"].values[0]
+        groups_df["identifier"] = identifier
         groups_df["time_of_check"] = pd.Timestamp(dataset_metadata_df["time_of_check"].values[0])
         groups_df = groups_df[col_order].copy()
         groups_df = groups_df.where(pd.notnull(groups_df), None)
