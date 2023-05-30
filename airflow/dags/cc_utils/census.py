@@ -552,5 +552,5 @@ class CensusVariableGroupAPICall:
         base_url = dataset_metadata_df["distribution_access_url"].values[0]
         group_part = f"group({self.group_name})"
         geog_part = self.geographies.api_call_geographies
-        auth_part = os.environ["CENSUS_API_KEY"]
+        auth_part = f"""key={os.environ["CENSUS_API_KEY"]}"""
         return f"{base_url}?get={group_part}&{geog_part}&{auth_part}"

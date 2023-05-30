@@ -15,7 +15,29 @@ config_version: 3.0
 # add a new datasource. Read more at https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/connect_to_data_overview
 datasources:
   where_house_source:
+    module_name: great_expectations.datasource
     class_name: Datasource
+    data_connectors:
+      default_runtime_data_connector_name:
+        module_name: great_expectations.datasource.data_connector
+        batch_identifiers:
+          - default_identifier_name
+        class_name: RuntimeDataConnector
+        name: default_runtime_data_connector_name
+      data_raw_inferred_data_connector_name:
+        module_name: great_expectations.datasource.data_connector
+        introspection_directives:
+          schema_name: data_raw
+        include_schema_name: true
+        class_name: InferredAssetSqlDataConnector
+        name: data_raw_inferred_data_connector_name
+      dwh_inferred_data_connector_name:
+        module_name: great_expectations.datasource.data_connector
+        introspection_directives:
+          schema_name: dwh
+        include_schema_name: true
+        class_name: InferredAssetSqlDataConnector
+        name: dwh_inferred_data_connector_name
     execution_engine:
       module_name: great_expectations.execution_engine
       class_name: SqlAlchemyExecutionEngine
@@ -26,28 +48,6 @@ datasources:
         password: ${DWH_POSTGRES_PASSWORD}
         database: ${DWH_POSTGRES_DB}
         drivername: postgresql
-    module_name: great_expectations.datasource
-    data_connectors:
-      default_runtime_data_connector_name:
-        class_name: RuntimeDataConnector
-        name: default_runtime_data_connector_name
-        batch_identifiers:
-          - default_identifier_name
-        module_name: great_expectations.datasource.data_connector
-      data_raw_inferred_data_connector_name:
-        introspection_directives:
-          schema_name: data_raw
-        class_name: InferredAssetSqlDataConnector
-        name: data_raw_inferred_data_connector_name
-        include_schema_name: true
-        module_name: great_expectations.datasource.data_connector
-      dwh_inferred_data_connector_name:
-        introspection_directives:
-          schema_name: dwh
-        class_name: InferredAssetSqlDataConnector
-        name: dwh_inferred_data_connector_name
-        include_schema_name: true
-        module_name: great_expectations.datasource.data_connector
 config_variables_file_path: uncommitted/config_variables.yml
 
 # The plugins_directory will be added to your python path for custom modules
