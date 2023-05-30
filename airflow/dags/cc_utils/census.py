@@ -1,6 +1,7 @@
 from collections import Counter
 import datetime as dt
 from itertools import chain
+import os
 from random import random
 import re
 import requests
@@ -518,3 +519,38 @@ class CensusAPIHandler:
         groups_df = groups_df[col_order].copy()
         groups_df = groups_df.where(pd.notnull(groups_df), None)
         return groups_df
+
+
+class CensusGeogTract:
+    def __init__(self, state_cd: str, county_cd: str = "*"):
+        self.state_cd = state_cd
+        self.county_cd = county_cd
+
+    @property
+    def api_call_geographies(self):
+        return f"for=tract:*&in=state:{self.state_cd}&in=county:{self.county_cd}"
+
+
+class CensusVariableGroupAPICall:
+    def __init__(
+        self,
+        identifier: str,
+        group_name: str,
+        geographies: CensusGeogTract,
+        api_handler: CensusAPIHandler,
+    ):
+        self.identifier = identifier
+        self.group_name = group_name
+        self.geographies = geographies
+        self.api_handler = api_handler
+
+    @property
+    def api_call(self) -> str:
+        dataset_metadata_df = self.api_handler.metadata_df.loc[
+            self.api_handler.metadata_df["identifier"] == self.identifier
+        ].copy()
+        base_url = dataset_metadata_df["distribution_access_url"].values[0]
+        group_part = f"group({self.group_name})"
+        geog_part = self.geographies.api_call_geographies
+        auth_part = os.environ["CENSUS_API_KEY"]
+        return f"{base_url}?get={group_part}&{geog_part}&{auth_part}"
