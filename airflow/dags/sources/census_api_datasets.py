@@ -1,13 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from cc_utils.census import (
-    CensusVariableGroupAPICall,
-    CensusGeogTract,
-    CensusAPIHandler,
-)
-
-# API_HANDLER = CensusAPIHandler()
+from cc_utils.census import CensusVariableGroupAPICall, CensusGeogTract
 
 
 @dataclass

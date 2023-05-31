@@ -457,6 +457,27 @@ class CensusAPIHandler:
         )
         return catalog_metadata_df
 
+    def get_freshest_local_dataset_metadata(self, dataset_name) -> pd.DataFrame:
+        engine = get_pg_engine(conn_id=self.conn_id)
+        local_dataset_metadata_df = execute_result_returning_query(
+            engine=engine,
+            query=f"""
+                WITH latest_metadata AS (
+                    SELECT
+                        *,
+                        row_number() over(
+                            partition by dataset_name, source_data_last_modified ORDER BY dataset_name, source_data_last_modified DESC
+                        ) as rn
+                    FROM metadata.dataset_metadata
+                    WHERE dataset_name = '{dataset_name}'
+                )
+                SELECT *
+                FROM latest_metadata
+                WHERE rn = 1;
+            """,
+        )
+        return local_dataset_metadata_df
+
     def ingest_api_dataset_freshness_check(self, metadata_df: pd.DataFrame) -> None:
         engine = get_pg_engine(conn_id=self.conn_id)
         api_dataset_metadata_table = get_reflected_db_table(

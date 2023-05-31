@@ -32,7 +32,8 @@ def create_dataset_metadata_table(conn_id: str, task_logger: Logger):
             f"""CREATE TABLE IF NOT EXISTS metadata.dataset_metadata (
                     id SERIAL PRIMARY KEY,
                     dataset_name TEXT NOT NULL,
-                    data_last_modified TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                    source_data_last_modified TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                    local_data_last_updated TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL,
                     time_of_check TIMESTAMP WITH TIME ZONE NOT NULL
                 );"""
         )
