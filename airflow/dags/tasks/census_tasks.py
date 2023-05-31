@@ -14,17 +14,6 @@ from cc_utils.db import (
 )
 
 
-# @task
-# def get_census_api_data_handler(task_logger: Logger) -> CensusAPIHandler:
-#     api_handler = CensusAPIHandler()
-#     n_datasets = api_handler.metadata_df["identifier"].nunique()
-#     task_logger.info("Retrieved Census API data handler.")
-#     task_logger.info(
-#         f"Distinct datasets in catalog as of {api_handler.time_of_check}: {n_datasets}."
-#     )
-#     return api_handler
-
-
 @task
 def get_census_api_data_handler(
     conn_id: str, task_logger: Logger, max_days_before_refresh: int = 30
@@ -35,10 +24,9 @@ def get_census_api_data_handler(
         max_days_before_refresh=max_days_before_refresh,
     )
     n_datasets = api_handler.metadata_df["identifier"].nunique()
+    latest_update = api_handler.metadata_df["modified"].max()
     task_logger.info("Retrieved Census API data handler.")
-    task_logger.info(
-        f"Distinct datasets in catalog as of {api_handler.time_of_check}: {n_datasets}."
-    )
+    task_logger.info(f"Distinct datasets in catalog as of {latest_update}: {n_datasets}.")
     return api_handler
 
 

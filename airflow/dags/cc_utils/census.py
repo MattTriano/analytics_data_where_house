@@ -458,10 +458,6 @@ class CensusAPIHandler:
         return catalog_metadata_df
 
     def ingest_api_dataset_freshness_check(self, metadata_df: pd.DataFrame) -> None:
-        # source_freshness_df = metadata_df.loc[metadata_df["modified_src"].notnull()].copy()
-        # metadata_df = source_freshness_df.reset_index(drop=True)
-        # source_freshness_df = source_freshness_df.drop(columns="modified_local")
-        # source_freshness_df = source_freshness_df.rename(columns={"modified_src": "modified"})
         engine = get_pg_engine(conn_id=self.conn_id)
         api_dataset_metadata_table = get_reflected_db_table(
             engine=engine, table_name="census_api_metadata", schema_name="metadata"
@@ -481,7 +477,7 @@ class CensusAPIHandler:
 
     def set_catalog(self) -> None:
         latest_check = self.local_metadata_df["time_of_check"].max()
-        time_since_latest_check = pd.Timestamp.now(tz=latest_check.tz) - latest_check
+        time_since_latest_check = (pd.Timestamp.now(tz=latest_check.tz) - latest_check).days
         if time_since_latest_check > self.max_days_before_refresh:
             self.catalog = CensusAPICatalog()
             self.time_of_check = dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
@@ -492,15 +488,15 @@ class CensusAPIHandler:
             self.metadata_df = self.local_metadata_df.copy()
 
     def is_local_dataset_metadata_fresh(self, identifier: str) -> bool:
-        in_local_mask = any(self.local_metadata_df["identifier"] == identifier)
-        in_source_mask = any(self.metadata_df["identifier"] == identifier)
-        if in_local_mask:
+        in_local_mask = self.local_metadata_df["identifier"] == identifier
+        in_source_mask = self.metadata_df["identifier"] == identifier
+        if any(in_local_mask):
             dataset_local_df = self.local_metadata_df.loc[in_local_mask].copy()
-        if in_source_mask:
+        if any(in_source_mask):
             dataset_source_df = self.metadata_df.loc[in_source_mask].copy()
-        if in_local_mask and in_source_mask:
-            return dataset_local_df["modified"] >= dataset_source_df["modified"]
-        elif in_source_mask:
+        if any(in_local_mask) and any(in_source_mask):
+            return dataset_local_df["modified"].values[0] >= dataset_source_df["modified"].values[0]
+        elif any(in_source_mask):
             return False
         else:
             raise Exception(f"Somehow dataset {identifier} is in local db but not on Census site.")
