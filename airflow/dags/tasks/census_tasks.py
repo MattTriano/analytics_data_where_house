@@ -14,9 +14,26 @@ from cc_utils.db import (
 )
 
 
+# @task
+# def get_census_api_data_handler(task_logger: Logger) -> CensusAPIHandler:
+#     api_handler = CensusAPIHandler()
+#     n_datasets = api_handler.metadata_df["identifier"].nunique()
+#     task_logger.info("Retrieved Census API data handler.")
+#     task_logger.info(
+#         f"Distinct datasets in catalog as of {api_handler.time_of_check}: {n_datasets}."
+#     )
+#     return api_handler
+
+
 @task
-def get_census_api_data_handler(task_logger: Logger) -> CensusAPIHandler:
-    api_handler = CensusAPIHandler()
+def get_census_api_data_handler(
+    conn_id: str, task_logger: Logger, max_days_before_refresh: int = 30
+) -> CensusAPIHandler:
+    api_handler = CensusAPIHandler(
+        conn_id=conn_id,
+        task_logger=task_logger,
+        max_days_before_refresh=max_days_before_refresh,
+    )
     n_datasets = api_handler.metadata_df["identifier"].nunique()
     task_logger.info("Retrieved Census API data handler.")
     task_logger.info(
@@ -113,8 +130,14 @@ def ingest_api_dataset_freshness_check(
 
 
 @task_group
-def check_api_dataset_freshness(conn_id: str, task_logger: Logger) -> pd.DataFrame:
-    get_handler_1 = get_census_api_data_handler(task_logger=task_logger)
+def check_api_dataset_freshness(
+    conn_id: str, task_logger: Logger, max_days_before_refresh: int = 30
+) -> pd.DataFrame:
+    get_handler_1 = get_census_api_data_handler(
+        conn_id=conn_id,
+        task_logger=task_logger,
+        max_days_before_refresh=max_days_before_refresh,
+    )
     latest_local_metadata_1 = get_latest_catalog_freshness_from_db(
         conn_id=conn_id, task_logger=task_logger
     )

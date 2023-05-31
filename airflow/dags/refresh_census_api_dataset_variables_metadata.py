@@ -42,23 +42,23 @@ def get_days_since_last_api_catalog_freshness_check(
     return time_since_last_check.days
 
 
-@task
-def get_latest_dataset_freshness_from_db(
-    freshness_df: pd.DataFrame, identifier: str, task_logger: Logger
-) -> pd.DataFrame:
-    dataset_metadata_in_local_db_mask = freshness_df["identifier"] == identifier
-    if dataset_metadata_in_local_db_mask.sum() > 0:
-        local_dataset_freshness = freshness_df.loc[dataset_metadata_in_local_db_mask].copy()
-        task_logger.info(
-            f"Distinct datasets in census_api_metadata table {local_dataset_freshness}."
-        )
-        return local_dataset_freshness
-    else:
-        raise Exception(
-            f"Dataset identifier '{identifier}' not found in local metadata.\n"
-            + f"If you're sure the identifier is valid, refresh Census API catalog metadata and "
-            + "try again."
-        )
+# @task
+# def get_latest_dataset_freshness_from_db(
+#     freshness_df: pd.DataFrame, identifier: str, task_logger: Logger
+# ) -> pd.DataFrame:
+#     dataset_metadata_in_local_db_mask = freshness_df["identifier"] == identifier
+#     if dataset_metadata_in_local_db_mask.sum() > 0:
+#         local_dataset_freshness = freshness_df.loc[dataset_metadata_in_local_db_mask].copy()
+#         task_logger.info(
+#             f"Distinct datasets in census_api_metadata table {local_dataset_freshness}."
+#         )
+#         return local_dataset_freshness
+#     else:
+#         raise Exception(
+#             f"Dataset identifier '{identifier}' not found in local metadata.\n"
+#             + f"If you're sure the identifier is valid, refresh Census API catalog metadata and "
+#             + "try again."
+#         )
 
 
 @task
@@ -92,7 +92,10 @@ def get_latest_dateset_variables_from_db(
 
 @task
 def get_fresh_enough_api_handler(
-    local_metadata_df: pd.DataFrame, max_days_before_refresh: int, task_logger: Logger, **kwargs
+    local_metadata_df: pd.DataFrame,
+    max_days_before_refresh: int,
+    task_logger: Logger,
+    **kwargs,
 ) -> CensusAPIHandler:
     days_since_refresh = get_days_since_last_api_catalog_freshness_check(
         freshness_df=local_metadata_df, task_logger=task_logger
@@ -121,8 +124,10 @@ def get_fresh_enough_api_handler(
 
 @task
 def update_api_dataset_variables_metadata(
-    identifier: str, api_handler: CensusAPIHandler, conn_id: str, task_logger: Logger
+    identifier: str, conn_id: str, task_logger: Logger, **kwargs
 ) -> CensusDatasetSource:
+    ti = kwargs["ti"]
+    api_handler = ti.xcom_pull(task_ids="get_census_api_data_handler")
     variables_df = api_handler.prepare_dataset_variables_metadata_df(identifier=identifier)
     task_logger.info(f"Dataset variables in the searched Census dataset: {len(variables_df)}")
     engine = get_pg_engine(conn_id=conn_id)
@@ -144,8 +149,10 @@ def update_api_dataset_variables_metadata(
 
 @task
 def update_api_dataset_geographies_metadata(
-    identifier: str, api_handler: CensusAPIHandler, conn_id: str, task_logger: Logger
+    identifier: str, conn_id: str, task_logger: Logger, **kwargs
 ) -> CensusDatasetSource:
+    ti = kwargs["ti"]
+    api_handler = ti.xcom_pull(task_ids="get_census_api_data_handler")
     geographies_df = api_handler.prepare_dataset_geographies_metadata_df(identifier=identifier)
     engine = get_pg_engine(conn_id=conn_id)
     api_dataset_geographies_metadata_table = get_reflected_db_table(
@@ -166,8 +173,10 @@ def update_api_dataset_geographies_metadata(
 
 @task
 def update_api_dataset_groups_metadata(
-    identifier: str, api_handler: CensusAPIHandler, conn_id: str, task_logger: Logger
+    identifier: str, conn_id: str, task_logger: Logger, **kwargs
 ) -> str:
+    ti = kwargs["ti"]
+    api_handler = ti.xcom_pull(task_ids="get_census_api_data_handler")
     groups_df = api_handler.prepare_dataset_groups_metadata_df(identifier=identifier)
     if (groups_df is not None) and (len(groups_df) > 0):
         engine = get_pg_engine(conn_id=conn_id)
@@ -235,6 +244,21 @@ def dataset_variables_metadata_are_fresh() -> str:
     return "variables_metadata_are_fresh"
 
 
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def dataset_variables_metadata_are_not_fresh() -> str:
+    return "dataset_variables_metadata_are_not_fresh"
+
+
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+def get_latest_dataset_freshness_from_db(
+    api_handler: CensusAPIHandler, identifier: str, task_logger: Logger
+) -> str:
+    if api_handler.is_local_dataset_metadata_fresh(identifier=identifier):
+        return "dataset_variables_metadata_are_not_fresh"
+    else:
+        return "dataset_variables_metadata_are_not_fresh"
+
+
 @dag(
     schedule=None,
     start_date=dt.datetime(2022, 11, 1),
@@ -242,51 +266,54 @@ def dataset_variables_metadata_are_fresh() -> str:
     tags=["census", "metadata"],
 )
 def refresh_census_api_dataset_variables_metadata():
-    local_freshness_1 = get_latest_catalog_freshness_from_db(
-        conn_id=POSTGRES_CONN_ID, task_logger=task_logger
+    api_handler = get_census_api_data_handler(
+        conn_id=POSTGRES_CONN_ID,
+        task_logger=task_logger,
+        max_days_before_refresh=MAX_DAYS_BEFORE_REFRESH,
     )
+    # local_freshness_1 = get_latest_catalog_freshness_from_db(
+    #     conn_id=POSTGRES_CONN_ID, task_logger=task_logger
+    # )
     local_dataset_freshness_1 = get_latest_dataset_freshness_from_db(
-        freshness_df=local_freshness_1,
+        api_handler=api_handler,
         identifier=DATASET_IDENTIFIER,
         task_logger=task_logger,
     )
-    single_dataset_check_1 = get_latest_dateset_variables_from_db(
-        identifier=DATASET_IDENTIFIER, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
-    )
-    fresher_variables_metadata_exists_1 = fresher_dataset_variables_metadata_available(
-        local_metadata_df=local_dataset_freshness_1,
-        local_variables_metadata_df=single_dataset_check_1,
-        max_days_before_refresh=MAX_DAYS_BEFORE_REFRESH,
-        task_logger=task_logger,
-    )
-    api_handler = get_fresh_enough_api_handler(
-        local_metadata_df=local_dataset_freshness_1,
-        max_days_before_refresh=MAX_DAYS_BEFORE_REFRESH,
-        task_logger=task_logger,
-    )
+    # single_dataset_check_1 = get_latest_dateset_variables_from_db(
+    #     identifier=DATASET_IDENTIFIER, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
+    # )
+    vars_not_fresh = dataset_variables_metadata_are_not_fresh()
+    # fresher_variables_metadata_exists_1 = fresher_dataset_variables_metadata_available(
+    #     local_metadata_df=local_dataset_freshness_1,
+    #     local_variables_metadata_df=single_dataset_check_1,
+    #     max_days_before_refresh=MAX_DAYS_BEFORE_REFRESH,
+    #     task_logger=task_logger,
+    # )
+    # api_handler = get_fresh_enough_api_handler(
+    #     local_metadata_df=local_dataset_freshness_1,
+    #     max_days_before_refresh=MAX_DAYS_BEFORE_REFRESH,
+    #     task_logger=task_logger,
+    # )
     update_variables_metadata_1 = update_api_dataset_variables_metadata(
         identifier=DATASET_IDENTIFIER,
-        api_handler=api_handler,
         conn_id=POSTGRES_CONN_ID,
         task_logger=task_logger,
     )
     update_geographies_metadata_1 = update_api_dataset_geographies_metadata(
         identifier=DATASET_IDENTIFIER,
-        api_handler=api_handler,
         conn_id=POSTGRES_CONN_ID,
         task_logger=task_logger,
     )
     update_groups_metadata_1 = update_api_dataset_groups_metadata(
         identifier=DATASET_IDENTIFIER,
-        api_handler=api_handler,
         conn_id=POSTGRES_CONN_ID,
         task_logger=task_logger,
     )
     already_fresh = dataset_variables_metadata_are_fresh()
 
-    chain(fresher_variables_metadata_exists_1, [already_fresh, api_handler])
+    chain(local_dataset_freshness_1, [already_fresh, vars_not_fresh])
     chain(
-        api_handler,
+        vars_not_fresh,
         [
             update_variables_metadata_1,
             update_geographies_metadata_1,

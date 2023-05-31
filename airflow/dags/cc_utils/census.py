@@ -1,6 +1,7 @@
 from collections import Counter
 import datetime as dt
 from itertools import chain
+from logging import Logger
 import os
 from random import random
 import re
@@ -14,6 +15,7 @@ from sqlalchemy import select, insert, update
 from sqlalchemy.engine.base import Engine
 
 from cc_utils.db import (
+    get_pg_engine,
     execute_result_returning_query,
     get_reflected_db_table,
     execute_result_returning_orm_query,
@@ -319,7 +321,11 @@ class CensusAPICatalog:
             distribution_df = pd.json_normalize(full_df["distribution"].str[0])
             distribution_df.columns = [f"distribution_{col}" for col in distribution_df.columns]
             full_df = pd.merge(
-                left=full_df, right=distribution_df, how="left", left_index=True, right_index=True
+                left=full_df,
+                right=distribution_df,
+                how="left",
+                left_index=True,
+                right_index=True,
             )
             full_df = full_df.sort_values(by="modified", ascending=False, ignore_index=True)
             colname_fixes = {
@@ -424,13 +430,80 @@ class CensusAPICatalog:
 
 
 class CensusAPIHandler:
-    def __init__(self, metadata_df: Optional[pd.DataFrame] = None):
-        self.catalog = CensusAPICatalog(metadata_df=metadata_df)
-        if metadata_df is not None:
-            self.metadata_df = metadata_df.copy()
-        else:
+    def __init__(self, conn_id: str, task_logger: Logger, max_days_before_refresh: int = 30):
+        self.conn_id = conn_id
+        self.task_logger = task_logger
+        self.max_days_before_refresh = max_days_before_refresh
+        self.local_metadata_df = self.get_freshest_census_API_data_catalog_metadata()
+        self.set_catalog()
+
+    def get_freshest_census_API_data_catalog_metadata(self) -> pd.DataFrame:
+        engine = get_pg_engine(conn_id=self.conn_id)
+        catalog_metadata_df = execute_result_returning_query(
+            engine=engine,
+            query="""
+                WITH latest_metadata AS (
+                    SELECT
+                        *,
+                        row_number() over(
+                            partition by identifier, modified ORDER BY identifier, modified DESC
+                        ) as rn
+                    FROM metadata.census_api_metadata
+                )
+                SELECT *
+                FROM latest_metadata
+                WHERE rn = 1;
+            """,
+        )
+        return catalog_metadata_df
+
+    def ingest_api_dataset_freshness_check(self, metadata_df: pd.DataFrame) -> None:
+        # source_freshness_df = metadata_df.loc[metadata_df["modified_src"].notnull()].copy()
+        # metadata_df = source_freshness_df.reset_index(drop=True)
+        # source_freshness_df = source_freshness_df.drop(columns="modified_local")
+        # source_freshness_df = source_freshness_df.rename(columns={"modified_src": "modified"})
+        engine = get_pg_engine(conn_id=self.conn_id)
+        api_dataset_metadata_table = get_reflected_db_table(
+            engine=engine, table_name="census_api_metadata", schema_name="metadata"
+        )
+        insert_statement = (
+            insert(api_dataset_metadata_table)
+            .values(metadata_df.to_dict(orient="records"))
+            .returning(api_dataset_metadata_table)
+        )
+        ingested_api_datasets_df = execute_result_returning_orm_query(
+            engine=engine, select_query=insert_statement
+        )
+        self.task_logger.info(
+            f"Max census_api_metadata id value after ingestion: {ingested_api_datasets_df['id'].max()}"
+        )
+        return ingested_api_datasets_df
+
+    def set_catalog(self) -> None:
+        latest_check = self.local_metadata_df["time_of_check"].max()
+        time_since_latest_check = pd.Timestamp.now(tz=latest_check.tz) - latest_check
+        if time_since_latest_check > self.max_days_before_refresh:
+            self.catalog = CensusAPICatalog()
             self.time_of_check = dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
             self.prepare_dataset_metadata_df()
+            self.ingest_api_dataset_freshness_check(metadata_df=self.metadata_df)
+        else:
+            self.catalog = CensusAPICatalog(metadata_df=self.local_metadata_df)
+            self.metadata_df = self.local_metadata_df.copy()
+
+    def is_local_dataset_metadata_fresh(self, identifier: str) -> bool:
+        in_local_mask = any(self.local_metadata_df["identifier"] == identifier)
+        in_source_mask = any(self.metadata_df["identifier"] == identifier)
+        if in_local_mask:
+            dataset_local_df = self.local_metadata_df.loc[in_local_mask].copy()
+        if in_source_mask:
+            dataset_source_df = self.metadata_df.loc[in_source_mask].copy()
+        if in_local_mask and in_source_mask:
+            return dataset_local_df["modified"] >= dataset_source_df["modified"]
+        elif in_source_mask:
+            return False
+        else:
+            raise Exception(f"Somehow dataset {identifier} is in local db but not on Census site.")
 
     def prepare_dataset_metadata_df(self):
         metadata_df = self.catalog.dataset_metadata.copy()
@@ -448,7 +521,13 @@ class CensusAPIHandler:
         if len(drop_cols) > 0:
             metadata_df = metadata_df.drop(columns=drop_cols)
 
-        bool_cols = ["is_microdata", "is_aggregate", "is_cube", "is_timeseries", "is_available"]
+        bool_cols = [
+            "is_microdata",
+            "is_aggregate",
+            "is_cube",
+            "is_timeseries",
+            "is_available",
+        ]
         for bool_col in bool_cols:
             metadata_df[bool_col] = metadata_df[bool_col].fillna(False).astype(bool)
 
@@ -534,22 +613,19 @@ class CensusGeogTract:
 class CensusVariableGroupAPICall:
     def __init__(
         self,
+        api_base_url: str,
         identifier: str,
         group_name: str,
         geographies: CensusGeogTract,
-        api_handler: CensusAPIHandler,
     ):
+        self.api_base_url = api_base_url
         self.identifier = identifier
         self.group_name = group_name
         self.geographies = geographies
-        self.api_handler = api_handler
 
     @property
     def api_call(self) -> str:
-        dataset_metadata_df = self.api_handler.metadata_df.loc[
-            self.api_handler.metadata_df["identifier"] == self.identifier
-        ].copy()
-        base_url = dataset_metadata_df["distribution_access_url"].values[0]
+        base_url = self.api_base_url
         group_part = f"group({self.group_name})"
         geog_part = self.geographies.api_call_geographies
         auth_part = f"""key={os.environ["CENSUS_API_KEY"]}"""
