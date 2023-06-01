@@ -663,3 +663,105 @@ class CensusVariableGroupAPICall(CensusAPIDataset):
             return pd.DataFrame(resp_json[1:], columns=resp_json[0])
         else:
             raise Exception(f"The API call produced an invalid response ({resp.status_code})")
+
+
+def clean_dataset_metadata_catalog(catalog_resp_json: Dict) -> pd.DataFrame:
+    catalog_resp_df = pd.json_normalize(catalog_resp_json)
+    catalog_cols = [col for col in catalog_resp_df.columns if col != "dataset"]
+    catalog_df = catalog_resp_df[catalog_cols].copy()
+    datasets = catalog_resp_df["dataset"].iloc[0].copy()
+    catalog_colname_fixes = {
+        "@context": "metadata_context",
+        "@id": "metadata_catalog_id",
+        "@type": "metadata_type",
+        "conformsTo": "conforms_to_schema",
+        "describedBy": "data_schema_dictionary",
+    }
+    catalog_df = catalog_df.rename(columns=catalog_colname_fixes)
+    print(f"Elements in Census data catalog datasets attr: {len(datasets)} ")
+    df_list = []
+    df_shape_list = []
+    for dataset in datasets:
+        df = pd.json_normalize(dataset)
+        df_list.append(df)
+        df_shape_list.append(df.shape)
+    datasets_df = pd.concat(df_list)
+    datasets_df = datasets_df.reset_index(drop=True)
+    datasets_df["modified"] = pd.to_datetime(datasets_df["modified"])
+    distribution_df = pd.json_normalize(datasets_df["distribution"].str[0])
+    distribution_df.columns = [f"distribution_{col}" for col in distribution_df.columns]
+    datasets_df = pd.merge(
+        left=datasets_df,
+        right=distribution_df,
+        how="left",
+        left_index=True,
+        right_index=True,
+    )
+    datasets_df = datasets_df.sort_values(by="modified", ascending=False, ignore_index=True)
+
+    datasets_df["join_col"] = 1
+    catalog_df["join_col"] = 1
+    full_df = pd.merge(left=datasets_df, right=catalog_df, how="inner", on="join_col")
+    full_df = full_df.drop(columns=["join_col"])
+    colname_fixes = {
+        "distribution_accessURL": "dataset_base_url",
+        "identifier": "identifier",
+        "title": "title",
+        "description": "description",
+        "modified": "modified",
+        "c_vintage": "vintage",
+        "c_geographyLink": "geography_link",
+        "c_variablesLink": "variables_link",
+        "c_tagsLink": "tags_link",
+        "c_examplesLink": "examples_link",
+        "c_groupsLink": "groups_link",
+        "c_sorts_url": "sorts_url",
+        "c_dataset": "dataset",
+        "spatial": "spatial",
+        "temporal": "temporal",
+        "bureauCode": "bureau_code",
+        "programCode": "program_code",
+        "keyword": "keyword",
+        "c_isMicrodata": "is_microdata",
+        "c_isAggregate": "is_aggregate",
+        "c_isCube": "is_cube",
+        "c_isAvailable": "is_available",
+        "c_isTimeseries": "is_timeseries",
+        "accessLevel": "access_level",
+        "license": "license",
+        "@type": "type",
+        "publisher.name": "publisher_name",
+        "publisher.@type": "publisher_type",
+        "contactPoint.fn": "contact_point_fn",
+        "contactPoint.hasEmail": "contact_point_email",
+        "distribution_@type": "distribution_type",
+        "distribution_mediaType": "distribution_media_type",
+        "references": "reference_docs",
+        "c_documentationLink": "documentation_link",
+        "distribution": "distribution",
+        "distribution_description": "distribution_description",
+        "distribution_format": "distribution_format",
+        "distribution_title": "distribution_title",
+        "publisher.subOrganizationOf.@type": "publisher_suborg_of_type",
+        "publisher.subOrganizationOf.name": "publisher_suborg_of_name",
+        "publisher.subOrganizationOf.subOrganizationOf.@type": "publisher_suborg_of_suborg_of_type",
+        "publisher.subOrganizationOf.subOrganizationOf.name": "publisher_suborg_of_suborg_of_name",
+    }
+    colname_fixes.update({v: v for k, v in catalog_colname_fixes.items()})
+    full_df_cols = full_df.columns
+    col_order = [col for col in colname_fixes.keys() if col in full_df_cols]
+    full_df = full_df[col_order].copy()
+    full_df = full_df.rename(columns=colname_fixes)
+    return full_df
+
+
+def get_dataset_metadata_catalog(base_dataset_url: str) -> pd.DataFrame:
+    resp = requests.get(base_dataset_url)
+    if resp.status_code == 200:
+        resp_json = resp.json()
+        return clean_dataset_metadata_catalog(catalog_resp_json=resp_json)
+    else:
+        raise Exception(
+            f"Dataset metadata url\n\n  {base_dataset_url}\n\nreturned and invalid status code: "
+            + f"{resp.status_code}"
+        )
