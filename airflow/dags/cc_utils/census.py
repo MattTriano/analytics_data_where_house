@@ -7,7 +7,7 @@ from random import random
 import re
 import requests
 from time import sleep
-from typing import Dict, List, Tuple, Union, Optional
+from typing import Dict, List, Tuple, Union, Optional, Protocol
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -627,7 +627,15 @@ class CensusGeogTract:
         return f"for=tract:*&in=state:{self.state_cd}&in=county:{self.county_cd}"
 
 
-class CensusVariableGroupAPICall:
+class CensusAPIDataset(Protocol):
+    def api_call(self) -> str:
+        ...
+
+    def make_api_call(self) -> pd.DataFrame:
+        ...
+
+
+class CensusVariableGroupAPICall(CensusAPIDataset):
     def __init__(
         self,
         api_base_url: str,
@@ -647,3 +655,11 @@ class CensusVariableGroupAPICall:
         geog_part = self.geographies.api_call_geographies
         auth_part = f"""key={os.environ["CENSUS_API_KEY"]}"""
         return f"{base_url}?get={group_part}&{geog_part}&{auth_part}"
+
+    def make_api_call(self) -> pd.DataFrame:
+        resp = requests.get(self.api_call)
+        if resp.status_code == 200:
+            resp_json = resp.json()
+            return pd.DataFrame(resp_json[1:], columns=resp_json[0])
+        else:
+            raise Exception(f"The API call produced an invalid response ({resp.status_code})")

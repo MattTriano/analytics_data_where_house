@@ -15,7 +15,7 @@ from cc_utils.db import (
     get_data_table_names_in_schema,
     execute_structural_command,
 )
-from cc_utils.census import CensusAPIHandler
+from cc_utils.census import CensusAPIHandler, CensusAPIDataset
 from tasks.census_tasks import get_census_api_data_handler
 from sources.census_api_datasets import GROSS_RENT_BY_COOK_COUNTY_IL_TRACT as CENSUS_DATASET
 
@@ -77,11 +77,49 @@ def ingest_dataset_freshness_into_gen_metadata(
         .values(metadata_check_df.to_dict(orient="records"))
         .returning(dataset_metadata_table)
     )
-    ingested_api_datasets_df = execute_result_returning_orm_query(
+    ingested_metadata_check_df = execute_result_returning_orm_query(
         engine=engine, select_query=insert_statement
     )
-    task_logger.info(f"ingested_api_datasets_df: {ingested_api_datasets_df.T}")
-    return ingested_api_datasets_df
+    task_logger.info(f"ingested_api_datasets_df: {ingested_metadata_check_df.T}")
+    return ingested_metadata_check_df
+
+
+@task
+def download_and_ingest_dataset(
+    census_dataset: CensusAPIDataset,
+    conn_id: str,
+    metadata_check_df: pd.DataFrame,
+    task_logger: Logger,
+) -> int:
+    dataset_df = census_dataset.make_api_call()
+    task_logger.info(f"Rows and columns in returned dataset: {dataset_df.shape}")
+    table_name = f"temp_{census_dataset.dataset_name}"
+    dataset_df["source_data_last_modified"] = metadata_check_df["source_data_last_modified"].max()
+    dataset_df["time_of_check"] = metadata_check_df["time_of_check"].max()
+    engine = get_pg_engine(conn_id=conn_id)
+    dataset_df.to_sql(
+        name=table_name,
+        schema="data_raw",
+        con=engine,
+        if_exists="replace",
+        chunksize=100000,
+    )
+    task_logger.info("Successfully ingested data using pd.to_sql()")
+    task_logger.info("Dataset metadata record id: {metadata_check_df['id'].max()}")
+    return metadata_check_df["id"].max()
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def update_result_of_check_in_metadata_table(conn_id: str, task_logger=task_logger):
+    engine = get_pg_engine(conn_id=conn_id)
+    # metadata_table = get_reflected_db_table(
+    #     engine=engine, table_name="dataset_metadata", schema_name="metadata"
+    # )
+    # update_query = (
+    #         update(metadata_table)
+    #         .where(metadata_table.c.time_of_check == self.data_freshness_check["time_of_check"])
+    #         .values(data_pulled_this_check=data_pulled_value)
+    #     )
 
 
 @dag(
