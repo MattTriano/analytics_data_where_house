@@ -665,7 +665,24 @@ class CensusVariableGroupAPICall(CensusAPIDataset):
             raise Exception(f"The API call produced an invalid response ({resp.status_code})")
 
 
-def clean_dataset_metadata_catalog(catalog_resp_json: Dict) -> pd.DataFrame:
+def get_url_response(url: str) -> Dict:
+    api_call = re.sub("\.html$", ".json", url)
+    resp = requests.get(api_call)
+    if resp.status_code == 200:
+        resp_json = resp.json()
+        return resp_json
+    else:
+        print(f"Failed to get a valid response; status code: {resp.status_code}")
+        return None
+
+
+def get_dataset_metadata_catalog(base_dataset_url: str) -> pd.DataFrame:
+    catalog_resp_json = get_url_response(url=base_dataset_url)
+    if catalog_resp_json is None:
+        raise Exception(
+            f"Request for metadata catalog for the dataset with url\n\n  {base_dataset_url}\n\n"
+            + "failed to get a valid response."
+        )
     catalog_resp_df = pd.json_normalize(catalog_resp_json)
     catalog_cols = [col for col in catalog_resp_df.columns if col != "dataset"]
     catalog_df = catalog_resp_df[catalog_cols].copy()
@@ -755,13 +772,43 @@ def clean_dataset_metadata_catalog(catalog_resp_json: Dict) -> pd.DataFrame:
     return full_df
 
 
-def get_dataset_metadata_catalog(base_dataset_url: str) -> pd.DataFrame:
-    resp = requests.get(base_dataset_url)
-    if resp.status_code == 200:
-        resp_json = resp.json()
-        return clean_dataset_metadata_catalog(catalog_resp_json=resp_json)
-    else:
-        raise Exception(
-            f"Dataset metadata url\n\n  {base_dataset_url}\n\nreturned and invalid status code: "
-            + f"{resp.status_code}"
-        )
+def get_dataset_geography_metadata(geog_url: str) -> pd.DataFrame:
+    geo_resp_json = get_url_response(url=geog_url)
+    geographies_df = pd.DataFrame(geo_resp_json["fips"])
+    geo_col_namemap = {
+        "name": "name",
+        "geoLevelDisplay": "geo_level",
+        "referenceDate": "reference_date",
+        "requires": "requires",
+        "wildcard": "wildcard",
+        "optionalWithWCFor": "optional_with_wildcard_for",
+    }
+    geographies_df = geographies_df.rename(columns=geo_col_namemap)
+    return geographies_df
+
+
+class CensusAPIDatasetSource:
+    def __init__(self, base_dataset_url: str):
+        self.base_url = base_dataset_url
+        self.metadata_catalog_df = get_dataset_metadata_catalog(base_dataset_url=self.base_url)
+        self.set_dataset_metadata_urls()
+        self.geographies_df = get_dataset_geography_metadata(geog_url=self.geographies_url)
+
+    def set_dataset_metadata_urls(self):
+        if (self.metadata_catalog_df["dataset_base_url"] == self.base_url).sum() == 0:
+            if self.base_url.startswith("https://"):
+                base_url = re.sub("https://", "http://", self.base_url)
+            elif self.base_url.startswith("http://"):
+                base_url = re.sub("http://", "https://", self.base_url)
+            else:
+                raise Exception(
+                    f"bad base_url. How did we get past the dataset_metadata_catalog network"
+                    + " request?"
+                )
+        dataset_metadata_df = self.metadata_catalog_df.loc[
+            self.metadata_catalog_df["dataset_base_url"] == base_url
+        ].copy()
+        self.geographies_url = dataset_metadata_df["geography_link"].iloc[0]
+        self.variables_url = dataset_metadata_df["variables_link"].iloc[0]
+        self.groups_url = dataset_metadata_df["groups_link"].iloc[0]
+        self.tags_url = dataset_metadata_df["tags_link"].iloc[0]
