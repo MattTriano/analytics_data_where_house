@@ -772,6 +772,40 @@ def get_dataset_metadata_catalog(base_dataset_url: str) -> pd.DataFrame:
     return full_df
 
 
+def get_dataset_variables_metadata(variables_url: str) -> pd.DataFrame:
+    variables_json = get_url_response(url=variables_url)
+    if variables_json is None:
+        raise Exception(
+            f"Request for dataset variables metadata for the dataset with url\n\n"
+            + f"  {variables_url}\n\n failed to get a valid response."
+        )
+    variables_df = pd.DataFrame(variables_json["variables"]).T
+    variables_df.index.name = "variable"
+    variables_df = variables_df.reset_index()
+    var_col_namemap = {
+        "variable": "variable",
+        "label": "label",
+        "concept": "concept",
+        "predicateType": "predicate_type",
+        "group": "dataset_group",
+        "limit": "limit_call",
+        "predicateOnly": "predicate_only",
+        "hasGeoCollectionSupport": "has_geo_collection_support",
+        "attributes": "attributes",
+        "required": "required",
+        "values": "values",
+        "datetime": "datetime",
+        "is-weight": "is_weight",
+        "suggested-weight": "suggested_weight",
+    }
+    variables_df = variables_df.rename(columns=var_col_namemap)
+    if "values" in variables_df.columns:
+        variables_df["values"] = variables_df["values"].fillna({})
+    variables_df["predicate_only"] = variables_df["predicate_only"].fillna(False)
+    col_order = [col for col in var_col_namemap.values() if col in variables_df.columns]
+    return variables_df[col_order].copy()
+
+
 def get_dataset_geography_metadata(geog_url: str) -> pd.DataFrame:
     geo_resp_json = get_url_response(url=geog_url)
     geographies_df = pd.DataFrame(geo_resp_json["fips"])
@@ -787,12 +821,40 @@ def get_dataset_geography_metadata(geog_url: str) -> pd.DataFrame:
     return geographies_df
 
 
+def get_dataset_groups_metadata(groups_url: str) -> pd.DataFrame:
+    groups_json = get_url_response(url=groups_url)
+    group_col_namemap = {
+        "name": "group_name",
+        "description": "group_description",
+        "variables": "group_variables",
+        "universe": "universe",
+    }
+    if groups_json is None:
+        groups_df = pd.DataFrame({v: [None] for v in group_col_namemap.values()})
+    else:
+        groups_df = pd.DataFrame(groups_json["groups"])
+        groups_df.columns = [col.strip() for col in groups_df.columns]
+        groups_df = groups_df.rename(columns=group_col_namemap)
+    return groups_df
+
+
+def get_dataset_tags_metadata(tags_url: str) -> pd.DataFrame:
+    tags_json = get_url_response(url=tags_url)
+    if tags_json is not None:
+        return pd.DataFrame(tags_json)
+    else:
+        return pd.DataFrame({"tags": None})
+
+
 class CensusAPIDatasetSource:
     def __init__(self, base_dataset_url: str):
         self.base_url = base_dataset_url
         self.metadata_catalog_df = get_dataset_metadata_catalog(base_dataset_url=self.base_url)
         self.set_dataset_metadata_urls()
+        self.variables_df = get_dataset_variables_metadata(variables_url=self.variables_url)
         self.geographies_df = get_dataset_geography_metadata(geog_url=self.geographies_url)
+        self.groups_df = get_dataset_groups_metadata(groups_url=self.groups_url)
+        self.tags_df = get_dataset_tags_metadata(geog_url=self.geographies_url)
 
     def set_dataset_metadata_urls(self):
         if (self.metadata_catalog_df["dataset_base_url"] == self.base_url).sum() == 0:
