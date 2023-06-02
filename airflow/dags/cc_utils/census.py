@@ -676,11 +676,11 @@ def get_url_response(url: str) -> Dict:
         return None
 
 
-def get_dataset_metadata_catalog(base_dataset_url: str) -> pd.DataFrame:
-    catalog_resp_json = get_url_response(url=base_dataset_url)
+def get_dataset_metadata_catalog(dataset_base_url: str) -> pd.DataFrame:
+    catalog_resp_json = get_url_response(url=dataset_base_url)
     if catalog_resp_json is None:
         raise Exception(
-            f"Request for metadata catalog for the dataset with url\n\n  {base_dataset_url}\n\n"
+            f"Request for metadata catalog for the dataset with url\n\n  {dataset_base_url}\n\n"
             + "failed to get a valid response."
         )
     catalog_resp_df = pd.json_normalize(catalog_resp_json)
@@ -746,19 +746,19 @@ def get_dataset_metadata_catalog(base_dataset_url: str) -> pd.DataFrame:
         "c_isTimeseries": "is_timeseries",
         "accessLevel": "access_level",
         "license": "license",
-        "@type": "type",
-        "publisher.name": "publisher_name",
-        "publisher.@type": "publisher_type",
+        "@type": "dataset_type",
         "contactPoint.fn": "contact_point_fn",
         "contactPoint.hasEmail": "contact_point_email",
-        "distribution_@type": "distribution_type",
-        "distribution_mediaType": "distribution_media_type",
         "references": "reference_docs",
         "c_documentationLink": "documentation_link",
-        "distribution": "distribution",
+        "distribution_@type": "distribution_type",
+        "distribution_mediaType": "distribution_media_type",
         "distribution_description": "distribution_description",
         "distribution_format": "distribution_format",
         "distribution_title": "distribution_title",
+        "distribution": "distribution",
+        "publisher.name": "publisher_name",
+        "publisher.@type": "publisher_type",
         "publisher.subOrganizationOf.@type": "publisher_suborg_of_type",
         "publisher.subOrganizationOf.name": "publisher_suborg_of_name",
         "publisher.subOrganizationOf.subOrganizationOf.@type": "publisher_suborg_of_suborg_of_type",
@@ -840,21 +840,25 @@ def get_dataset_groups_metadata(groups_url: str) -> pd.DataFrame:
 
 def get_dataset_tags_metadata(tags_url: str) -> pd.DataFrame:
     tags_json = get_url_response(url=tags_url)
+    tag_col_namemap = {"tags": "tag_name"}
     if tags_json is not None:
-        return pd.DataFrame(tags_json)
+        tags_df = pd.DataFrame(tags_json)
+        tags_df = tags_df.rename(columns=tag_col_namemap)
+        return tags_df
     else:
         return pd.DataFrame({"tags": None})
 
 
 class CensusAPIDatasetSource:
-    def __init__(self, base_dataset_url: str):
-        self.base_url = base_dataset_url
-        self.metadata_catalog_df = get_dataset_metadata_catalog(base_dataset_url=self.base_url)
+    def __init__(self, dataset_base_url: str):
+        self.base_url = dataset_base_url
+        self.metadata_catalog_df = get_dataset_metadata_catalog(dataset_base_url=self.base_url)
         self.set_dataset_metadata_urls()
         self.variables_df = get_dataset_variables_metadata(variables_url=self.variables_url)
         self.geographies_df = get_dataset_geography_metadata(geog_url=self.geographies_url)
         self.groups_df = get_dataset_groups_metadata(groups_url=self.groups_url)
-        self.tags_df = get_dataset_tags_metadata(geog_url=self.geographies_url)
+        self.tags_df = get_dataset_tags_metadata(tags_url=self.tags_url)
+        self.time_of_check = dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     def set_dataset_metadata_urls(self):
         if (self.metadata_catalog_df["dataset_base_url"] == self.base_url).sum() == 0:
@@ -867,6 +871,8 @@ class CensusAPIDatasetSource:
                     f"bad base_url. How did we get past the dataset_metadata_catalog network"
                     + " request?"
                 )
+        else:
+            base_url = self.base_url
         dataset_metadata_df = self.metadata_catalog_df.loc[
             self.metadata_catalog_df["dataset_base_url"] == base_url
         ].copy()
