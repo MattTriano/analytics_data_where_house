@@ -216,6 +216,7 @@ def check_freshness(
     )
     freshness_check = organize_freshness_check_results(task_logger=task_logger)
     chain(local_dataset_freshness, dataset_source)
+    chain(source_dataset_freshness, freshness_check)
     return freshness_check
 
 
@@ -224,18 +225,20 @@ def fresher_source_data_available(
     freshness_check: CensusDatasetFreshnessCheck, task_logger: Logger
 ) -> str:
     dataset_not_in_local_dwh = len(freshness_check.local_freshness) == 0
-    local_dataset_is_stale = (
-        freshness_check.source_freshness["source_data_last_modified"]
-        > freshness_check.local_freshness["source_data_last_modified"]
-    )
-    if (dataset_not_in_local_dwh) or (local_dataset_is_stale):
-        return "update_local_data.update_local_metadata"
-    else:
-        return "local_data_is_fresh"
+
+    if not dataset_not_in_local_dwh:
+        local_last_modified = freshness_check.local_freshness["source_data_last_modified"].max()
+        task_logger.info(f"Local dataset last modified: {local_last_modified}")
+        source_last_modified = freshness_check.source_freshness["source_data_last_modified"].max()
+        task_logger.info(f"Source dataset last modified: {source_last_modified}")
+        local_dataset_is_fresh = local_last_modified >= source_last_modified
+        if local_dataset_is_fresh:
+            return "local_data_is_fresh"
+    return "update_local_metadata.get_freshness_check_results"
 
 
 @task
-def update_local_metadata(task_logger: Logger, **kwargs) -> CensusDatasetFreshnessCheck:
+def get_freshness_check_results(task_logger: Logger, **kwargs) -> CensusDatasetFreshnessCheck:
     ti = kwargs["ti"]
     freshness_check = ti.xcom_pull(task_ids="check_freshness.organize_freshness_check_results")
     return freshness_check
@@ -289,9 +292,14 @@ def ingest_dataset_tags_metadata(
     return "success"
 
 
+@task
+def local_metadata_endpoint() -> str:
+    return "Making the DAG flow cleaner"
+
+
 @task_group
-def update_local_data(conn_id: str, task_logger: Logger):
-    freshness_check = update_local_metadata(task_logger=task_logger)
+def update_local_metadata(conn_id: str, task_logger: Logger):
+    freshness_check = get_freshness_check_results(task_logger=task_logger)
     update_dataset_variables = ingest_dataset_variables_metadata(
         freshness_check=freshness_check, conn_id=conn_id, task_logger=task_logger
     )
@@ -304,119 +312,23 @@ def update_local_data(conn_id: str, task_logger: Logger):
     update_dataset_tags = ingest_dataset_tags_metadata(
         freshness_check=freshness_check, conn_id=conn_id, task_logger=task_logger
     )
+    local_metadata_endpoint_1 = local_metadata_endpoint()
 
-    # chain(
-    #     freshness_check,
-    #     [
-    #         update_dataset_variables,
-    #         update_dataset_geographies,
-    #         update_dataset_groups,
-    #         update_dataset_tags
-    #     ]
-    # )
-    # return "hi"
+    chain(
+        freshness_check,
+        [
+            update_dataset_variables,
+            update_dataset_geographies,
+            update_dataset_groups,
+            update_dataset_tags,
+        ],
+        local_metadata_endpoint_1,
+    )
 
 
 @task
 def local_data_is_fresh(task_logger: Logger):
     return "hi"
-
-
-# @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
-# def check_dataset_freshness_in_gen_metadata(
-#     census_dataset, api_handler: CensusAPIHandler, task_logger: Logger
-# ):
-#     identifier = census_dataset.api_call_obj.identifier
-#     local_dataset_metadata_df = api_handler.get_freshest_local_dataset_metadata(
-#         dataset_name=census_dataset.dataset_name
-#     )
-#     dataset_metadata_df = api_handler.metadata_df.loc[
-#         api_handler.metadata_df["identifier"] == identifier
-#     ].copy()
-#     task_logger.info(f"local_dataset_metadata_df: {local_dataset_metadata_df.T}")
-#     if (len(local_dataset_metadata_df) == 0) or (
-#         dataset_metadata_df["modified"].max()
-#         > local_dataset_metadata_df["source_data_last_modified"].max()
-#     ):
-#         return "ingest_dataset_freshness_into_gen_metadata"
-#     else:
-#         return "dataset_metadata_is_fresh"
-
-
-# @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-# def dataset_metadata_is_fresh() -> str:
-#     return "dataset_metadata_is_fresh"
-
-
-# @task
-# def ingest_dataset_freshness_into_gen_metadata(
-#     census_dataset, api_handler: CensusAPIHandler, task_logger: Logger
-# ) -> pd.DataFrame:
-#     identifier = census_dataset.api_call_obj.identifier
-#     dataset_name = census_dataset.dataset_name
-#     dataset_metadata_df = api_handler.metadata_df.loc[
-#         api_handler.metadata_df["identifier"] == identifier
-#     ].copy()
-#     metadata_check_df = pd.DataFrame(
-#         {
-#             "dataset_name": [dataset_name],
-#             "source_data_last_modified": [dataset_metadata_df["modified"].max()],
-#             "time_of_check": [dataset_metadata_df["time_of_check"].max()],
-#         }
-#     )
-#     task_logger.info(f"metadata_check_df: {metadata_check_df.T}")
-#     engine = get_pg_engine(conn_id=api_handler.conn_id)
-#     dataset_metadata_table = get_reflected_db_table(
-#         engine=engine, table_name="dataset_metadata", schema_name="metadata"
-#     )
-#     insert_statement = (
-#         insert(dataset_metadata_table)
-#         .values(metadata_check_df.to_dict(orient="records"))
-#         .returning(dataset_metadata_table)
-#     )
-#     ingested_metadata_check_df = execute_result_returning_orm_query(
-#         engine=engine, select_query=insert_statement
-#     )
-#     task_logger.info(f"ingested_api_datasets_df: {ingested_metadata_check_df.T}")
-#     return ingested_metadata_check_df
-
-
-# @task
-# def download_and_ingest_dataset(
-#     census_dataset: CensusAPIDataset,
-#     conn_id: str,
-#     metadata_check_df: pd.DataFrame,
-#     task_logger: Logger,
-# ) -> int:
-#     dataset_df = census_dataset.make_api_call()
-#     task_logger.info(f"Rows and columns in returned dataset: {dataset_df.shape}")
-#     table_name = f"temp_{census_dataset.dataset_name}"
-#     dataset_df["source_data_last_modified"] = metadata_check_df["source_data_last_modified"].max()
-#     dataset_df["time_of_check"] = metadata_check_df["time_of_check"].max()
-#     engine = get_pg_engine(conn_id=conn_id)
-#     dataset_df.to_sql(
-#         name=table_name,
-#         schema="data_raw",
-#         con=engine,
-#         if_exists="replace",
-#         chunksize=100000,
-#     )
-#     task_logger.info("Successfully ingested data using pd.to_sql()")
-#     task_logger.info("Dataset metadata record id: {metadata_check_df['id'].max()}")
-#     return metadata_check_df["id"].max()
-
-
-# @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-# def update_result_of_check_in_metadata_table(conn_id: str, task_logger=task_logger):
-#     engine = get_pg_engine(conn_id=conn_id)
-#     metadata_table = get_reflected_db_table(
-#         engine=engine, table_name="dataset_metadata", schema_name="metadata"
-#     )
-#     update_query = (
-#         update(metadata_table)
-#         .where(metadata_table.c.time_of_check == self.data_freshness_check["time_of_check"])
-#         .values(data_pulled_this_check=data_pulled_value)
-#     )
 
 
 @dag(
@@ -432,19 +344,10 @@ def dev_update_cc_housing_units_by_census_tract():
     fresh_source_data_available_1 = fresher_source_data_available(
         freshness_check=freshness_check_1, task_logger=task_logger
     )
-    update_local_1 = update_local_data(conn_id=POSTGRES_CONN_ID, task_logger=task_logger)
+    update_local_1 = update_local_metadata(conn_id=POSTGRES_CONN_ID, task_logger=task_logger)
     local_is_fresh_1 = local_data_is_fresh(task_logger=task_logger)
+
     chain(freshness_check_1, fresh_source_data_available_1, [update_local_1, local_is_fresh_1])
-    # local_dataset_freshness = get_latest_local_freshness_check(
-    #     census_dataset=CENSUS_DATASET, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
-    # )
-    # dataset_source = get_source_dataset_metadata(
-    #     census_dataset=CENSUS_DATASET, task_logger=task_logger
-    # )
-    # source_dataset_freshness = record_source_freshness_check(
-    #     dataset_source=dataset_source, census_dataset=CENSUS_DATASET,
-    #     conn_id=POSTGRES_CONN_ID, task_logger=task_logger
-    # )
 
 
 dev_update_cc_housing_units_by_census_tract()
