@@ -66,7 +66,7 @@ def create_api_dataset_metadata_table(conn_id: str, task_logger: Logger):
                     distribution_description TEXT,
                     distribution_format TEXT,
                     distribution_title TEXT,
-                    distribution TEXT ARRAY,
+                    distribution JSONB,
                     publisher_name TEXT,
                     publisher_type TEXT,
                     publisher_suborg_of_type TEXT,

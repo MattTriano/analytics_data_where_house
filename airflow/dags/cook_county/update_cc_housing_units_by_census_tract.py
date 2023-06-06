@@ -219,9 +219,11 @@ def check_freshness(
 def fresher_source_data_available(
     freshness_check: CensusDatasetFreshnessCheck, task_logger: Logger
 ) -> str:
-    dataset_not_in_local_dwh = len(freshness_check.local_freshness) == 0
+    dataset_in_local_dwh = len(freshness_check.local_freshness) > 0
 
-    if not dataset_not_in_local_dwh:
+    task_logger.info(f"Dataset in local dwh: {dataset_in_local_dwh}")
+    task_logger.info(f"freshness_check.local_freshness: {freshness_check.local_freshness}")
+    if dataset_in_local_dwh:
         local_last_modified = freshness_check.local_freshness["source_data_last_modified"].max()
         task_logger.info(f"Local dataset last modified: {local_last_modified}")
         source_last_modified = freshness_check.source_freshness["source_data_last_modified"].max()
