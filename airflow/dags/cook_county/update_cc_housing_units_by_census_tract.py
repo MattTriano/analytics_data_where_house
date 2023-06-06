@@ -120,11 +120,6 @@ def record_source_freshness_check(
         dataset_source.metadata_catalog_df["dataset_base_url"]
         == census_dataset.api_call_obj.dataset_base_url
     ].copy()
-    # task_logger.info(f"dataset_source.metadata_catalog_df: {dataset_source.metadata_catalog_df}\n\n\n\n\n\n\n")
-    # task_logger.info(f"dataset_source.geographies_df: {dataset_source.geographies_df}\n\n\n\n\n\n\n")
-    # task_logger.info(f"dataset_source.variables_df: {dataset_source.variables_df}\n\n\n\n\n\n\n")
-    # task_logger.info(f"dataset_source.groups_df: {dataset_source.groups_df}\n\n\n\n\n\n\n")
-
     freshness_check_record = pd.DataFrame(
         {
             "dataset_name": [census_dataset.dataset_name],
@@ -245,14 +240,50 @@ def get_freshness_check_results(task_logger: Logger, **kwargs) -> CensusDatasetF
 
 
 @task
+def ingest_dataset_metadata(
+    freshness_check: CensusDatasetFreshnessCheck, conn_id: str, task_logger: Logger
+) -> str:
+    metadata_df = freshness_check.dataset_source.metadata_catalog_df.copy()
+    metadata_df["time_of_check"] = freshness_check.source_freshness["time_of_check"].max()
+    task_logger.info(f"Dataset metadata columns:")
+    for col in metadata_df.columns:
+        task_logger.info(f"  {col}")
+    task_logger.info(f"{metadata_df.T}")
+    engine = get_pg_engine(conn_id=conn_id)
+    metadata_table = get_reflected_db_table(
+        engine=engine, table_name="census_api_dataset_metadata", schema_name="metadata"
+    )
+    insert_statement = (
+        insert(metadata_table)
+        .values(metadata_df.to_dict(orient="records"))
+        .returning(metadata_table)
+    )
+    ingested_df = execute_result_returning_orm_query(engine=engine, select_query=insert_statement)
+    return "success"
+
+
+@task
 def ingest_dataset_variables_metadata(
     freshness_check: CensusDatasetFreshnessCheck, conn_id: str, task_logger: Logger
 ) -> str:
     variables_df = freshness_check.dataset_source.variables_df.copy()
-    task_logger.info(f"Columns in variables_df:")
-    for col in variables_df.columns:
-        task_logger.info(f"  {col}")
-    print("hi")
+    variables_df["dataset_base_url"] = freshness_check.dataset_source.base_url
+    variables_df["dataset_id"] = freshness_check.source_freshness["id"].max()
+    variables_df["dataset_last_modified"] = freshness_check.source_freshness[
+        "source_data_last_modified"
+    ].max()
+    variables_df["time_of_check"] = freshness_check.source_freshness["time_of_check"].max()
+    engine = get_pg_engine(conn_id=conn_id)
+    metadata_table = get_reflected_db_table(
+        engine=engine, table_name="census_api_dataset_variables_metadata", schema_name="metadata"
+    )
+    insert_statement = (
+        insert(metadata_table)
+        .values(variables_df.to_dict(orient="records"))
+        .returning(metadata_table)
+    )
+    ingested_df = execute_result_returning_orm_query(engine=engine, select_query=insert_statement)
+    task_logger.info(f"Variables ingested: {len(ingested_df)}")
     return "success"
 
 
@@ -261,10 +292,23 @@ def ingest_dataset_geographies_metadata(
     freshness_check: CensusDatasetFreshnessCheck, conn_id: str, task_logger: Logger
 ) -> str:
     geographies_df = freshness_check.dataset_source.geographies_df.copy()
-    task_logger.info(f"Columns in geographies_df:")
-    for col in geographies_df.columns:
-        task_logger.info(f"  {col}")
-    print("hi")
+    geographies_df["dataset_base_url"] = freshness_check.dataset_source.base_url
+    geographies_df["dataset_id"] = freshness_check.source_freshness["id"].max()
+    geographies_df["dataset_last_modified"] = freshness_check.source_freshness[
+        "source_data_last_modified"
+    ].max()
+    geographies_df["time_of_check"] = freshness_check.source_freshness["time_of_check"].max()
+    engine = get_pg_engine(conn_id=conn_id)
+    metadata_table = get_reflected_db_table(
+        engine=engine, table_name="census_api_dataset_geographies_metadata", schema_name="metadata"
+    )
+    insert_statement = (
+        insert(metadata_table)
+        .values(geographies_df.to_dict(orient="records"))
+        .returning(metadata_table)
+    )
+    ingested_df = execute_result_returning_orm_query(engine=engine, select_query=insert_statement)
+    task_logger.info(f"Geographies ingested: {len(ingested_df)}")
     return "success"
 
 
@@ -273,10 +317,21 @@ def ingest_dataset_groups_metadata(
     freshness_check: CensusDatasetFreshnessCheck, conn_id: str, task_logger: Logger
 ) -> str:
     groups_df = freshness_check.dataset_source.groups_df.copy()
-    task_logger.info(f"Columns in groups_df:")
-    for col in groups_df.columns:
-        task_logger.info(f"  {col}")
-    print("hi")
+    groups_df["dataset_base_url"] = freshness_check.dataset_source.base_url
+    groups_df["dataset_id"] = freshness_check.source_freshness["id"].max()
+    groups_df["dataset_last_modified"] = freshness_check.source_freshness[
+        "source_data_last_modified"
+    ].max()
+    groups_df["time_of_check"] = freshness_check.source_freshness["time_of_check"].max()
+    engine = get_pg_engine(conn_id=conn_id)
+    metadata_table = get_reflected_db_table(
+        engine=engine, table_name="census_api_dataset_groups_metadata", schema_name="metadata"
+    )
+    insert_statement = (
+        insert(metadata_table).values(groups_df.to_dict(orient="records")).returning(metadata_table)
+    )
+    ingested_df = execute_result_returning_orm_query(engine=engine, select_query=insert_statement)
+    task_logger.info(f"Groups ingested: {len(ingested_df)}")
     return "success"
 
 
@@ -285,10 +340,21 @@ def ingest_dataset_tags_metadata(
     freshness_check: CensusDatasetFreshnessCheck, conn_id: str, task_logger: Logger
 ) -> str:
     tags_df = freshness_check.dataset_source.tags_df.copy()
-    task_logger.info(f"Columns in tags_df:")
-    for col in tags_df.columns:
-        task_logger.info(f"  {col}")
-    print("hi")
+    tags_df["dataset_base_url"] = freshness_check.dataset_source.base_url
+    tags_df["dataset_id"] = freshness_check.source_freshness["id"].max()
+    tags_df["dataset_last_modified"] = freshness_check.source_freshness[
+        "source_data_last_modified"
+    ].max()
+    tags_df["time_of_check"] = freshness_check.source_freshness["time_of_check"].max()
+    engine = get_pg_engine(conn_id=conn_id)
+    metadata_table = get_reflected_db_table(
+        engine=engine, table_name="census_api_dataset_tags_metadata", schema_name="metadata"
+    )
+    insert_statement = (
+        insert(metadata_table).values(tags_df.to_dict(orient="records")).returning(metadata_table)
+    )
+    ingested_df = execute_result_returning_orm_query(engine=engine, select_query=insert_statement)
+    task_logger.info(f"Tags ingested: {len(ingested_df)}")
     return "success"
 
 
@@ -300,6 +366,9 @@ def local_metadata_endpoint() -> str:
 @task_group
 def update_local_metadata(conn_id: str, task_logger: Logger):
     freshness_check = get_freshness_check_results(task_logger=task_logger)
+    update_dataset_metadata = ingest_dataset_metadata(
+        freshness_check=freshness_check, conn_id=conn_id, task_logger=task_logger
+    )
     update_dataset_variables = ingest_dataset_variables_metadata(
         freshness_check=freshness_check, conn_id=conn_id, task_logger=task_logger
     )
@@ -317,6 +386,7 @@ def update_local_metadata(conn_id: str, task_logger: Logger):
     chain(
         freshness_check,
         [
+            update_dataset_metadata,
             update_dataset_variables,
             update_dataset_geographies,
             update_dataset_groups,

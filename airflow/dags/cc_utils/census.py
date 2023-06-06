@@ -769,6 +769,9 @@ def get_dataset_metadata_catalog(dataset_base_url: str) -> pd.DataFrame:
     col_order = [col for col in colname_fixes.keys() if col in full_df_cols]
     full_df = full_df[col_order].copy()
     full_df = full_df.rename(columns=colname_fixes)
+    for bool_col in ["is_microdata", "is_aggregate", "is_cube", "is_available", "is_timeseries"]:
+        if bool_col in full_df.columns:
+            full_df[bool_col] = full_df[bool_col].fillna(False)
     return full_df
 
 
@@ -801,7 +804,14 @@ def get_dataset_variables_metadata(variables_url: str) -> pd.DataFrame:
     variables_df = variables_df.rename(columns=var_col_namemap)
     if "values" in variables_df.columns:
         variables_df["values"] = variables_df["values"].fillna({})
-    variables_df["predicate_only"] = variables_df["predicate_only"].fillna(False)
+    if "predicate_only" in variables_df.columns:
+        variables_df["predicate_only"] = variables_df["predicate_only"].fillna(False)
+    if "has_geo_collection_support" in variables_df.columns:
+        variables_df["has_geo_collection_support"] = variables_df[
+            "has_geo_collection_support"
+        ].fillna(False)
+    if "is_weight" in variables_df.columns:
+        variables_df["is_weight"] = variables_df["is_weight"].fillna(False)
     col_order = [col for col in var_col_namemap.values() if col in variables_df.columns]
     return variables_df[col_order].copy()
 
@@ -818,6 +828,14 @@ def get_dataset_geography_metadata(geog_url: str) -> pd.DataFrame:
         "optionalWithWCFor": "optional_with_wildcard_for",
     }
     geographies_df = geographies_df.rename(columns=geo_col_namemap)
+    if "requires" in geographies_df.columns:
+        geographies_df["requires"] = geographies_df["requires"].apply(
+            lambda x: x if isinstance(x, list) else []
+        )
+    if "wildcard" in geographies_df.columns:
+        geographies_df["wildcard"] = geographies_df["wildcard"].apply(
+            lambda x: x if isinstance(x, list) else []
+        )
     return geographies_df
 
 
