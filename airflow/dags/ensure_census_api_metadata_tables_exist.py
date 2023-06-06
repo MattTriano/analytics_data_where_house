@@ -73,6 +73,11 @@ def create_api_dataset_metadata_table(conn_id: str, task_logger: Logger):
                     publisher_suborg_of_name TEXT,
                     publisher_suborg_of_suborg_of_type TEXT,
                     publisher_suborg_of_suborg_of_name TEXT,
+                    metadata_context TEXT,
+                    metadata_catalog_id TEXT,
+                    metadata_type TEXT,
+                    conforms_to_schema TEXT,
+                    data_schema_dictionary TEXT,
                     time_of_check TIMESTAMP WITH TIME ZONE NOT NULL
                 );"""
         )
