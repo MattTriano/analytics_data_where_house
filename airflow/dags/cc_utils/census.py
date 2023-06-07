@@ -1,4 +1,5 @@
 from collections import Counter
+from dataclasses import dataclass
 import datetime as dt
 from itertools import chain
 from logging import Logger
@@ -638,19 +639,17 @@ class CensusAPIDataset(Protocol):
 class CensusVariableGroupAPICall(CensusAPIDataset):
     def __init__(
         self,
-        api_base_url: str,
-        identifier: str,
+        dataset_base_url: str,
         group_name: str,
         geographies: CensusGeogTract,
     ):
-        self.api_base_url = api_base_url
-        self.identifier = identifier
+        self.dataset_base_url = dataset_base_url
         self.group_name = group_name
         self.geographies = geographies
 
     @property
     def api_call(self) -> str:
-        base_url = self.api_base_url
+        base_url = self.dataset_base_url
         group_part = f"group({self.group_name})"
         geog_part = self.geographies.api_call_geographies
         auth_part = f"""key={os.environ["CENSUS_API_KEY"]}"""
@@ -898,3 +897,22 @@ class CensusAPIDatasetSource:
         self.variables_url = dataset_metadata_df["variables_link"].iloc[0]
         self.groups_url = dataset_metadata_df["groups_link"].iloc[0]
         self.tags_url = dataset_metadata_df["tags_link"].iloc[0]
+
+
+class CensusDatasetFreshnessCheck:
+    def __init__(
+        self,
+        dataset_source: CensusAPIDatasetSource,
+        source_freshness: pd.DataFrame,
+        local_freshness: pd.DataFrame,
+    ):
+        self.dataset_source = dataset_source
+        self.source_freshness = source_freshness
+        self.local_freshness = local_freshness
+
+
+@dataclass
+class CensusVariableGroupDataset:
+    dataset_name: str
+    api_call_obj: CensusVariableGroupAPICall
+    schedule: Optional[str] = None
