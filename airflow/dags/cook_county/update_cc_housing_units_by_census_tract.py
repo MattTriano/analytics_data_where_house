@@ -11,13 +11,14 @@ from airflow.models.baseoperator import chain
 from airflow.utils.trigger_rule import TriggerRule
 import pandas as pd
 import requests
-from sqlalchemy import insert
+from sqlalchemy import insert, update
 
 from cc_utils.census import CensusGeogTract
 from cc_utils.db import (
     get_pg_engine,
     get_reflected_db_table,
     execute_result_returning_orm_query,
+    execute_dml_orm_query,
     get_data_table_names_in_schema,
     execute_structural_command,
     execute_result_returning_query,
@@ -28,12 +29,9 @@ from tasks.census_tasks import get_census_api_data_handler
 # from sources.census_api_datasets import GROSS_RENT_BY_COOK_COUNTY_IL_TRACT as CENSUS_DATASET
 
 task_logger = logging.getLogger("airflow.task")
-POSTGRES_CONN_ID = "dwh_db_conn"
-MAX_DAYS_BEFORE_REFRESH = 30
 pd.options.display.max_columns = None
 
-DATASET_BASE_URL = "http://api.census.gov/data/2021/acs/acs5"
-group_name = "B25001"
+POSTGRES_CONN_ID = "dwh_db_conn"
 
 
 class CensusDatasetFreshnessCheck:
@@ -403,6 +401,71 @@ def local_data_is_fresh(task_logger: Logger):
     return "hi"
 
 
+@task
+def request_and_ingest_dataset(
+    census_dataset: CensusVariableGroupDataset, conn_id: str, task_logger: Logger, **kwargs
+) -> str:
+    ti = kwargs["ti"]
+    freshness_check = ti.xcom_pull(task_ids="check_freshness.organize_freshness_check_results")
+    engine = get_pg_engine(conn_id=conn_id)
+
+    dataset_df = census_dataset.api_call_obj.make_api_call()
+    task_logger.info(f"Rows in returned dataset: {len(dataset_df)}")
+    task_logger.info(f"Columns in returned dataset: {dataset_df.columns}")
+    dataset_df["dataset_base_url"] = census_dataset.api_call_obj.dataset_base_url
+    dataset_df["dataset_id"] = freshness_check.source_freshness["id"].max()
+    dataset_df["dataset_last_modified"] = freshness_check.source_freshness[
+        "source_data_last_modified"
+    ].max()
+    dataset_df["time_of_check"] = freshness_check.source_freshness["time_of_check"].max()
+    task_logger.info(f"""dataset_id: {dataset_df["dataset_id"]}""")
+    task_logger.info(f"""dataset_base_url: {dataset_df["dataset_base_url"]}""")
+    task_logger.info(f"""dataset_last_modified: {dataset_df["dataset_last_modified"]}""")
+    task_logger.info(f"""time_of_check: {dataset_df["time_of_check"]}""")
+    result = dataset_df.to_sql(
+        name=f"temp_{census_dataset.dataset_name}",
+        schema="data_raw",
+        con=engine,
+        if_exists="replace",
+        chunksize=100000,
+    )
+    task_logger.info(f"Ingestion result: {result}")
+    if result is not None:
+        return "ingested"
+    else:
+        raise Exception(f"No rows ingested")
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+def record_data_update(conn_id: str, task_logger: Logger, **kwargs) -> str:
+    ti = kwargs["ti"]
+    freshness_check = ti.xcom_pull(task_ids="check_freshness.organize_freshness_check_results")
+    engine = get_pg_engine(conn_id=conn_id)
+
+    dataset_id = freshness_check.source_freshness["id"].max()
+    pre_update_record = execute_result_returning_query(
+        engine=engine,
+        query=f"""SELECT * FROM metadata.dataset_metadata WHERE id = {dataset_id}""",
+    )
+    task_logger.info(f"General metadata record pre-update: {pre_update_record}")
+    metadata_table = get_reflected_db_table(
+        engine=engine, table_name="dataset_metadata", schema_name="metadata"
+    )
+    update_query = (
+        update(metadata_table)
+        .where(metadata_table.c.id == int(dataset_id))
+        .values(local_data_updated=True)
+    )
+    execute_dml_orm_query(engine=engine, dml_stmt=update_query, logger=task_logger)
+    task_logger.info(f"dataset_id: {dataset_id}")
+    post_update_record = execute_result_returning_query(
+        engine=engine,
+        query=f"""SELECT * FROM metadata.dataset_metadata WHERE id = {dataset_id}""",
+    )
+    task_logger.info(f"General metadata record post-update: {post_update_record}")
+    return "success"
+
+
 @dag(
     schedule=CENSUS_DATASET.schedule,
     start_date=dt.datetime(2022, 11, 1),
@@ -416,10 +479,22 @@ def dev_update_cc_housing_units_by_census_tract():
     fresh_source_data_available_1 = fresher_source_data_available(
         freshness_check=freshness_check_1, task_logger=task_logger
     )
-    update_local_1 = update_local_metadata(conn_id=POSTGRES_CONN_ID, task_logger=task_logger)
+    update_local_metadata_1 = update_local_metadata(
+        conn_id=POSTGRES_CONN_ID, task_logger=task_logger
+    )
     local_is_fresh_1 = local_data_is_fresh(task_logger=task_logger)
 
-    chain(freshness_check_1, fresh_source_data_available_1, [update_local_1, local_is_fresh_1])
+    get_and_ingest_data_1 = request_and_ingest_dataset(
+        census_dataset=CENSUS_DATASET, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
+    )
+    record_update_1 = record_data_update(conn_id=POSTGRES_CONN_ID, task_logger=task_logger)
+
+    chain(
+        freshness_check_1,
+        fresh_source_data_available_1,
+        [update_local_metadata_1, local_is_fresh_1],
+    )
+    chain(update_local_metadata_1, get_and_ingest_data_1, record_update_1)
 
 
 dev_update_cc_housing_units_by_census_tract()
