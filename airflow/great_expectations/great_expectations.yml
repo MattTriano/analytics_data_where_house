@@ -15,9 +15,7 @@ config_version: 3.0
 # add a new datasource. Read more at https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/connect_to_data_overview
 datasources:
   where_house_source:
-    class_name: Datasource
     execution_engine:
-      class_name: SqlAlchemyExecutionEngine
       module_name: great_expectations.execution_engine
       credentials:
         host: dwh_db
@@ -26,28 +24,30 @@ datasources:
         password: ${DWH_POSTGRES_PASSWORD}
         database: ${DWH_POSTGRES_DB}
         drivername: postgresql
+      class_name: SqlAlchemyExecutionEngine
     module_name: great_expectations.datasource
+    class_name: Datasource
     data_connectors:
       default_runtime_data_connector_name:
-        class_name: RuntimeDataConnector
         name: default_runtime_data_connector_name
         module_name: great_expectations.datasource.data_connector
+        class_name: RuntimeDataConnector
         batch_identifiers:
           - default_identifier_name
       data_raw_inferred_data_connector_name:
+        name: data_raw_inferred_data_connector_name
+        include_schema_name: true
+        module_name: great_expectations.datasource.data_connector
         class_name: InferredAssetSqlDataConnector
         introspection_directives:
           schema_name: data_raw
-        name: data_raw_inferred_data_connector_name
-        module_name: great_expectations.datasource.data_connector
-        include_schema_name: true
       dwh_inferred_data_connector_name:
+        name: dwh_inferred_data_connector_name
+        include_schema_name: true
+        module_name: great_expectations.datasource.data_connector
         class_name: InferredAssetSqlDataConnector
         introspection_directives:
           schema_name: dwh
-        name: dwh_inferred_data_connector_name
-        module_name: great_expectations.datasource.data_connector
-        include_schema_name: true
 config_variables_file_path: uncommitted/config_variables.yml
 
 # The plugins_directory will be added to your python path for custom modules
@@ -114,8 +114,8 @@ anonymous_usage_statistics:
   data_context_id: b25cb2e2-4999-427c-93b4-7597f9e172a9
 include_rendered_content:
   expectation_suite: false
-  expectation_validation_result: false
   globally: false
+  expectation_validation_result: false
 notebooks:
 fluent_datasources:
   fluent_dwh_source:
@@ -294,5 +294,41 @@ fluent_datasources:
         order_by: []
         batch_metadata: {}
         table_name: cook_county_multifam_parcel_improvements
+        schema_name: data_raw
+      data_raw.temp_cook_county_parcel_assessment_appeals:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_cook_county_parcel_assessment_appeals
+        schema_name: data_raw
+      data_raw.cook_county_parcel_assessment_appeals:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: cook_county_parcel_assessment_appeals
+        schema_name: data_raw
+      data_raw.temp_cook_county_parcel_value_assessments:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_cook_county_parcel_value_assessments
+        schema_name: data_raw
+      data_raw.cook_county_parcel_value_assessments:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: cook_county_parcel_value_assessments
+        schema_name: data_raw
+      data_raw.temp_cook_county_parcel_sales:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_cook_county_parcel_sales
+        schema_name: data_raw
+      data_raw.cook_county_parcel_sales:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: cook_county_parcel_sales
         schema_name: data_raw
     connection_string: ${GX_DWH_DB_CONN}
