@@ -74,17 +74,18 @@ clean_dbt:
 
 create_warehouse_infra:
 	docker compose exec airflow-scheduler /bin/bash -c \
-		"airflow dags unpause ensure_metadata_table_exists &&\
-		 airflow dags trigger ensure_metadata_table_exists &&\
+		"airflow dags unpause create_socrata_dataset_metadata_table &&\
+		 airflow dags trigger create_socrata_dataset_metadata_table &&\
 		 airflow dags unpause setup_schemas &&\
 		 airflow dags trigger setup_schemas &&\
 		 airflow dags unpause create_census_api_metadata_tables &&\
 		 airflow dags trigger create_census_api_metadata_tables &&\
 		 cd /opt/airflow/dbt && dbt deps &&\
-		 mkdir -p /opt/airflow/dbt/models/intermediate &&\
+		 mkdir -p /opt/airflow/dbt/models/data_raw &&\
+		 mkdir -p /opt/airflow/dbt/models/standardized &&\
+		 mkdir -p /opt/airflow/dbt/models/clean &&\
 		 mkdir -p /opt/airflow/dbt/models/feature &&\
-		 mkdir -p /opt/airflow/dbt/models/dwh &&\
-		 mkdir -p /opt/airflow/dbt/models/report"
+		 mkdir -p /opt/airflow/dbt/models/dwh"
 
 build_python_img:
 	docker compose build --no-cache py-utils 2>&1 | tee logs/python_build_logs_$(run_time).txt
