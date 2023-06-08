@@ -8,7 +8,6 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
 
-
 from tasks.metadata_tasks import (
     metadata_schema_exists,
     create_metadata_schema,
@@ -17,7 +16,6 @@ from tasks.metadata_tasks import (
 
 
 task_logger = logging.getLogger("airflow.task")
-
 POSTGRES_CONN_ID = "dwh_db_conn"
 
 
@@ -250,7 +248,7 @@ def api_tags_table_endpoint() -> str:
     catchup=False,
     tags=["metadata", "census"],
 )
-def ensure_census_api_metadata_tables_exist():
+def create_census_api_dataset_metadata_tables():
 
     metadata_schema_exists_branch_1 = metadata_schema_exists(
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger
@@ -372,4 +370,4 @@ def ensure_census_api_metadata_tables_exist():
     )
 
 
-ensure_census_api_metadata_tables_exist()
+create_census_api_dataset_metadata_tables()
