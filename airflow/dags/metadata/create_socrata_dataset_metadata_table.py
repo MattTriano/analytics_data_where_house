@@ -19,7 +19,7 @@ POSTGRES_CONN_ID = "dwh_db_conn"
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def create_socrata_dataset_metadata_table(conn_id: str, task_logger: Logger):
+def create_socrata_metadata_table(conn_id: str, task_logger: Logger):
     try:
         task_logger.info(f"Creating table metadata.table_metadata")
         postgres_hook = PostgresHook(postgres_conn_id=conn_id)
@@ -73,10 +73,10 @@ def create_socrata_dataset_metadata_table():
         table_name="table_metadata",
         conn_id=POSTGRES_CONN_ID,
         task_logger=task_logger,
-        create_route="create_socrata_dataset_metadata_table",
+        create_route="create_socrata_metadata_table",
         exists_route="socrata_dataset_metadata_endpoint",
     )
-    create_socrata_dataset_metadata_table_1 = create_socrata_dataset_metadata_table(
+    create_socrata_metadata_table_1 = create_socrata_metadata_table(
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger
     )
     socrata_dataset_metadata_endpoint_1 = socrata_dataset_metadata_endpoint()
@@ -84,12 +84,12 @@ def create_socrata_dataset_metadata_table():
     chain(
         metadata_schema_exists_branch_1,
         [create_metadata_schema_1, Label("Metadata schema exists")],
-        [create_socrata_dataset_metadata_table_1, metadata_table_exists_1],
+        [create_socrata_metadata_table_1, metadata_table_exists_1],
     )
     chain(
         metadata_table_exists_1,
         [
-            create_socrata_dataset_metadata_table_1,
+            create_socrata_metadata_table_1,
             Label("Socrata Dataset\nMetadata Table Exists"),
         ],
         socrata_dataset_metadata_endpoint_1,

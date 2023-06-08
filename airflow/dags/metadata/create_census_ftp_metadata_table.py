@@ -54,7 +54,7 @@ def create_metadata_table(conn_id: str, task_logger: Logger):
     catchup=False,
     tags=["metadata"],
 )
-def a_dev_create_census_metadata_table():
+def create_census_ftp_metadata_table():
 
     metadata_schema_exists_branch_1 = metadata_schema_exists(
         conn_id=POSTGRES_CONN_ID, task_logger=task_logger
@@ -86,4 +86,4 @@ def a_dev_create_census_metadata_table():
     chain(create_metadata_schema_1, create_metadata_table_1, end_1)
 
 
-a_dev_create_census_metadata_table()
+create_census_ftp_metadata_table()
