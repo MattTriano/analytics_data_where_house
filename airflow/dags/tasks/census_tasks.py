@@ -7,11 +7,15 @@ from airflow.utils.trigger_rule import TriggerRule
 import pandas as pd
 from sqlalchemy import insert, update
 
-from cc_utils.census import (
-    CensusAPIDatasetSource,
-    CensusAPIHandler,
-    CensusDatasetFreshnessCheck,
+# from cc_utils.census import (
+#     CensusAPIDatasetSource,
+#     CensusAPIHandler,
+#     ,
+# )
+from cc_utils.census.api import (
     CensusVariableGroupDataset,
+    CensusAPIDatasetSource,
+    CensusDatasetFreshnessCheck,
 )
 from cc_utils.db import (
     get_pg_engine,
@@ -22,20 +26,20 @@ from cc_utils.db import (
 )
 
 
-@task
-def get_census_api_data_handler(
-    conn_id: str, task_logger: Logger, max_days_before_refresh: int = 30
-) -> CensusAPIHandler:
-    api_handler = CensusAPIHandler(
-        conn_id=conn_id,
-        task_logger=task_logger,
-        max_days_before_refresh=max_days_before_refresh,
-    )
-    n_datasets = api_handler.metadata_df["identifier"].nunique()
-    latest_update = api_handler.metadata_df["modified"].max()
-    task_logger.info("Retrieved Census API data handler.")
-    task_logger.info(f"Distinct datasets in catalog as of {latest_update}: {n_datasets}.")
-    return api_handler
+# @task
+# def get_census_api_data_handler(
+#     conn_id: str, task_logger: Logger, max_days_before_refresh: int = 30
+# ) -> CensusAPIHandler:
+#     api_handler = CensusAPIHandler(
+#         conn_id=conn_id,
+#         task_logger=task_logger,
+#         max_days_before_refresh=max_days_before_refresh,
+#     )
+#     n_datasets = api_handler.metadata_df["identifier"].nunique()
+#     latest_update = api_handler.metadata_df["modified"].max()
+#     task_logger.info("Retrieved Census API data handler.")
+#     task_logger.info(f"Distinct datasets in catalog as of {latest_update}: {n_datasets}.")
+#     return api_handler
 
 
 @task
@@ -62,41 +66,41 @@ def get_latest_catalog_freshness_from_db(conn_id: str, task_logger: Logger) -> p
     return local_api_catalog_metadata_df
 
 
-@task
-def check_warehouse_dataset_freshness(
-    api_handler: CensusAPIHandler, local_metadata_df: pd.DataFrame, task_logger: Logger
-) -> pd.DataFrame:
-    source_metadata_df = api_handler.metadata_df.copy()
-    n_src_datasets = source_metadata_df["identifier"].nunique()
-    n_local_datasets = local_metadata_df["identifier"].nunique()
-    task_logger.info(f"Distinct datasets in source census_api_metadata table: {n_src_datasets}.")
-    task_logger.info(f"Distinct datasets in local census_api_metadata table: {n_local_datasets}.")
+# @task
+# def check_warehouse_dataset_freshness(
+#     api_handler: CensusAPIHandler, local_metadata_df: pd.DataFrame, task_logger: Logger
+# ) -> pd.DataFrame:
+#     source_metadata_df = api_handler.metadata_df.copy()
+#     n_src_datasets = source_metadata_df["identifier"].nunique()
+#     n_local_datasets = local_metadata_df["identifier"].nunique()
+#     task_logger.info(f"Distinct datasets in source census_api_metadata table: {n_src_datasets}.")
+#     task_logger.info(f"Distinct datasets in local census_api_metadata table: {n_local_datasets}.")
 
-    dset_freshness_df = pd.merge(
-        left=source_metadata_df.copy(),
-        right=local_metadata_df[["identifier", "modified"]].copy(),
-        how="outer",
-        on="identifier",
-        suffixes=("_src", "_local"),
-    )
-    not_in_local_mask = dset_freshness_df["modified_local"].isnull()
-    not_in_source_mask = dset_freshness_df["modified_src"].isnull()
-    in_both_mask = ~not_in_source_mask & ~not_in_local_mask
-    source_fresher_mask = pd.to_datetime(
-        dset_freshness_df["modified_src"], errors="coerce"
-    ) > pd.to_datetime(dset_freshness_df["modified_local"], errors="coerce")
-    task_logger.info(f"dset_freshness_df.shape:          {dset_freshness_df.shape}")
-    task_logger.info(f"Datasets in source but not local: {not_in_local_mask.sum()}")
-    task_logger.info(f"Datasets in local but not source: {not_in_source_mask.sum()}")
-    task_logger.info(f"Source is fresher (and dset in both): {source_fresher_mask.sum()}")
-    task_logger.info(
-        f"Source is fresher or only: {(source_fresher_mask | not_in_local_mask).sum()}"
-    )
+#     dset_freshness_df = pd.merge(
+#         left=source_metadata_df.copy(),
+#         right=local_metadata_df[["identifier", "modified"]].copy(),
+#         how="outer",
+#         on="identifier",
+#         suffixes=("_src", "_local"),
+#     )
+#     not_in_local_mask = dset_freshness_df["modified_local"].isnull()
+#     not_in_source_mask = dset_freshness_df["modified_src"].isnull()
+#     in_both_mask = ~not_in_source_mask & ~not_in_local_mask
+#     source_fresher_mask = pd.to_datetime(
+#         dset_freshness_df["modified_src"], errors="coerce"
+#     ) > pd.to_datetime(dset_freshness_df["modified_local"], errors="coerce")
+#     task_logger.info(f"dset_freshness_df.shape:          {dset_freshness_df.shape}")
+#     task_logger.info(f"Datasets in source but not local: {not_in_local_mask.sum()}")
+#     task_logger.info(f"Datasets in local but not source: {not_in_source_mask.sum()}")
+#     task_logger.info(f"Source is fresher (and dset in both): {source_fresher_mask.sum()}")
+#     task_logger.info(
+#         f"Source is fresher or only: {(source_fresher_mask | not_in_local_mask).sum()}"
+#     )
 
-    task_logger.info(f"Datasets in local and source: {in_both_mask.sum()}")
-    task_logger.info(f"column info: {dset_freshness_df.info()}")
-    dset_freshness_df["modified_since_last_check"] = source_fresher_mask | not_in_local_mask
-    return dset_freshness_df
+#     task_logger.info(f"Datasets in local and source: {in_both_mask.sum()}")
+#     task_logger.info(f"column info: {dset_freshness_df.info()}")
+#     dset_freshness_df["modified_since_last_check"] = source_fresher_mask | not_in_local_mask
+#     return dset_freshness_df
 
 
 @task

@@ -4,8 +4,6 @@ import logging
 from airflow.decorators import dag
 from airflow.models.baseoperator import chain
 
-import pandas as pd
-
 from tasks.census_tasks import (
     check_freshness,
     fresher_source_data_available,
@@ -14,12 +12,9 @@ from tasks.census_tasks import (
     request_and_ingest_dataset,
     record_data_update,
 )
-
-from sources.census_api_datasets import CC_HOUSING_UNITS_PER_CENSUS_TRACT as CENSUS_DATASET
+from sources.census_api_datasets import CC_HH_EARNINGS_IN_LAST_12MO_BY_TRACT as CENSUS_DATASET
 
 task_logger = logging.getLogger("airflow.task")
-pd.options.display.max_columns = None
-
 POSTGRES_CONN_ID = "dwh_db_conn"
 
 

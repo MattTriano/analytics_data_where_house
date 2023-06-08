@@ -12,7 +12,7 @@ from tasks.census_tasks import (
     request_and_ingest_dataset,
     record_data_update,
 )
-from sources.census_api_datasets import CC_HOUSING_UNITS_BY_TRACT as CENSUS_DATASET
+from sources.census_api_datasets import GROSS_RENT_BY_COOK_COUNTY_IL_TRACT as CENSUS_DATASET
 
 task_logger = logging.getLogger("airflow.task")
 POSTGRES_CONN_ID = "dwh_db_conn"
@@ -24,7 +24,7 @@ POSTGRES_CONN_ID = "dwh_db_conn"
     catchup=False,
     tags=["cook_county", "census"],
 )
-def dev_update_cc_housing_units_by_tract():
+def update_cc_gross_rent_by_tract():
     freshness_check_1 = check_freshness(
         census_dataset=CENSUS_DATASET, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
     )
@@ -49,4 +49,4 @@ def dev_update_cc_housing_units_by_tract():
     chain(update_local_metadata_1, get_and_ingest_data_1, record_update_1)
 
 
-dev_update_cc_housing_units_by_tract()
+update_cc_gross_rent_by_tract()
