@@ -8,7 +8,6 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
 
-
 from tasks.metadata_tasks import (
     metadata_schema_exists,
     create_metadata_schema,
