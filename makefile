@@ -78,8 +78,8 @@ create_warehouse_infra:
 		 airflow dags trigger create_socrata_dataset_metadata_table &&\
 		 airflow dags unpause setup_schemas &&\
 		 airflow dags trigger setup_schemas &&\
-		 airflow dags unpause create_census_api_metadata_tables &&\
-		 airflow dags trigger create_census_api_metadata_tables &&\
+		 airflow dags unpause create_census_api_dataset_metadata_tables &&\
+		 airflow dags trigger create_census_api_dataset_metadata_tables &&\
 		 cd /opt/airflow/dbt && dbt deps &&\
 		 mkdir -p /opt/airflow/dbt/models/data_raw &&\
 		 mkdir -p /opt/airflow/dbt/models/standardized &&\
