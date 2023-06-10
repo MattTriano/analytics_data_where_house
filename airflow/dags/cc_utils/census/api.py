@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import datetime as dt
 import os
 import re
-from typing import Optional, Protocol
+from typing import List, Optional, Protocol, Union
 
 import requests
 import pandas as pd
@@ -60,6 +60,44 @@ class CensusVariableGroupAPICall(CensusAPIDataset):
             return pd.DataFrame(resp_json[1:], columns=resp_json[0])
         else:
             raise Exception(f"The API call produced an invalid response ({resp.status_code})")
+
+
+class CensusDatasetVariablesAPICaller(CensusAPIDataset):
+    def __init__(
+        self,
+        dataset_base_url: str,
+        variable_names: List[str],
+        geographies: CensusGeogTract,
+    ):
+        self.dataset_base_url = dataset_base_url
+        self.variable_names = variable_names
+        self.geographies = geographies
+
+    def validations(self):
+        if len(self.variable_names) > 50:
+            raise Exception("Received too many variables for a Census API call")
+
+
+class CensusGeogBlockGroup:
+    def __init__(
+        self,
+        state_cd: Union[List, str],
+        county_cd: Union[List, str],
+        tract_cd: Union[List, str] = "*",
+    ):
+        self.state_cd = self.format_geog_cd_param(geog_cd=state_cd)
+        self.county_cd = self.format_geog_cd_param(geog_cd=state_cd)
+        self.tract_cd = self.format_geog_cd_param(geog_cd=tract_cd)
+
+    def format_geog_cd_param(self, geog_cd: Union[List, str]) -> str:
+        if isinstance(geog_cd, list):
+            return ",".join([el.strip() for el in geog_cd])
+        else:
+            return geog_cd
+
+    @property
+    def api_call_geographies(self):
+        return f"for=tract:*&in=state:{self.state_cd}&in=county:{self.county_cd}&in=tract:{self.tract_cd}"
 
 
 @dataclass
