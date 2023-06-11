@@ -16,22 +16,46 @@ from cc_utils.census.core import (
 )
 
 
+class CensusGeography:
+    def format_geog_cd_param(self, geog_cd: Union[List, str]) -> str:
+        if isinstance(geog_cd, list):
+            return ",".join([el.strip() for el in geog_cd])
+        else:
+            return geog_cd
+
+
+class CensusGeogTract(CensusGeography):
+    def __init__(self, state_cd: str, county_cd: str = "*"):
+        self.state_cd = self.format_geog_cd_param(geog_cd=state_cd)
+        self.county_cd = self.format_geog_cd_param(geog_cd=county_cd)
+
+    @property
+    def api_call_geographies(self):
+        return f"for=tract:*&in=state:{self.state_cd}&in=county:{self.county_cd}"
+
+
+class CensusGeogBlockGroup(CensusGeography):
+    def __init__(
+        self,
+        state_cd: Union[List, str],
+        county_cd: Union[List, str],
+        tract_cd: Union[List, str] = "*",
+    ):
+        self.state_cd = self.format_geog_cd_param(geog_cd=state_cd)
+        self.county_cd = self.format_geog_cd_param(geog_cd=county_cd)
+        self.tract_cd = self.format_geog_cd_param(geog_cd=tract_cd)
+
+    @property
+    def api_call_geographies(self):
+        return f"for=tract:*&in=state:{self.state_cd}&in=county:{self.county_cd}&in=tract:{self.tract_cd}"
+
+
 class CensusAPIDataset(Protocol):
     def api_call(self) -> str:
         ...
 
     def make_api_call(self) -> pd.DataFrame:
         ...
-
-
-class CensusGeogTract:
-    def __init__(self, state_cd: str, county_cd: str = "*"):
-        self.state_cd = state_cd
-        self.county_cd = county_cd
-
-    @property
-    def api_call_geographies(self):
-        return f"for=tract:*&in=state:{self.state_cd}&in=county:{self.county_cd}"
 
 
 class CensusVariableGroupAPICall(CensusAPIDataset):
@@ -76,28 +100,6 @@ class CensusDatasetVariablesAPICaller(CensusAPIDataset):
     def validations(self):
         if len(self.variable_names) > 50:
             raise Exception("Received too many variables for a Census API call")
-
-
-class CensusGeogBlockGroup:
-    def __init__(
-        self,
-        state_cd: Union[List, str],
-        county_cd: Union[List, str],
-        tract_cd: Union[List, str] = "*",
-    ):
-        self.state_cd = self.format_geog_cd_param(geog_cd=state_cd)
-        self.county_cd = self.format_geog_cd_param(geog_cd=state_cd)
-        self.tract_cd = self.format_geog_cd_param(geog_cd=tract_cd)
-
-    def format_geog_cd_param(self, geog_cd: Union[List, str]) -> str:
-        if isinstance(geog_cd, list):
-            return ",".join([el.strip() for el in geog_cd])
-        else:
-            return geog_cd
-
-    @property
-    def api_call_geographies(self):
-        return f"for=tract:*&in=state:{self.state_cd}&in=county:{self.county_cd}&in=tract:{self.tract_cd}"
 
 
 @dataclass
