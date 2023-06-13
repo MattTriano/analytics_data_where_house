@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import datetime as dt
 import os
 import re
-from typing import Optional, Protocol
+from typing import List, Optional, Protocol, Union
 
 import requests
 import pandas as pd
@@ -16,22 +16,46 @@ from cc_utils.census.core import (
 )
 
 
+class CensusGeography:
+    def format_geog_cd_param(self, geog_cd: Union[List, str]) -> str:
+        if isinstance(geog_cd, list):
+            return ",".join([el.strip() for el in geog_cd])
+        else:
+            return geog_cd
+
+
+class CensusGeogTract(CensusGeography):
+    def __init__(self, state_cd: str, county_cd: str = "*"):
+        self.state_cd = self.format_geog_cd_param(geog_cd=state_cd)
+        self.county_cd = self.format_geog_cd_param(geog_cd=county_cd)
+
+    @property
+    def api_call_geographies(self):
+        return f"for=tract:*&in=state:{self.state_cd}&in=county:{self.county_cd}"
+
+
+class CensusGeogBlockGroup(CensusGeography):
+    def __init__(
+        self,
+        state_cd: Union[List, str],
+        county_cd: Union[List, str],
+        tract_cd: Union[List, str] = "*",
+    ):
+        self.state_cd = self.format_geog_cd_param(geog_cd=state_cd)
+        self.county_cd = self.format_geog_cd_param(geog_cd=county_cd)
+        self.tract_cd = self.format_geog_cd_param(geog_cd=tract_cd)
+
+    @property
+    def api_call_geographies(self):
+        return f"for=block%20group:*&in=state:{self.state_cd}&in=county:{self.county_cd}&in=tract:{self.tract_cd}"
+
+
 class CensusAPIDataset(Protocol):
     def api_call(self) -> str:
         ...
 
     def make_api_call(self) -> pd.DataFrame:
         ...
-
-
-class CensusGeogTract:
-    def __init__(self, state_cd: str, county_cd: str = "*"):
-        self.state_cd = state_cd
-        self.county_cd = county_cd
-
-    @property
-    def api_call_geographies(self):
-        return f"for=tract:*&in=state:{self.state_cd}&in=county:{self.county_cd}"
 
 
 class CensusVariableGroupAPICall(CensusAPIDataset):
@@ -52,6 +76,39 @@ class CensusVariableGroupAPICall(CensusAPIDataset):
         geog_part = self.geographies.api_call_geographies
         auth_part = f"""key={os.environ["CENSUS_API_KEY"]}"""
         return f"{base_url}?get={group_part}&{geog_part}&{auth_part}"
+
+    def make_api_call(self) -> pd.DataFrame:
+        resp = requests.get(self.api_call)
+        if resp.status_code == 200:
+            resp_json = resp.json()
+            return pd.DataFrame(resp_json[1:], columns=resp_json[0])
+        else:
+            raise Exception(f"The API call produced an invalid response ({resp.status_code})")
+
+
+class CensusDatasetVariablesAPICaller(CensusAPIDataset):
+    def __init__(
+        self,
+        dataset_base_url: str,
+        variable_names: List[str],
+        geographies: CensusGeography,
+    ):
+        self.dataset_base_url = dataset_base_url
+        self.variable_names = variable_names
+        self.geographies = geographies
+        self.validate_variables()
+
+    def validate_variables(self):
+        if len(self.variable_names) > 50:
+            raise Exception("Received too many variables for a Census API call")
+
+    @property
+    def api_call(self) -> str:
+        base_url = self.dataset_base_url
+        vars_part = f"""{",".join(self.variable_names)}"""
+        geog_part = self.geographies.api_call_geographies
+        auth_part = f"""key={os.environ["CENSUS_API_KEY"]}"""
+        return f"{base_url}?get={vars_part}&{geog_part}&{auth_part}"
 
     def make_api_call(self) -> pd.DataFrame:
         resp = requests.get(self.api_call)

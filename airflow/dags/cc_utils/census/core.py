@@ -188,11 +188,14 @@ def get_dataset_groups_metadata(groups_url: str) -> pd.DataFrame:
         "universe": "universe",
     }
     if groups_json is None:
-        groups_df = pd.DataFrame({v: [None] for v in group_col_namemap.values()})
+        groups_df = pd.DataFrame({v: ["no_groups"] for v in group_col_namemap.values()})
     else:
         groups_df = pd.DataFrame(groups_json["groups"])
-        groups_df.columns = [col.strip() for col in groups_df.columns]
-        groups_df = groups_df.rename(columns=group_col_namemap)
+        if len(groups_df) == 0:
+            groups_df = pd.DataFrame({v: ["no_groups"] for v in group_col_namemap.values()})
+        else:
+            groups_df.columns = [col.strip() for col in groups_df.columns]
+            groups_df = groups_df.rename(columns=group_col_namemap)
     return groups_df
 
 
@@ -204,4 +207,4 @@ def get_dataset_tags_metadata(tags_url: str) -> pd.DataFrame:
         tags_df = tags_df.rename(columns=tag_col_namemap)
         return tags_df
     else:
-        return pd.DataFrame({"tags": None})
+        return pd.DataFrame({"tag_name": ["no_tags"]})
