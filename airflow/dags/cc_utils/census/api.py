@@ -47,7 +47,7 @@ class CensusGeogBlockGroup(CensusGeography):
 
     @property
     def api_call_geographies(self):
-        return f"for=tract:*&in=state:{self.state_cd}&in=county:{self.county_cd}&in=tract:{self.tract_cd}"
+        return f"for=block%20group:*&in=state:{self.state_cd}&in=county:{self.county_cd}&in=tract:{self.tract_cd}"
 
 
 class CensusAPIDataset(Protocol):
