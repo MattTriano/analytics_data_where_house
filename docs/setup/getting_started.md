@@ -14,6 +14,14 @@ make make_credentials
 
 The program will validate the values you enter, assemble them into some compound values (mostly connection strings), and output these configs into the dot-env files (`.env`, `.env.dwh`, and `.env.superset`) in the top-level repo directory. Review these files and make any changes before you initialize the system (i.e., when these username and password pairs are used to create roles in databases or Airflow starts using the Fernet key to encrypt passwords in connection strings).
 
+### Requesting a Census API Key
+
+To get a Census API key:
+
+1. Go to [https://www.census.gov/data/developers.html](https://www.census.gov/data/developers.html) and click the **Request a KEY** button.
+2. Enter your email address and an "Organization Name" to associate to the API key.
+3. Copy your new API key from your email and paste it into your `.env` file for the `CENSUS_API_KEY` variable.
+
 ### [Optional] Mapbox API Token for Geospatial Superset Maps
 
 To include a basemap underneath geospatial visualizations in Superset, you'll need to:

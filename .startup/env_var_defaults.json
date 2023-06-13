@@ -49,6 +49,16 @@
     "invalid_substrings": "[\\s]",
     "dependant_on_other_env_vars": false
   },
+  ".env::CENSUS_API_KEY": {
+    "file": ".env",
+    "name": "CENSUS_API_KEY",
+    "group": "Airflow",
+    "default_value": "your_census_API_key__(fine_to_replace_later)",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
   ".env::AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": {
     "file": ".env",
     "name": "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN",
