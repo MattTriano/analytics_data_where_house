@@ -91,15 +91,24 @@ class CensusDatasetVariablesAPICaller(CensusAPIDataset):
         self,
         dataset_base_url: str,
         variable_names: List[str],
-        geographies: CensusGeogTract,
+        geographies: CensusGeography,
     ):
         self.dataset_base_url = dataset_base_url
         self.variable_names = variable_names
         self.geographies = geographies
+        self.validate_variables()
 
-    def validations(self):
+    def validate_variables(self):
         if len(self.variable_names) > 50:
             raise Exception("Received too many variables for a Census API call")
+
+    @property
+    def api_call(self) -> str:
+        base_url = self.dataset_base_url
+        vars_part = f"""{",".join(self.variable_names)}"""
+        geog_part = self.geographies.api_call_geographies
+        auth_part = f"""key={os.environ["CENSUS_API_KEY"]}"""
+        return f"{base_url}?get={vars_part}&{geog_part}&{auth_part}"
 
 
 @dataclass
