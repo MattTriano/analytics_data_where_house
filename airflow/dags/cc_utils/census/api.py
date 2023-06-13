@@ -110,6 +110,14 @@ class CensusDatasetVariablesAPICaller(CensusAPIDataset):
         auth_part = f"""key={os.environ["CENSUS_API_KEY"]}"""
         return f"{base_url}?get={vars_part}&{geog_part}&{auth_part}"
 
+    def make_api_call(self) -> pd.DataFrame:
+        resp = requests.get(self.api_call)
+        if resp.status_code == 200:
+            resp_json = resp.json()
+            return pd.DataFrame(resp_json[1:], columns=resp_json[0])
+        else:
+            raise Exception(f"The API call produced an invalid response ({resp.status_code})")
+
 
 @dataclass
 class CensusVariableGroupDataset:
