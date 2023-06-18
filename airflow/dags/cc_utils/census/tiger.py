@@ -1,10 +1,11 @@
 from typing import Dict, List, Union, Optional
-from urllib.request import urlretrieve
 
 from bs4 import BeautifulSoup
 import geopandas as gpd
 import pandas as pd
 import requests
+
+from cc_utils.census.api import CensusGeography
 
 
 def request_page(metadata_url: str) -> requests.models.Response:
@@ -117,13 +118,28 @@ class TIGERGeographicEntityVintage:
     def entity_files_metadata(self):
         return scrape_census_ftp_metadata_page(metadata_url=self.entity_url)
 
-    def get_entity_file_metadata(self, filter_str: str) -> pd.DataFrame:
+    def get_geometry_filter_str(self, geography: CensusGeography) -> str:
+        state_county_mask = self.entity_files_metadata["name"].str.contains("_\d{4}_\d{5}_")
+        state_mask = self.entity_files_metadata["name"].str.contains("_\d{4}_\d{2}_")
+        state_codes = geography.state_cd
+        if (state_county_mask.sum() > 0) and (state_mask.sum() == 0):
+            county_codes = geography.county_cd
+            if isinstance(state_codes, list):
+                filter_str = f"""_{"*_|_".join(state_codes)}*_"""
+            else:
+                filter_str = f"_{state_codes}{county_codes}_"
+        else:
+            filter_str = f"_{state_codes}_"
+        return filter_str
+
+    def get_entity_file_metadata(self, geography: CensusGeography) -> pd.DataFrame:
+        filter_str = self.get_geometry_filter_str(geography=geography)
         return self.entity_files_metadata.loc[
             self.entity_files_metadata["name"].str.contains(filter_str)
         ].copy()
 
-    def get_entity_data(self, filter_str: str) -> gpd.GeoDataFrame:
-        entity_subset_metadata = self.get_entity_file_metadata(filter_str=filter_str)
+    def get_entity_data(self, geography: CensusGeography) -> gpd.GeoDataFrame:
+        entity_subset_metadata = self.get_entity_file_metadata(geography=geography)
         gdfs = []
         urls = entity_subset_metadata["metadata_url"].values
         for url in urls:

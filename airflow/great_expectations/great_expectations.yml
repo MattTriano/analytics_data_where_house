@@ -17,26 +17,25 @@ datasources:
   where_house_source:
     data_connectors:
       default_runtime_data_connector_name:
-        name: default_runtime_data_connector_name
+        class_name: RuntimeDataConnector
         batch_identifiers:
           - default_identifier_name
-        class_name: RuntimeDataConnector
+        name: default_runtime_data_connector_name
         module_name: great_expectations.datasource.data_connector
       data_raw_inferred_data_connector_name:
-        name: data_raw_inferred_data_connector_name
         introspection_directives:
           schema_name: data_raw
-        include_schema_name: true
         class_name: InferredAssetSqlDataConnector
+        name: data_raw_inferred_data_connector_name
+        include_schema_name: true
         module_name: great_expectations.datasource.data_connector
       dwh_inferred_data_connector_name:
-        name: dwh_inferred_data_connector_name
         introspection_directives:
           schema_name: dwh
-        include_schema_name: true
         class_name: InferredAssetSqlDataConnector
+        name: dwh_inferred_data_connector_name
+        include_schema_name: true
         module_name: great_expectations.datasource.data_connector
-    class_name: Datasource
     execution_engine:
       module_name: great_expectations.execution_engine
       credentials:
@@ -47,6 +46,7 @@ datasources:
         database: ${DWH_POSTGRES_DB}
         drivername: postgresql
       class_name: SqlAlchemyExecutionEngine
+    class_name: Datasource
     module_name: great_expectations.datasource
 config_variables_file_path: uncommitted/config_variables.yml
 
@@ -110,12 +110,12 @@ data_docs_sites:
       class_name: DefaultSiteIndexBuilder
 
 anonymous_usage_statistics:
-  data_context_id: b25cb2e2-4999-427c-93b4-7597f9e172a9
   enabled: true
+  data_context_id: b25cb2e2-4999-427c-93b4-7597f9e172a9
 include_rendered_content:
   globally: false
-  expectation_validation_result: false
   expectation_suite: false
+  expectation_validation_result: false
 notebooks:
 fluent_datasources:
   fluent_dwh_source:
@@ -330,5 +330,17 @@ fluent_datasources:
         order_by: []
         batch_metadata: {}
         table_name: cook_county_parcel_sales
+        schema_name: data_raw
+      data_raw.temp_nyc_parcel_sales:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_nyc_parcel_sales
+        schema_name: data_raw
+      data_raw.nyc_parcel_sales:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: nyc_parcel_sales
         schema_name: data_raw
     connection_string: ${GX_DWH_DB_CONN}
