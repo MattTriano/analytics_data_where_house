@@ -8,7 +8,7 @@ from airflow.decorators import dag, task, task_group
 from airflow.models.baseoperator import chain
 from airflow.utils.trigger_rule import TriggerRule
 import pandas as pd
-from sqlalchemy import insert
+from sqlalchemy import insert, update
 
 from cc_utils.census.api import CensusGeography, CensusDatasetFreshnessCheck
 from cc_utils.census.tiger import TIGERCatalog, TIGERGeographicEntityVintage
@@ -44,7 +44,7 @@ class TIGERDataset:
     base_dataset_name: str
     vintage_year: Union[str, int, List[str], List[int]]
     entity_name: str
-    geographies: CensusGeography
+    geography: CensusGeography
     schedule: Optional[str] = None
 
     @property
@@ -60,7 +60,7 @@ TIGER_DATASET = TIGERDataset(
     base_dataset_name="illinois_census_tracts",
     vintage_year=2022,
     entity_name="TRACT",
-    geographies=ILLINOIS_CENSUS_TRACTS,
+    geography=ILLINOIS_CENSUS_TRACTS,
     schedule="5 4 3 * *",
 )
 
@@ -92,30 +92,19 @@ def get_entity_vintage_metadata(
         + f"\n  last_modified: {entity_files['last_modified'].values[0]}"
         + f"\n  Files: {entity_files['is_file'].sum()}"
     )
-    state_county_mask = entity_files["name"].str.contains("_\d{4}_\d{5}_")
-    state_mask = entity_files["name"].str.contains("_\d{4}_\d{2}_")
-    state_codes = tiger_dataset.geographies.state_cd
-    if (state_county_mask.sum() > 0) and (state_mask.sum() == 0):
-        county_codes = tiger_dataset.geographies.county_cd
-        if isinstance(state_codes, list):
-            filter_str = f"""_{"*_|_".join(state_codes)}*_"""
-        else:
-            filter_str = f"_{state_codes}{county_codes}_"
-    else:
-        filter_str = f"_{state_codes}_"
-    task_logger.info(f"entity-filtering-str: {filter_str}")
-    entity_vintage = entity_files.loc[entity_files["name"].str.contains(filter_str)].copy()
+    entity_vintage = vintages.get_entity_file_metadata(geography=tiger_dataset.geography)
     task_logger.info(f"entities after filtering: {len(entity_vintage)}")
-    return entity_vintage
+    return vintages
 
 
 @task
 def record_source_freshness_check(
     tiger_dataset: TIGERDataset,
-    entity_vintage: TIGERGeographicEntityVintage,
+    vintages: TIGERGeographicEntityVintage,
     conn_id: str,
     task_logger: Logger,
 ) -> pd.DataFrame:
+    entity_vintage = vintages.get_entity_file_metadata(geography=tiger_dataset.geography)
     freshness_check_record = pd.DataFrame(
         {
             "dataset_name": [tiger_dataset.dataset_name],
@@ -196,12 +185,12 @@ def check_freshness(
     local_dataset_freshness = get_latest_local_freshness_check(
         tiger_dataset=tiger_dataset, conn_id=conn_id, task_logger=task_logger
     )
-    entity_vintage = get_entity_vintage_metadata(
+    entity_vintages = get_entity_vintage_metadata(
         tiger_dataset=tiger_dataset, tiger_catalog=tiger_catalog, task_logger=task_logger
     )
     source_dataset_freshness = record_source_freshness_check(
         tiger_dataset=tiger_dataset,
-        entity_vintage=entity_vintage,
+        vintages=entity_vintages,
         conn_id=conn_id,
         task_logger=task_logger,
     )
@@ -212,9 +201,9 @@ def check_freshness(
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
-def fresher_source_data_available(
-    freshness_check: TIGERDatasetFreshnessCheck, task_logger: Logger
-) -> str:
+def fresher_source_data_available(task_logger: Logger, **kwargs) -> str:
+    ti = kwargs["ti"]
+    freshness_check = ti.xcom_pull(task_ids="check_freshness.organize_freshness_check_results")
     dataset_in_local_dwh = len(freshness_check.local_freshness) > 0
 
     task_logger.info(f"Dataset in local dwh: {dataset_in_local_dwh}")
@@ -227,7 +216,64 @@ def fresher_source_data_available(
         local_dataset_is_fresh = local_last_modified >= source_last_modified
         if local_dataset_is_fresh:
             return "local_data_is_fresh"
-    return "update_local_metadata.get_freshness_check_results"
+    return "request_and_ingest_fresh_data"
+
+
+@task
+def local_data_is_fresh(task_logger: Logger):
+    return "hi"
+
+
+@task
+def request_and_ingest_fresh_data(
+    tiger_dataset: TIGERDataset, conn_id: str, task_logger: Logger, **kwargs
+):
+    ti = kwargs["ti"]
+    vintages = ti.xcom_pull(task_ids="check_freshness.get_entity_vintage_metadata")
+    engine = get_pg_engine(conn_id=conn_id)
+    full_gdf = vintages.get_entity_data(geography=tiger_dataset.geography)
+    task_logger.info(f"Rows in returned TIGER dataset:    {len(full_gdf)}")
+    task_logger.info(f"Columns in returned TIGER dataset: {full_gdf.columns}")
+    full_gdf["vintage_year"] = tiger_dataset.vintage_year
+    full_gdf.to_postgis(
+        name=f"temp_{tiger_dataset.dataset_name}",
+        schema="data_raw",
+        con=engine,
+        index=False,
+        if_exists="replace",
+        chunksize=100000,
+    )
+    return "ingested"
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+def record_data_update(conn_id: str, task_logger: Logger, **kwargs) -> str:
+    ti = kwargs["ti"]
+    freshness_check = ti.xcom_pull(task_ids="check_freshness.organize_freshness_check_results")
+    engine = get_pg_engine(conn_id=conn_id)
+
+    dataset_id = freshness_check.source_freshness["id"].max()
+    pre_update_record = execute_result_returning_query(
+        engine=engine,
+        query=f"""SELECT * FROM metadata.dataset_metadata WHERE id = {dataset_id}""",
+    )
+    task_logger.info(f"General metadata record pre-update: {pre_update_record}")
+    metadata_table = get_reflected_db_table(
+        engine=engine, table_name="dataset_metadata", schema_name="metadata"
+    )
+    update_query = (
+        update(metadata_table)
+        .where(metadata_table.c.id == int(dataset_id))
+        .values(local_data_updated=True)
+    )
+    execute_dml_orm_query(engine=engine, dml_stmt=update_query, logger=task_logger)
+    task_logger.info(f"dataset_id: {dataset_id}")
+    post_update_record = execute_result_returning_query(
+        engine=engine,
+        query=f"""SELECT * FROM metadata.dataset_metadata WHERE id = {dataset_id}""",
+    )
+    task_logger.info(f"General metadata record post-update: {post_update_record}")
+    return "success"
 
 
 @dag(
@@ -240,6 +286,18 @@ def update_illinois_census_tracts():
     freshness_check_1 = check_freshness(
         tiger_dataset=TIGER_DATASET, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
     )
+    update_available_1 = fresher_source_data_available(
+        freshness_check=freshness_check_1, task_logger=task_logger
+    )
+    local_data_is_fresh_1 = local_data_is_fresh(task_logger=task_logger)
+    update_data_1 = request_and_ingest_fresh_data(
+        tiger_dataset=TIGER_DATASET, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
+    )
+
+    record_update_1 = record_data_update(conn_id=POSTGRES_CONN_ID, task_logger=task_logger)
+
+    chain(freshness_check_1, update_available_1, [update_data_1, local_data_is_fresh_1])
+    chain(update_data_1, record_update_1)
 
 
 update_illinois_census_tracts()
