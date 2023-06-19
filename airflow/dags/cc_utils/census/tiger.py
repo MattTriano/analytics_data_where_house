@@ -122,12 +122,11 @@ class TIGERGeographicEntityVintage:
         state_county_mask = self.entity_files_metadata["name"].str.contains("_\d{4}_\d{5}_")
         state_mask = self.entity_files_metadata["name"].str.contains("_\d{4}_\d{2}_")
         state_codes = geography.state_cd
-        if (state_county_mask.sum() > 0) and (state_mask.sum() == 0):
+        if isinstance(state_codes, list):
+            filter_str = f"""_{"*_|_".join(state_codes)}*_"""
+        elif (state_county_mask.sum() > 0) and (state_mask.sum() == 0):
             county_codes = geography.county_cd
-            if isinstance(state_codes, list):
-                filter_str = f"""_{"*_|_".join(state_codes)}*_"""
-            else:
-                filter_str = f"_{state_codes}{county_codes}_"
+            filter_str = f"_{state_codes}{county_codes}_"
         else:
             filter_str = f"_{state_codes}_"
         return filter_str
