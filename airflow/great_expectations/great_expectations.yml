@@ -343,4 +343,16 @@ fluent_datasources:
         batch_metadata: {}
         table_name: nyc_parcel_sales
         schema_name: data_raw
+      data_raw.temp_chicago_affordable_rental_housing:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_affordable_rental_housing
+        schema_name: data_raw
+      data_raw.chicago_affordable_rental_housing:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_affordable_rental_housing
+        schema_name: data_raw
     connection_string: ${GX_DWH_DB_CONN}
