@@ -70,3 +70,5 @@ sources:
       - name: temp_cook_county_sao_case_intake_data
       - name: temp_cook_county_sao_case_sentencing_data
       - name: temp_nyc_parcel_sales
+      - name: temp_united_states_counties_2022
+      - name: united_states_counties_2022

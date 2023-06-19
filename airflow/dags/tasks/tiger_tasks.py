@@ -7,6 +7,7 @@ from airflow.utils.trigger_rule import TriggerRule
 import pandas as pd
 from sqlalchemy import insert, update
 
+from cc_utils.cleanup import standardize_column_names
 from cc_utils.census.tiger import (
     TIGERCatalog,
     TIGERGeographicEntityVintage,
@@ -187,11 +188,17 @@ def request_and_ingest_fresh_data(
 ):
     ti = kwargs["ti"]
     vintages = ti.xcom_pull(task_ids="check_freshness.get_entity_vintage_metadata")
+    freshness_check = ti.xcom_pull(task_ids="check_freshness.organize_freshness_check_results")
+    source_freshness = freshness_check.source_freshness
+    task_logger.info(f"source_freshness:    {source_freshness} (type: {type(source_freshness)})")
     engine = get_pg_engine(conn_id=conn_id)
     full_gdf = vintages.get_entity_data(geography=tiger_dataset.geography)
     task_logger.info(f"Rows in returned TIGER dataset:    {len(full_gdf)}")
     task_logger.info(f"Columns in returned TIGER dataset: {full_gdf.columns}")
     full_gdf["vintage_year"] = tiger_dataset.vintage_year
+    full_gdf["source_data_updated"] = source_freshness["source_data_last_modified"]
+    full_gdf["ingestion_check_time"] = source_freshness["time_of_check"]
+    full_gdf = standardize_column_names(df=full_gdf)
     full_gdf.to_postgis(
         name=f"temp_{tiger_dataset.dataset_name}",
         schema="data_raw",
