@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Dict, List, Union, Optional
 
 from bs4 import BeautifulSoup
@@ -119,16 +120,20 @@ class TIGERGeographicEntityVintage:
         return scrape_census_ftp_metadata_page(metadata_url=self.entity_url)
 
     def get_geometry_filter_str(self, geography: CensusGeography) -> str:
+        us_mask = self.entity_files_metadata["name"].str.contains("_\d{4}_us_")
         state_county_mask = self.entity_files_metadata["name"].str.contains("_\d{4}_\d{5}_")
         state_mask = self.entity_files_metadata["name"].str.contains("_\d{4}_\d{2}_")
-        state_codes = geography.state_cd
-        if isinstance(state_codes, list):
-            filter_str = f"""_{"*_|_".join(state_codes)}*_"""
-        elif (state_county_mask.sum() > 0) and (state_mask.sum() == 0):
-            county_codes = geography.county_cd
-            filter_str = f"_{state_codes}{county_codes}_"
-        else:
-            filter_str = f"_{state_codes}_"
+        if us_mask.sum() == 1:
+            filter_str = "_us_"
+        elif hasattr(geography, "state_cd"):
+            state_codes = geography.state_cd
+            if isinstance(state_codes, list):
+                filter_str = f"""_{"*_|_".join(state_codes)}*_"""
+            elif (state_county_mask.sum() > 0) and (state_mask.sum() == 0):
+                county_codes = geography.county_cd
+                filter_str = f"_{state_codes}{county_codes}_"
+            else:
+                filter_str = f"_{state_codes}_"
         return filter_str
 
     def get_entity_file_metadata(self, geography: CensusGeography) -> pd.DataFrame:
@@ -149,3 +154,31 @@ class TIGERGeographicEntityVintage:
                 print(f"Failed to download {url}")
         full_gdf = pd.concat(gdfs)
         return full_gdf
+
+
+@dataclass
+class TIGERDatasetFreshnessCheck:
+    def __init__(
+        self,
+        source_freshness: pd.DataFrame,
+        local_freshness: pd.DataFrame,
+    ):
+        self.source_freshness = source_freshness
+        self.local_freshness = local_freshness
+
+
+@dataclass
+class TIGERDataset:
+    base_dataset_name: str
+    vintage_year: Union[str, int, List[str], List[int]]
+    entity_name: str
+    geography: CensusGeography
+    schedule: Optional[str] = None
+
+    @property
+    def dataset_name(self):
+        if isinstance(self.vintage_year, list):
+            year_str = f"{min(self.vintage_year)}_to_{max(self.vintage_year)}"
+        else:
+            year_str = str(self.vintage_year)
+        return f"{self.base_dataset_name}_{year_str}"
