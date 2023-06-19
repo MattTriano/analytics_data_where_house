@@ -24,6 +24,25 @@ class CensusGeography:
             return geog_cd
 
 
+class CensusGeogUS(CensusGeography):
+    def __init__(self):
+        self.us_cd = "*"
+
+    @property
+    def api_call_geographies(self):
+        return f"for=us:*"
+
+
+class CensusGeogState(CensusGeography):
+    def __init__(self, state_cd: str):
+        self.state_cd = state_cd
+
+    @property
+    def api_call_geographies(self):
+        state_cd_str = self.format_geog_str(geog_cd=self.state_cd)
+        return f"for=state:{state_cd_str}"
+
+
 class CensusGeogTract(CensusGeography):
     def __init__(self, state_cd: str, county_cd: str = "*"):
         self.state_cd = state_cd

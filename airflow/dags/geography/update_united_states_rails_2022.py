@@ -12,7 +12,7 @@ from tasks.tiger_tasks import (
     check_freshness,
 )
 
-from sources.tiger_datasets import ILLINOIS_CENSUS_TRACTS_2022 as TIGER_DATASET
+from sources.tiger_datasets import UNITED_STATES_RAILS_2022 as TIGER_DATASET
 
 task_logger = logging.getLogger("airflow.task")
 POSTGRES_CONN_ID = "dwh_db_conn"
@@ -24,7 +24,7 @@ POSTGRES_CONN_ID = "dwh_db_conn"
     catchup=False,
     tags=["illinois", "census", "geospatial"],
 )
-def update_illinois_census_tracts_2022():
+def update_united_states_rails_2022():
     freshness_check_1 = check_freshness(
         tiger_dataset=TIGER_DATASET, conn_id=POSTGRES_CONN_ID, task_logger=task_logger
     )
@@ -42,4 +42,4 @@ def update_illinois_census_tracts_2022():
     chain(update_data_1, record_update_1)
 
 
-update_illinois_census_tracts_2022()
+update_united_states_rails_2022()
