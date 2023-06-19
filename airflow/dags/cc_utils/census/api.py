@@ -17,7 +17,7 @@ from cc_utils.census.core import (
 
 
 class CensusGeography:
-    def format_geog_cd_param(self, geog_cd: Union[List, str]) -> str:
+    def format_geog_str(self, geog_cd: Union[List, str]) -> str:
         if isinstance(geog_cd, list):
             return ",".join([el.strip() for el in geog_cd])
         else:
@@ -26,12 +26,14 @@ class CensusGeography:
 
 class CensusGeogTract(CensusGeography):
     def __init__(self, state_cd: str, county_cd: str = "*"):
-        self.state_cd = self.format_geog_cd_param(geog_cd=state_cd)
-        self.county_cd = self.format_geog_cd_param(geog_cd=county_cd)
+        self.state_cd = state_cd
+        self.county_cd = county_cd
 
     @property
     def api_call_geographies(self):
-        return f"for=tract:*&in=state:{self.state_cd}&in=county:{self.county_cd}"
+        state_cd_str = self.format_geog_str(geog_cd=self.state_cd)
+        county_cd_str = self.format_geog_str(geog_cd=self.county_cd)
+        return f"for=tract:*&in=state:{state_cd_str}&in=county:{county_cd_str}"
 
 
 class CensusGeogBlockGroup(CensusGeography):
@@ -41,13 +43,19 @@ class CensusGeogBlockGroup(CensusGeography):
         county_cd: Union[List, str],
         tract_cd: Union[List, str] = "*",
     ):
-        self.state_cd = self.format_geog_cd_param(geog_cd=state_cd)
-        self.county_cd = self.format_geog_cd_param(geog_cd=county_cd)
-        self.tract_cd = self.format_geog_cd_param(geog_cd=tract_cd)
+        self.state_cd = state_cd
+        self.county_cd = county_cd
+        self.tract_cd = tract_cd
 
     @property
     def api_call_geographies(self):
-        return f"for=block%20group:*&in=state:{self.state_cd}&in=county:{self.county_cd}&in=tract:{self.tract_cd}"
+        state_cd_str = self.format_geog_str(geog_cd=self.state_cd)
+        county_cd_str = self.format_geog_str(geog_cd=self.county_cd)
+        tract_cd_str = self.format_geog_str(geog_cd=self.tract_cd)
+        return (
+            f"for=block%20group:*&in=state:{state_cd_str}&in=county:{county_cd_str}"
+            + f"&in=tract:{tract_cd_str}"
+        )
 
 
 class CensusAPIDataset(Protocol):
