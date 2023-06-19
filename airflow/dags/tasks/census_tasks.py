@@ -21,30 +21,6 @@ from cc_utils.db import (
 )
 
 
-# @task
-# def get_latest_catalog_freshness_from_db(conn_id: str, task_logger: Logger) -> pd.DataFrame:
-#     engine = get_pg_engine(conn_id=conn_id)
-#     local_api_catalog_metadata_df = execute_result_returning_query(
-#         engine=engine,
-#         query="""
-#             WITH latest_metadata AS (
-#                 SELECT
-#                     *,
-#                     row_number() over(
-#                         partition by identifier, modified ORDER BY identifier, modified DESC
-#                     ) as rn
-#                 FROM metadata.census_api_metadata
-#             )
-#             SELECT *
-#             FROM latest_metadata
-#             WHERE rn = 1;
-#         """,
-#     )
-#     n_datasets = local_api_catalog_metadata_df["identifier"].nunique()
-#     task_logger.info(f"Distinct datasets in census_api_metadata table {n_datasets}.")
-#     return local_api_catalog_metadata_df
-
-
 @task
 def ingest_api_dataset_freshness_check(
     freshness_df: pd.DataFrame, conn_id: str, task_logger: Logger

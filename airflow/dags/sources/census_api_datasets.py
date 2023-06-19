@@ -1,3 +1,8 @@
+from sources.geographies import (
+    COOK_COUNTY_CENSUS_BLOCK_GROUPS,
+    COOK_COUNTY_CENSUS_TRACTS,
+    ILLINOIS_CENSUS_TRACTS,
+)
 from cc_utils.census.api import (
     CensusGeogTract,
     CensusGeogBlockGroup,
@@ -12,7 +17,7 @@ GROSS_RENT_BY_ILLINOIS_TRACT = CensusVariableGroupDataset(
     api_call_obj=CensusVariableGroupAPICall(
         dataset_base_url="http://api.census.gov/data/2021/acs/acs5",
         group_name="B25063",
-        geographies=CensusGeogTract(state_cd="17"),
+        geographies=ILLINOIS_CENSUS_TRACTS,
     ),
     schedule="0 2 10 4,10 *",
 )
@@ -22,7 +27,7 @@ GROSS_RENT_BY_COOK_COUNTY_IL_TRACT = CensusVariableGroupDataset(
     api_call_obj=CensusVariableGroupAPICall(
         dataset_base_url="http://api.census.gov/data/2021/acs/acs5",
         group_name="B25063",
-        geographies=CensusGeogTract(state_cd="17", county_cd="031"),
+        geographies=COOK_COUNTY_CENSUS_TRACTS,
     ),
     schedule="5 2 10 4,10 *",
 )
@@ -32,7 +37,7 @@ CC_HOUSING_UNITS_BY_TRACT = CensusVariableGroupDataset(
     api_call_obj=CensusVariableGroupAPICall(
         dataset_base_url="http://api.census.gov/data/2021/acs/acs5",
         group_name="B25001",
-        geographies=CensusGeogTract(state_cd="17", county_cd="031"),
+        geographies=COOK_COUNTY_CENSUS_TRACTS,
     ),
     schedule="40 5 2 3,9 *",
 )
@@ -42,7 +47,7 @@ CC_HH_EARNINGS_IN_LAST_12MO_BY_TRACT = CensusVariableGroupDataset(
     api_call_obj=CensusVariableGroupAPICall(
         dataset_base_url="http://api.census.gov/data/2021/acs/acs5",
         group_name="B19051",
-        geographies=CensusGeogTract(state_cd="17", county_cd="031"),
+        geographies=COOK_COUNTY_CENSUS_TRACTS,
     ),
     schedule="40 5 20 3,9 *",
 )
@@ -51,7 +56,7 @@ CC_PLANNING_DB_HOUSING_AND_DEMOS_BY_BG = CensusVariableGroupDataset(
     dataset_name="cc_planning_db_housing_and_demos_by_bg",
     api_call_obj=CensusDatasetVariablesAPICaller(
         dataset_base_url="http://api.census.gov/data/2020/pdb/blockgroup",
-        geographies=CensusGeogBlockGroup(state_cd="17", county_cd="031"),
+        geographies=COOK_COUNTY_CENSUS_BLOCK_GROUPS,
         variable_names=[
             "State",
             "County",
