@@ -26,6 +26,7 @@ sources:
       - name: chicago_towed_vehicles
       - name: chicago_traffic_crashes
       - name: chicago_vacant_and_abandoned_buildings
+      - name: cook_county_areawaters_2022
       - name: cook_county_multifam_parcel_improvements
       - name: cook_county_neighborhood_boundaries
       - name: cook_county_parcel_assessment_appeals
@@ -58,6 +59,7 @@ sources:
       - name: temp_chicago_towed_vehicles
       - name: temp_chicago_traffic_crashes
       - name: temp_chicago_vacant_and_abandoned_buildings
+      - name: temp_cook_county_areawaters_2022
       - name: temp_cook_county_multifam_parcel_improvements
       - name: temp_cook_county_neighborhood_boundaries
       - name: temp_cook_county_parcel_assessment_appeals
@@ -70,3 +72,5 @@ sources:
       - name: temp_cook_county_sao_case_intake_data
       - name: temp_cook_county_sao_case_sentencing_data
       - name: temp_nyc_parcel_sales
+      - name: temp_united_states_counties_2022
+      - name: united_states_counties_2022

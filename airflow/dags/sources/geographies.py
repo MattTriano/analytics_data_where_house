@@ -1,5 +1,6 @@
 from cc_utils.census.api import (
     CensusGeogUS,
+    CensusGeogCounty,
     CensusGeogTract,
     CensusGeogBlockGroup,
 )
@@ -12,3 +13,4 @@ MIDWEST_CENSUS_TRACTS = CensusGeogTract(
 )
 ILLINOIS_CENSUS_TRACTS = CensusGeogTract(state_cd="17")
 ENTIRE_UNITED_STATES = CensusGeogUS()
+UNITED_STATES_COUNTIES = CensusGeogCounty(state_cd="*", county_cd="*")

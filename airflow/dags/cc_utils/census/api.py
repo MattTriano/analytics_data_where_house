@@ -34,13 +34,30 @@ class CensusGeogUS(CensusGeography):
 
 
 class CensusGeogState(CensusGeography):
-    def __init__(self, state_cd: str):
+    def __init__(self, state_cd: Union[str, List]):
         self.state_cd = state_cd
 
     @property
     def api_call_geographies(self):
         state_cd_str = self.format_geog_str(geog_cd=self.state_cd)
         return f"for=state:{state_cd_str}"
+
+
+class CensusGeogCounty(CensusGeography):
+    def __init__(self, state_cd: Union[str, List] = "*", county_cd: Union[str, List] = "*"):
+        self.state_cd = state_cd
+        self.county_cd = county_cd
+        self.validate()
+
+    @property
+    def api_call_geographies(self):
+        state_cd_str = self.format_geog_str(geog_cd=self.state_cd)
+        county_cd_str = self.format_geog_str(geog_cd=self.county_cd)
+        return f"for=county:{county_cd_str}&in=state:{state_cd_str}"
+
+    def validate(self):
+        if isinstance(self.state_cd, list) and self.county_cd != "*":
+            raise ValueError(f"Can't pull specific counties when pulling multiple states.")
 
 
 class CensusGeogTract(CensusGeography):

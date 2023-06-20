@@ -5,7 +5,7 @@ from airflow.decorators import dag
 
 from tasks.tiger_tasks import update_tiger_table
 
-from sources.tiger_datasets import COOK_COUNTY_ROADS_2022 as TIGER_DATASET
+from sources.tiger_datasets import COOK_COUNTY_AREAWATERS_2022 as TIGER_DATASET
 
 task_logger = logging.getLogger("airflow.task")
 
@@ -16,7 +16,7 @@ task_logger = logging.getLogger("airflow.task")
     catchup=False,
     tags=["cook_county", "census", "geospatial", "TIGER"],
 )
-def update_cook_county_roads_2022():
+def update_cook_county_areawaters_2022():
     update_tiger_table(
         tiger_dataset=TIGER_DATASET,
         datasource_name="fluent_dwh_source",
@@ -25,4 +25,4 @@ def update_cook_county_roads_2022():
     )
 
 
-update_cook_county_roads_2022()
+update_cook_county_areawaters_2022()
