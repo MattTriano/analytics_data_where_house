@@ -6,6 +6,14 @@ from sources.geographies import (
     UNITED_STATES_COUNTIES,
 )
 
+COOK_COUNTY_AREAWATERS_2022 = TIGERDataset(
+    base_dataset_name="cook_county_areawaters",
+    vintage_year=2022,
+    entity_name="AREAWATER",
+    geography=COOK_COUNTY_CENSUS_TRACTS,
+    schedule="30 3 2 * *",
+)
+
 COOK_COUNTY_ROADS_2022 = TIGERDataset(
     base_dataset_name="cook_county_roads",
     vintage_year=2022,
