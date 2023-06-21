@@ -204,7 +204,7 @@ def fresher_source_data_available(
         task_logger.info(f"Source dataset last modified: {source_last_modified}")
         local_dataset_is_fresh = local_last_modified >= source_last_modified
         if local_dataset_is_fresh:
-            return "local_data_is_fresh"
+            return "update_census_table.local_data_is_fresh"
     return "update_census_table.update_local_metadata.get_freshness_check_results"
 
 

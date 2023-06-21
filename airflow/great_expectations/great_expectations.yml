@@ -439,4 +439,40 @@ fluent_datasources:
         batch_metadata: {}
         table_name: cc_transportation_to_work_by_occ_by_tract
         schema_name: data_raw
+      data_raw.temp_cc_hh_earnings_in_last_12mo_by_tract:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_cc_hh_earnings_in_last_12mo_by_tract
+        schema_name: data_raw
+      data_raw.cc_hh_earnings_in_last_12mo_by_tract:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: cc_hh_earnings_in_last_12mo_by_tract
+        schema_name: data_raw
+      data_raw.temp_cc_housing_units_by_tract:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_cc_housing_units_by_tract
+        schema_name: data_raw
+      data_raw.cc_housing_units_by_tract:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: cc_housing_units_by_tract
+        schema_name: data_raw
+      data_raw.temp_cc_planning_db_housing_and_demos_by_bg:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_cc_planning_db_housing_and_demos_by_bg
+        schema_name: data_raw
+      data_raw.cc_planning_db_housing_and_demos_by_bg:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: cc_planning_db_housing_and_demos_by_bg
+        schema_name: data_raw
     connection_string: ${GX_DWH_DB_CONN}

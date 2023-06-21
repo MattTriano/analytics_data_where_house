@@ -6,7 +6,10 @@ sources:
     tags:
       - raw
     tables:
+      - name: cc_hh_earnings_in_last_12mo_by_tract
       - name: cc_hh_internet_access_by_age_by_tract
+      - name: cc_housing_units_by_tract
+      - name: cc_planning_db_housing_and_demos_by_bg
       - name: cc_transportation_to_work_by_occ_by_tract
       - name: chicago_affordable_rental_housing
       - name: chicago_bike_paths
@@ -43,7 +46,10 @@ sources:
       - name: cook_county_sao_case_sentencing_data
       - name: illinois_census_tracts_2022
       - name: nyc_parcel_sales
+      - name: temp_cc_hh_earnings_in_last_12mo_by_tract
       - name: temp_cc_hh_internet_access_by_age_by_tract
+      - name: temp_cc_housing_units_by_tract
+      - name: temp_cc_planning_db_housing_and_demos_by_bg
       - name: temp_cc_transportation_to_work_by_occ_by_tract
       - name: temp_chicago_affordable_rental_housing
       - name: temp_chicago_bike_paths
