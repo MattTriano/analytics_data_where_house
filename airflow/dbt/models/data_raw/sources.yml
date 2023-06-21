@@ -6,6 +6,11 @@ sources:
     tags:
       - raw
     tables:
+      - name: cc_hh_earnings_in_last_12mo_by_tract
+      - name: cc_hh_internet_access_by_age_by_tract
+      - name: cc_housing_units_by_tract
+      - name: cc_planning_db_housing_and_demos_by_bg
+      - name: cc_transportation_to_work_by_occ_by_tract
       - name: chicago_affordable_rental_housing
       - name: chicago_bike_paths
       - name: chicago_city_boundary
@@ -33,12 +38,19 @@ sources:
       - name: cook_county_parcel_locations
       - name: cook_county_parcel_sales
       - name: cook_county_parcel_value_assessments
+      - name: cook_county_roads_2022
       - name: cook_county_sao_case_disposition_data
       - name: cook_county_sao_case_diversion_data
       - name: cook_county_sao_case_initiation_data
       - name: cook_county_sao_case_intake_data
       - name: cook_county_sao_case_sentencing_data
+      - name: illinois_census_tracts_2022
       - name: nyc_parcel_sales
+      - name: temp_cc_hh_earnings_in_last_12mo_by_tract
+      - name: temp_cc_hh_internet_access_by_age_by_tract
+      - name: temp_cc_housing_units_by_tract
+      - name: temp_cc_planning_db_housing_and_demos_by_bg
+      - name: temp_cc_transportation_to_work_by_occ_by_tract
       - name: temp_chicago_affordable_rental_housing
       - name: temp_chicago_bike_paths
       - name: temp_chicago_city_boundary
@@ -66,11 +78,15 @@ sources:
       - name: temp_cook_county_parcel_locations
       - name: temp_cook_county_parcel_sales
       - name: temp_cook_county_parcel_value_assessments
+      - name: temp_cook_county_roads_2022
       - name: temp_cook_county_sao_case_disposition_data
       - name: temp_cook_county_sao_case_diversion_data
       - name: temp_cook_county_sao_case_initiation_data
       - name: temp_cook_county_sao_case_intake_data
       - name: temp_cook_county_sao_case_sentencing_data
+      - name: temp_illinois_census_tracts_2022
       - name: temp_nyc_parcel_sales
       - name: temp_united_states_counties_2022
+      - name: temp_united_states_rails_2022
       - name: united_states_counties_2022
+      - name: united_states_rails_2022
