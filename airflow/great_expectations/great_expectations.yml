@@ -379,4 +379,52 @@ fluent_datasources:
         batch_metadata: {}
         table_name: cook_county_areawaters_2022
         schema_name: data_raw
+      data_raw.temp_illinois_census_tracts_2022:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_illinois_census_tracts_2022
+        schema_name: data_raw
+      data_raw.illinois_census_tracts_2022:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: illinois_census_tracts_2022
+        schema_name: data_raw
+      data_raw.temp_cook_county_roads_2022:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_cook_county_roads_2022
+        schema_name: data_raw
+      data_raw.cook_county_roads_2022:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: cook_county_roads_2022
+        schema_name: data_raw
+      data_raw.temp_united_states_rails_2022:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_united_states_rails_2022
+        schema_name: data_raw
+      data_raw.united_states_rails_2022:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: united_states_rails_2022
+        schema_name: data_raw
+      data_raw.temp_cc_hh_internet_access_by_age_by_tract:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_cc_hh_internet_access_by_age_by_tract
+        schema_name: data_raw
+      data_raw.cc_hh_internet_access_by_age_by_tract:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: cc_hh_internet_access_by_age_by_tract
+        schema_name: data_raw
     connection_string: ${GX_DWH_DB_CONN}
