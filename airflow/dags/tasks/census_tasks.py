@@ -12,6 +12,7 @@ from cc_utils.census.api import (
     CensusAPIDatasetSource,
     CensusDatasetFreshnessCheck,
 )
+from cc_utils.cleanup import standardize_column_names
 from cc_utils.db import (
     get_pg_engine,
     get_reflected_db_table,
@@ -368,18 +369,20 @@ def request_and_ingest_dataset(
     task_logger.info(f"Columns in returned dataset: {dataset_df.columns}")
     dataset_df["dataset_base_url"] = census_dataset.api_call_obj.dataset_base_url
     dataset_df["dataset_id"] = freshness_check.source_freshness["id"].max()
-    dataset_df["dataset_last_modified"] = freshness_check.source_freshness[
+    dataset_df["source_data_updated"] = freshness_check.source_freshness[
         "source_data_last_modified"
     ].max()
-    dataset_df["time_of_check"] = freshness_check.source_freshness["time_of_check"].max()
+    dataset_df["ingestion_check_time"] = freshness_check.source_freshness["time_of_check"].max()
     task_logger.info(f"""dataset_id: {dataset_df["dataset_id"]}""")
     task_logger.info(f"""dataset_base_url: {dataset_df["dataset_base_url"]}""")
-    task_logger.info(f"""dataset_last_modified: {dataset_df["dataset_last_modified"]}""")
-    task_logger.info(f"""time_of_check: {dataset_df["time_of_check"]}""")
+    task_logger.info(f"""source_data_updated: {dataset_df["source_data_updated"]}""")
+    task_logger.info(f"""ingestion_check_time: {dataset_df["ingestion_check_time"]}""")
+    dataset_df = standardize_column_names(df=dataset_df)
     result = dataset_df.to_sql(
         name=f"temp_{census_dataset.dataset_name}",
         schema="data_raw",
         con=engine,
+        index=False,
         if_exists="replace",
         chunksize=100000,
     )
