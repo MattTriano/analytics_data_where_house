@@ -16,7 +16,7 @@ task_logger = logging.getLogger("airflow.task")
     catchup=False,
     tags=["cook_county", "census", "utilities"],
 )
-def dev_cc_transportation_to_work_by_occ_by_tract():
+def update_cc_transportation_to_work_by_occ_by_tract():
     update_census_table(
         census_dataset=CENSUS_DATASET,
         datasource_name="fluent_dwh_source",
@@ -25,4 +25,4 @@ def dev_cc_transportation_to_work_by_occ_by_tract():
     )
 
 
-dev_cc_transportation_to_work_by_occ_by_tract()
+update_cc_transportation_to_work_by_occ_by_tract()
