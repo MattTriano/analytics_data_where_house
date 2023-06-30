@@ -79,10 +79,12 @@ markdown_extensions:
       separator: "_"
       toc_depth: 4
       title: On this page
+  - admonition
   - attr_list
   - md_in_html
   - def_list
   - footnotes
+  - pymdownx.details
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.highlight:
