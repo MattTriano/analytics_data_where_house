@@ -408,29 +408,79 @@ checkpoint = context.add_or_update_checkpoint(
 checkpoint_result = checkpoint.run()
 ```
 
-After running the `Checkpoint`, report the results (by building Data Docs)
+After running the `Checkpoint`, report the results (by building Data Docs).
 
 ```python
 context.build_data_docs()
 ```
 
+### Reviewing Data Docs
+
+Navigate to `/uncommitted/data_docs/local_site` in the File Browser and open the file named `index.html`.
+
+??? note "How-to: Navigate Data Docs"
+
+    If you can't click anything and your Data Docs interface looks like this, click "Trust HTML" in the upper left corner.
+
+    ![GX Data Docs index with failed runs](/assets/imgs/validation/Data_Docs_need_to_trust_HTML.png)
+
+If you see checks of batches where the validation status indicates failure (i.e. a :x: mark in the Status column), then at least one `Expectation` was not met. Click into a report to see the failed expectations.
+
+![GX Data Docs index with failed runs](/assets/imgs/validation/gx_failed_batches_data_docs.png)
+
+Click **Failed Only** in the left-hand **Actions: Validation Filter** box to only see failed `Expectations`.
+
+![GX Data Docs failed batch](/assets/imgs/validation/gx_specific_failed_batch_data_doc.png)
+
+We see that our uniqueness expectation for `account_number` and `site_number` wasn't met and isn't valid. Let's remove those expectations.
 
 
-
-
-
-
-#### Removing an expectation
+#### Removing an `Expectation`
 
 While reviewing expectations, you may find an expectation you want to just remove. You can delete such expectations via the `validator` object's `.remove_expectation()` method, but you have to pass in the expectation that is to be removed from the suite. You can access the expectation by accessing the `.expectation_config` attr of the `ExpectationValidationResult`.
 
 
 ```python
-expectation_validation_result = validator.expect_column_values_to_not_be_null(column="zip_code")
+expectation_validation_result = validator.expect_column_values_to_not_be_null(column="account_number")
 
 print(f"Expectation configs in suite pre-removal: {len(validator.expectation_suite.expectations)}")
 validator.remove_expectation(
     expectation_configuration=expectation_validation_result.expectation_config
 )
+validator.remove_expectation(
+    validator.expect_column_values_to_be_unique(column="site_number").expectation_config
+)
 print(f"Expectation configs in suite post-removal: {len(validator.expectation_suite.expectations)}")
 ```
+
+After removing those, save the suite to our context.
+
+```python
+validator.save_expectation_suite(discard_failed_expectations=False)
+```
+
+#### Rerunning Checkpoints
+
+Update the `Checkpoint` with our modified `validator` and rerun.
+
+```python
+checkpoint = context.add_or_update_checkpoint(
+    name=f"{data_asset_name}_checkpoint",
+    validator=validator,
+)
+checkpoint_result = checkpoint.run()
+```
+
+After running the `Checkpoint`, rebuild and review Data Docs.
+
+```python
+context.build_data_docs()
+```
+
+If all `Expectations` are being met for all batches, the Data Docs index should look like this (with green check mark circles :octicons-check-circle-16: in the Status column)
+
+![GX Data Docs failed batch](/assets/imgs/validation/gx_successful_batches_data_docs.png)
+
+### Summary
+
+We've defined a suite of `Expectations` for batches of data as well as configured a `Checkpoint` to handle validating our data. Now we can run that `Checkpoint` when we update this `DataAsset`.

@@ -54,7 +54,7 @@ nav:
     - "Standardizing Columns": dev_guide/standardizing_columns.md
     - "Validating Data":
       - dev_guide/validation/index.md
-      - "GE Startup": dev_guide/validation/new_workflow.md
+      - "Sample Workflow": dev_guide/validation/new_workflow.md
       - "Defining a Datasource": dev_guide/validation/data_source_setup.md
       - "Setting (data) Expectations":
         - "Manual Workflow": dev_guide/validation/manually_setting_expectations.md
