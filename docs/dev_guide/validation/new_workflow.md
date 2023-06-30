@@ -14,16 +14,16 @@ docker compose exec airflow-scheduler /bin/bash -c \
         "mkdir -p /opt/airflow/.jupyter/share/jupyter/runtime &&\
         cd /opt/airflow/great_expectations/ &&\
         jupyter lab --ip 0.0.0.0 --port 18888"
-[I 2023-04-20 00:53:29.039 ServerApp] Package jupyterlab took 0.0000s to import
+[I ServerApp] Package jupyterlab took 0.0000s to import
 ...
-[I 2023-04-20 00:53:29.550 ServerApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
-[W 2023-04-20 00:53:29.557 ServerApp] No web browser found: Error('could not locate runnable browser').
-[C 2023-04-20 00:53:29.557 ServerApp] 
+[I ServerApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[W ServerApp] No web browser found: Error('could not locate runnable browser').
+[C ServerApp] 
     
     To access the server, open this file in a browser:
-        file:///opt/airflow/.jupyter/share/jupyter/runtime/jpserver-437-open.html
+        file:///opt/airflow/.jupyter/share/jupyter/runtime/jpserver-164217-open.html
     Or copy and paste one of these URLs:
-        http://33972abe32d4:18888/lab?token=be72207c3a182bed5c026af4c3014765250e98e0f8994d9c
+        http://44a94924c5da:18888/lab?token=be72207c3a182bed5c026af4c3014765250e98e0f8994d9c
         http://127.0.0.1:18888/lab?token=be72207c3a182bed5c026af4c3014765250e98e0f8994d9c
 ```
 
@@ -33,56 +33,454 @@ Copy the URL starting with `http://127.0.0.1:18888/...` and paste it into a brow
 
     To copy the URL, highlight it, right click it, and select **Copy**. Don't press ctrl+c as that will shut down the jupyter server.
 
-This will bring you to a jupyterlab interface. Open a terminal (optional: enter `bash` if you want tab-completion and command history), 
+This will bring you to a jupyterlab interface where you can develop `GX` resources in the execution environment.
 
-## Useful Great Expectations Commands
+There are several [Expectation development workflows](https://docs.greatexpectations.io/docs/guides/expectations/create_expectations_overview). This demo shows the interactive workflow.
 
-```bash
-default@container_id:/opt/airflow/great_expectations$ great_expectations suite list
+## Creating Expectations Interactively
+
+In the **file browser** on the left, go into the `uncommitted` directory and create a new notebook.
+
+Load the `DataContext` and our data_warehouse `Datasource`
+
+```python
+import great_expectations as gx
+
+context = gx.get_context()
+datasource = context.get_datasource(datasource_name="fluent_dwh_source")
 ```
 
-### Editing a suite
+Pick and load a `DataAsset` to develop `Expectations` for. You can view all registered `DataAssets` via `datasource.get_asset_names()`.
 
-Enter this command to generate a notebook that will help edit expectations. Use the `-nj` flag to prevent `great_expectations` from starting up another jupyter server (you can just access the newly created notebook in the `/expectations` directory).
-
-```bash
-default@cfade96635e4:/opt/airflow/great_expectations$ great_expectations suite edit data_raw.temp_chicago_homicide_and_shooting_victimizations.warning -nj
+```python
+data_asset_name = f"data_raw.temp_chicago_sidewalk_cafe_permits"
+expectation_suite_name = f"{data_asset_name}_suite"
+data_asset = datasource.get_asset(asset_name=data_asset_name)
 ```
 
-In the suite editor notebook, each expectation in the suite will have its own cell that you can run, inspect, and edit. At the end of the notebook, expectations in the `validator` object will be written to file.
+\[Optional\]: Define a strategy for splitting the data into batches and sorting those data batches. In this example, I've split the data by year and month based on a `date`-valued column in the dataset.
 
-#### Removing an expectation
+```python
+data_asset.add_splitter_year_and_month(column_name="issued_date")
+data_asset.add_sorters(["+year", "+month"])
+```
+
+Get a `Validator` instance for the current `DataAsset` and inspect a few rows of a batch.
+
+
+```python
+validator = context.get_validator(
+    batch_request=data_asset.build_batch_request(),
+    expectation_suite_name=expectation_suite_name,
+)
+validator.head()
+# Or, if you want to explore a full batch
+# sample_df = validator.head(fetch_all=True)
+```
+
+??? note "How-to: View all `DataFrame` columns"
+
+    If your dataset has more than 20 columns (`pandas`' default `max_columns` value), `validator.head()` will show a truncated view of the `DataFrame`. To view all columns, change the `max_columns` setting for your notebook by running this:
+
+    ```python
+    import pandas as pd
+    pd.options.display.max_columns = 0
+    ```
+
+|  | location_state | expiration_date | zip_code | address_number_start | issued_date | city | location_zip | police_district |latitude | state | location_address | location_city | payment_date | longitude | account_number | site_number | ward | doing_business_as_name | street_type | permit_number | address | legal_name | address_number | street | street_direction| geometry | source_data_updated | ingestion_check_time |
+| ---: | :--- | :--- | ---: | ---: | :--- | :--- | :--- | ---: | ---: | :--- | :--- | :--- | :--- | ---: | ---: | ---: | ---: | :--- | :--- | ---: | :--- | :--- | ---: | :--- | :--- | :--- | :--- | :--- |
+| 0 | | 2024-02-29 00:00:00 | 60647 | 0 | 2023-06-22 00:00:00 | CHICAGO | | | | IL | | | 2023-06-22 00:00:00 | | 426327 | 1 | 1 | MINI MOTT | BLVD| 1829707 | 0 W LOGAN BLVD| MINI MOTT CO. | 0 | LOGAN | W | 0101000020E6100000000000000000F87F000000000000F87F | 2023-06-24T09:48:47Z | 2023-06-25T03:50:03.938039Z |
+| 1 | | 2024-02-29 00:00:00 | 60618 | 2890 | 2023-06-09 00:00:00 | CHICAGO | | 14 | 41.9338 | IL | | | 2023-06-09 00:00:00 | -87.7154 | 432506 |1 | 35 | LA CELIA LATIN KITCHEN| AVE | 1829005 | 2890 N MILWAUKEE AVE | LA CELIA LLC | 2890 | MILWAUKEE | N | 0101000020E6100000B3EEF24EC8ED55C0DF3844EB85F74440 | 2023-06-24T09:48:47Z | 2023-06-25T03:50:03.938039Z |
+| 2 | | 2024-02-29 00:00:00 | 60610 | 0 | 2023-06-15 00:00:00 | CHICAGO | |1 | 41.8821 | IL | | | 2023-06-15 00:00:00 | -87.628 | 478579 |1 | 42 | Cafe Sophie| ST | 1828623 | 0 N STATE ST | CAFE SOPHIE GOLD COAST LLC | 0 | STATE | N | 0101000020E61000007A196F8E30E855C0698D6D16E8F04440 | 2023-06-24T09:48:47Z | 2023-06-25T03:50:03.938039Z |
+| 3 | | 2024-02-29 00:00:00 | 60622 | 0 | 2023-06-23 00:00:00 | CHICAGO | | 18 | 41.9041 | IL | | | 2023-06-23 00:00:00 | -87.6287 |7533 |1 | 26 | LA BRUQUENA RESTAURANT & LOUNGE | ST | 1828620 | 0 W DIVISION ST| LA BRUQUENA RESTAURANT & LOUNGE, INC. | 0 | DIVISION | W | 0101000020E61000005EFC06633DE855C096906BEDB7F34440 | 2023-06-24T09:48:47Z | 2023-06-25T03:50:03.938039Z |
+| 4 | | 2024-02-29 00:00:00 | 60657 | 3328 | 2023-06-22 00:00:00 | CHICAGO | | 19 | 41.9424 | IL | | | 2023-06-22 00:00:00 | -87.6707 | 482604 |2 | 32 | PWU DUMMY ACCOUNT | AVE | 1827202 | 3328 N LINCOLN AVE| PWU DUMMY ACCOUNT|3328 | LINCOLN| N | 0101000020E6100000B1ABBBF9ECEA55C0A31D5016A0F84440 | 2023-06-24T09:48:47Z | 2023-06-25T03:50:03.938039Z |
+
+Now that we have a `Validator` instance, we can use its `expect_*` methods to start defining expectations.
+
+??? note "How-to: View available `Expectation` types"
+
+    Run command `validator.list_available_expectation_types()` to get a list of `Expectation` methods available through the `Validator` instance (as shown below). Note: some expectations aren't implemented for all sources; check [here](https://docs.greatexpectations.io/docs/reference/expectations/implemented_expectations/) to review which `Expectation`s are implemented for each backend.
+
+    `validator.list_available_expectation_types()`
+
+    ```python
+    [
+        'expect_column_distinct_values_to_be_in_set',
+        'expect_column_distinct_values_to_contain_set',
+        'expect_column_distinct_values_to_equal_set',
+        'expect_column_kl_divergence_to_be_less_than',
+        'expect_column_max_to_be_between',
+        'expect_column_mean_to_be_between',
+        'expect_column_median_to_be_between',
+        'expect_column_min_to_be_between',
+        'expect_column_most_common_value_to_be_in_set',
+        'expect_column_pair_values_a_to_be_greater_than_b',
+        'expect_column_pair_values_to_be_equal',
+        'expect_column_pair_values_to_be_in_set',
+        'expect_column_proportion_of_unique_values_to_be_between',
+        'expect_column_quantile_values_to_be_between',
+        'expect_column_stdev_to_be_between',
+        'expect_column_sum_to_be_between',
+        'expect_column_to_exist',
+        'expect_column_unique_value_count_to_be_between',
+        'expect_column_value_lengths_to_be_between',
+        'expect_column_value_lengths_to_equal',
+        'expect_column_value_z_scores_to_be_less_than',
+        'expect_column_values_to_be_between',
+        'expect_column_values_to_be_dateutil_parseable',
+        'expect_column_values_to_be_decreasing',
+        'expect_column_values_to_be_in_set',
+        'expect_column_values_to_be_in_type_list',
+        'expect_column_values_to_be_increasing',
+        'expect_column_values_to_be_json_parseable',
+        'expect_column_values_to_be_null',
+        'expect_column_values_to_be_of_type',
+        'expect_column_values_to_be_unique',
+        'expect_column_values_to_match_json_schema',
+        'expect_column_values_to_match_like_pattern',
+        'expect_column_values_to_match_like_pattern_list',
+        'expect_column_values_to_match_regex',
+        'expect_column_values_to_match_regex_list',
+        'expect_column_values_to_match_strftime_format',
+        'expect_column_values_to_not_be_in_set',
+        'expect_column_values_to_not_be_null',
+        'expect_column_values_to_not_match_like_pattern',
+        'expect_column_values_to_not_match_like_pattern_list',
+        'expect_column_values_to_not_match_regex',
+        'expect_column_values_to_not_match_regex_list',
+        'expect_compound_columns_to_be_unique',
+        'expect_multicolumn_sum_to_equal',
+        'expect_select_column_values_to_be_unique_within_record',
+        'expect_table_column_count_to_be_between',
+        'expect_table_column_count_to_equal',
+        'expect_table_columns_to_match_ordered_list',
+        'expect_table_columns_to_match_set',
+        'expect_table_row_count_to_be_between',
+        'expect_table_row_count_to_equal',
+        'expect_table_row_count_to_equal_other_table'
+    ]
+    ```
+
+To inspect the `args` and/or `kwargs` for a method, prefix the call with a question mark to see the docstring (or two question marks to see the docstring and source code).
+
+??? note "How-to: View args and kwargs for an `Expectation`"
+
+    To view the docstring (which includes descriptions of args and kwargs), prefix the method with one question mark and run that cell (note: leave off the parentheses). To view the method's docstring and source code, use two question marks.
+    
+    `?validator.expect_column_values_to_be_of_type`
+
+    ```python
+    Signature: validator.expect_column_values_to_be_of_type(*args, **kwargs)
+    Docstring:
+    Expect a column to contain values of a specified data type.
+
+    expect_column_values_to_be_of_type is a [Column Map Expectation](https://docs.greatexpectations.io/docs/guides/expectations/creating_custom_expectations/how_to_create_custom_column_map_expectations) for typed-column backends, and also for PandasDataset where the column dtype and provided type_ are unambiguous constraints (any dtype except 'object' or dtype of 'object' with     type_ specified as 'object').
+
+    For PandasDataset columns with dtype of 'object' expect_column_values_to_be_of_type will
+    independently check each row's type.
+
+    Args:
+        column (str):  The column name.
+        type\_ (str):  A string representing the data type that each column should have as entries.
+                        Valid types are defined by the current backend implementation and are
+                        dynamically loaded. For example, valid types for PandasDataset include any
+                        numpy dtype values (such as 'int64') or native python types (such as 'int'),
+                        whereas valid types for a SqlAlchemyDataset include types named by the current
+                        driver such as 'INTEGER' in most SQL dialects and 'TEXT' in dialects such as
+                        postgresql. Valid types for SparkDFDataset include 'StringType', 'BooleanType'
+                        and other pyspark-defined type names. Note that the strings representing these
+                        types are sometimes case-sensitive. For instance, with a Pandas backend
+                        `timestamp` will be unrecognized and fail the expectation, while `Timestamp`
+                        would pass with valid data.
+
+    Keyword Args:
+        mostly (None or a float between 0 and 1):   Successful if at least mostly fraction of values match the expectation. For more detail, see [mostly](https://docs.greatexpectations.io/docs/reference/expectations/standard_arguments/#mostly).
+    ...
+    ```
+
+Add `Expectations` to your `Validator`-instance's `expectation_suite` (or edit them if they already exist) by running the relevant `validator` method. Except for the four [standard arguments](https://docs.greatexpectations.io/docs/reference/expectations/standard_arguments/#catch_exceptions) (`result_format`, `catch_exceptions`, `meta`, and `mostly`), each `Expectation`-type can have different arguments (although they're pretty intuitive).
+
+
+```python
+validator.expect_table_columns_to_match_set(
+    column_set=[
+        "account_number", "site_number", "permit_number", "legal_name", "doing_business_as_name",
+        "issued_date", "expiration_date", "payment_date", "address_number", "address_number_start",
+        "street_direction", "street", "street_type", "city", "state", "zip_code", "address",
+        "ward", "police_district", "location_state", "location_zip", "location_address",
+        "location_city", "longitude", "latitude", "geometry", "source_data_updated",
+        "ingestion_check_time"
+    ],
+    exact_match=True
+)
+validator.expect_column_distinct_values_to_be_in_set(column="state", value_set=["IL"])
+validator.expect_column_distinct_values_to_be_in_set(column="city", value_set=["CHICAGO"])
+
+validator.expect_column_values_to_be_null(column="location_address")
+validator.expect_column_values_to_be_null(column="location_city")
+validator.expect_column_values_to_be_null(column="location_state")
+validator.expect_column_values_to_be_null(column="location_zip")
+
+validator.expect_column_values_to_not_be_null(column="issued_date")
+validator.expect_column_values_to_not_be_null(column="expiration_date")
+validator.expect_column_values_to_not_be_null(column="legal_name")
+validator.expect_column_values_to_not_be_null(column="doing_business_as_name")
+validator.expect_column_values_to_not_be_null(column="source_data_updated")
+validator.expect_column_values_to_not_be_null(column="ingestion_check_time")
+validator.expect_column_values_to_not_be_null(column="permit_number")
+validator.expect_column_values_to_not_be_null(column="account_number")
+validator.expect_column_values_to_not_be_null(column="zip_code", mostly=0.99)
+
+validator.expect_column_values_to_be_of_type(column="issued_date", type_="TIMESTAMP")
+validator.expect_column_values_to_be_of_type(column="expiration_date", type_="TIMESTAMP")
+validator.expect_column_values_to_be_of_type(column="payment_date", type_="TIMESTAMP")
+
+validator.expect_column_values_to_be_unique(column="permit_number")
+validator.expect_column_values_to_be_unique(column="account_number")
+validator.expect_column_values_to_be_unique(column="site_number")
+
+validator.expect_column_unique_value_count_to_be_between(
+    column="ward",
+    min_value=1,
+    max_value=50,
+    meta={
+        "notes": {
+            "format": "markdown",
+            "content": (
+                "Some markdown-formatted comment about this expectation fo be included in the "
+                + "Data Docs entry for this validation. **Markdown** `Supported`, $\latex$ too."
+            ),
+        }
+    }
+)
+...
+```
+
+??? note "Standard argument example: `result_format`"
+
+    The valid `result_format` types are:
+
+    * "BASIC" (default)
+    * "BOOLEAN_ONLY"
+    * "SUMMARY"
+    * "COMPLETE"
+
+    ### "BASIC"
+
+    ```python
+    validator.expect_column_value_lengths_to_be_between(
+        column="doing_business_as_name",
+        min_value=1,
+        max_value=127,
+        result_format="BASIC"
+    )
+    ```
+    outputs
+    ```python
+    {
+        "meta": {},
+        "success": true,
+        "result": {
+            "element_count": 58,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "partial_unexpected_list": [],
+            "missing_count": 0,
+            "missing_percent": 0.0,
+            "unexpected_percent_total": 0.0,
+            "unexpected_percent_nonmissing": 0.0
+        },
+        "exception_info": {
+            "raised_exception": false,
+            "exception_traceback": null,
+            "exception_message": null
+        }
+    }
+    ```
+
+    ### "BOOLEAN_ONLY"
+
+    ```python
+    validator.expect_column_value_lengths_to_be_between(
+        column="doing_business_as_name",
+        min_value=1,
+        max_value=127,
+        result_format="BOOLEAN_ONLY"
+    )
+    ```
+    outputs
+    ```python
+    {
+        "meta": {},
+        "success": true,
+        "result": {},
+        "exception_info": {
+            "raised_exception": false,
+            "exception_traceback": null,
+            "exception_message": null
+        }
+    }
+    ```
+
+    ### "SUMMARY"
+
+    ```python
+    validator.expect_column_value_lengths_to_be_between(
+        column="doing_business_as_name",
+        min_value=1,
+        max_value=127,
+        result_format="SUMMARY"
+    )
+    ```
+    outputs
+    ```python
+    {
+        "meta": {},
+        "success": true,
+        "result": {
+            "element_count": 58,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "partial_unexpected_list": [],
+            "missing_count": 0,
+            "missing_percent": 0.0,
+            "unexpected_percent_total": 0.0,
+            "unexpected_percent_nonmissing": 0.0,
+            "partial_unexpected_counts": []
+        },
+        "exception_info": {
+            "raised_exception": false,
+            "exception_traceback": null,
+            "exception_message": null
+        }
+    }
+    ```
+
+    ### "COMPLETE"
+
+    ```python
+    validator.expect_column_value_lengths_to_be_between(
+        column="doing_business_as_name",
+        min_value=1,
+        max_value=127,
+        result_format="COMPLETE"
+    )
+    ```
+    outputs
+    ```python
+    {
+        "meta": {},
+        "success": true,
+        "result": {
+            "element_count": 58,
+            "unexpected_count": 0,
+            "unexpected_percent": 0.0,
+            "partial_unexpected_list": [],
+            "missing_count": 0,
+            "missing_percent": 0.0,
+            "unexpected_percent_total": 0.0,
+            "unexpected_percent_nonmissing": 0.0,
+            "partial_unexpected_counts": [],
+            "unexpected_list": [],
+            "unexpected_index_query": "SELECT doing_business_as_name \nFROM data_raw.temp_chicago_sidewalk_cafe_permits \nWHERE doing_business_as_name IS NOT NULL AND NOT (length(doing_business_as_name) >= 1 AND length(doing_business_as_name) <= 127);"
+        },
+        "exception_info": {
+            "raised_exception": false,
+            "exception_traceback": null,
+            "exception_message": null
+        }
+    }
+    ```
+
+When you're content with your suite of `Expectations`, save them to your `DataContext`.
+
+```python
+validator.save_expectation_suite(discard_failed_expectations=False)
+```
+
+Now you can add (or update) a `Checkpoint` to evaluate that suite of `Expectations`. This step can take a while (depending on the size of the table and the number of `Expectations` being evaluated).
+
+```python
+checkpoint = context.add_or_update_checkpoint(
+    name=f"{data_asset_name}_checkpoint",
+    validator=validator,
+)
+checkpoint_result = checkpoint.run()
+```
+
+After running the `Checkpoint`, report the results (by building Data Docs).
+
+```python
+context.build_data_docs()
+```
+
+### Reviewing Data Docs
+
+Navigate to `/uncommitted/data_docs/local_site` in the File Browser and open the file named `index.html`.
+
+??? note "How-to: Navigate Data Docs"
+
+    If you can't click anything and your Data Docs interface looks like this, click "Trust HTML" in the upper left corner.
+
+    ![GX Data Docs index with failed runs](/assets/imgs/validation/Data_Docs_need_to_trust_HTML.png)
+
+If you see checks of batches where the validation status indicates failure (i.e. a :x: mark in the Status column), then at least one `Expectation` was not met. Click into a report to see the failed expectations.
+
+![GX Data Docs index with failed runs](/assets/imgs/validation/gx_failed_batches_data_docs.png)
+
+Click **Failed Only** in the left-hand **Actions: Validation Filter** box to only see failed `Expectations`.
+
+![GX Data Docs failed batch](/assets/imgs/validation/gx_specific_failed_batch_data_doc.png)
+
+We see that our uniqueness expectation for `account_number` and `site_number` wasn't met and isn't valid. Let's remove those expectations.
+
+
+#### Removing an `Expectation`
 
 While reviewing expectations, you may find an expectation you want to just remove. You can delete such expectations via the `validator` object's `.remove_expectation()` method, but you have to pass in the expectation that is to be removed from the suite. You can access the expectation by accessing the `.expectation_config` attr of the `ExpectationValidationResult`.
 
 
 ```python
-expectation_validation_result = validator.expect_column_values_to_match_regex(
-    column='victimization_fbi_cd',
-    mostly=1.0,
-    regex='-?\d+',
-    meta={
-        'profiler_details': {
-            'evaluated_regexes': {
-                '(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})(?:.(?:25[0-5]|2[0-4]\\d|[01]\\d{2}|\\d{1,2})){3}': 0.0,
-                '-?\\d+': 1.0, '-?\\d+(?:\\.\\d*)?': 1.0, '<\\/?(?:p|a|b|img)(?: \\/)?>': 0.0,
-                '[A-Za-z0-9\\.,;:!?()\\"\'%\\-]+': 1.0,
-                '\\b[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}-[0-5][0-9a-fA-F]{3}-[089ab][0-9a-fA-F]{3}-\\b[0-9a-fA-F]{12}\\b ': 0.0,
-                '\\d+': 1.0,
-                '\\s+$': 0.0,
-                '^\\s+': 0.0,
-                'https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,255}\\.[a-z]{2,6}\\b(?:[-a-zA-Z0-9@:%_\\+.~#()?&//=]*)': 0.0
-            },
-            'success_ratio': 1.0
-        }
-    }
+expectation_validation_result = validator.expect_column_values_to_not_be_null(column="account_number")
+
+print(f"Expectation configs in suite pre-removal: {len(validator.expectation_suite.expectations)}")
+validator.remove_expectation(
+    expectation_configuration=expectation_validation_result.expectation_config
 )
+validator.remove_expectation(
+    validator.expect_column_values_to_be_unique(column="site_number").expectation_config
+)
+print(f"Expectation configs in suite post-removal: {len(validator.expectation_suite.expectations)}")
 ```
 
-To confirm that you've removed that expectation, check the length of the expectation suite (via the command below) before and after removing the expectation.
+After removing those, save the suite to our context.
 
 ```python
-print(f"Number of expectations pre-removal: {len(validator.expectation_suite.expectations)}")
-validator.remove_expectation(expectation_validation_result.expectation_config)
-print(f"Number of expectations after-removal: {len(validator.expectation_suite.expectations)}")
+validator.save_expectation_suite(discard_failed_expectations=False)
 ```
+
+#### Rerunning Checkpoints
+
+Update the `Checkpoint` with our modified `validator` and rerun.
+
+```python
+checkpoint = context.add_or_update_checkpoint(
+    name=f"{data_asset_name}_checkpoint",
+    validator=validator,
+)
+checkpoint_result = checkpoint.run()
+```
+
+After running the `Checkpoint`, rebuild and review Data Docs.
+
+```python
+context.build_data_docs()
+```
+
+If all `Expectations` are being met for all batches, the Data Docs index should look like this (with green check mark circles :octicons-check-circle-16: in the Status column)
+
+![GX Data Docs failed batch](/assets/imgs/validation/gx_successful_batches_data_docs.png)
+
+### Summary
+
+We've defined a suite of `Expectations` for batches of data as well as configured a `Checkpoint` to handle validating our data. Now we can run that `Checkpoint` when we update this `DataAsset`.

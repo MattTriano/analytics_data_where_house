@@ -54,7 +54,7 @@ nav:
     - "Standardizing Columns": dev_guide/standardizing_columns.md
     - "Validating Data":
       - dev_guide/validation/index.md
-      - "GE Startup": dev_guide/validation/new_workflow.md
+      - "Sample Workflow": dev_guide/validation/new_workflow.md
       - "Defining a Datasource": dev_guide/validation/data_source_setup.md
       - "Setting (data) Expectations":
         - "Manual Workflow": dev_guide/validation/manually_setting_expectations.md
@@ -79,10 +79,12 @@ markdown_extensions:
       separator: "_"
       toc_depth: 4
       title: On this page
+  - admonition
   - attr_list
   - md_in_html
   - def_list
   - footnotes
+  - pymdownx.details
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.highlight:
@@ -97,6 +99,7 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+  - tables
 
 extra_css:
   - stylesheets/extra.css
