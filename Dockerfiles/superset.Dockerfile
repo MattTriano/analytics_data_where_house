@@ -1,4 +1,4 @@
-FROM apache/superset:2.0.1
+FROM apache/superset:2.1.0
 
 COPY requirements/superset/docker-init.sh /app/docker/docker-init.sh
 COPY requirements/superset/pythonpath_dev /app/docker/pythonpath_dev
