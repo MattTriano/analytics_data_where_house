@@ -1,14 +1,12 @@
 version: "3.9"
 
-x-airflow-common:
-  &airflow-common
+x-airflow-common: &airflow-common
   build:
     context: ./
     dockerfile: ./Dockerfiles/airflow.Dockerfile
   env_file:
     - .env
-  environment:
-    &airflow-common-env
+  environment: &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
@@ -29,13 +27,11 @@ x-airflow-common:
   user: "${AIRFLOW_UID:-50000}:0"
   networks:
     - re_etl_net
-  depends_on:
-    &airflow-common-depends-on
+  depends_on: &airflow-common-depends-on
     airflow_db:
       condition: service_healthy
 
-x-superset-common:
-  &superset-common
+x-superset-common: &superset-common
   build:
     context: ./
     dockerfile: Dockerfiles/superset.Dockerfile
@@ -48,8 +44,7 @@ x-superset-common:
     REDIS_HOST: redis
     REDIS_PORT: 6379
 
-  depends_on:
-    &superset-common-depends-on
+  depends_on: &superset-common-depends-on
     redis:
       condition: service_healthy
     ss_db:
@@ -58,7 +53,7 @@ x-superset-common:
 services:
   superset:
     <<: *superset-common
-    image: adwh_superset:2.0.1
+    image: adwh_superset:2.1.0
     command: [ "/app/docker/docker-bootstrap.sh", "app-gunicorn" ]
     restart: unless-stopped
     ports:
@@ -181,7 +176,7 @@ services:
     restart: always
 
   db_admin:
-    image: adwh_pgadmin:7.4
+    image: adwh_pgadmin:7.5
     build:
       context: ./
       dockerfile: ./Dockerfiles/pgadmin4.Dockerfile

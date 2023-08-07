@@ -16,8 +16,6 @@ config_version: 3.0
 datasources:
   where_house_source:
     execution_engine:
-      class_name: SqlAlchemyExecutionEngine
-      module_name: great_expectations.execution_engine
       credentials:
         host: dwh_db
         port: '5432'
@@ -25,29 +23,31 @@ datasources:
         password: ${DWH_POSTGRES_PASSWORD}
         database: ${DWH_POSTGRES_DB}
         drivername: postgresql
-    module_name: great_expectations.datasource
-    class_name: Datasource
+      class_name: SqlAlchemyExecutionEngine
+      module_name: great_expectations.execution_engine
     data_connectors:
       default_runtime_data_connector_name:
+        class_name: RuntimeDataConnector
+        module_name: great_expectations.datasource.data_connector
         batch_identifiers:
           - default_identifier_name
-        module_name: great_expectations.datasource.data_connector
-        class_name: RuntimeDataConnector
         name: default_runtime_data_connector_name
       data_raw_inferred_data_connector_name:
-        module_name: great_expectations.datasource.data_connector
         include_schema_name: true
-        class_name: InferredAssetSqlDataConnector
         introspection_directives:
           schema_name: data_raw
+        class_name: InferredAssetSqlDataConnector
+        module_name: great_expectations.datasource.data_connector
         name: data_raw_inferred_data_connector_name
       dwh_inferred_data_connector_name:
-        module_name: great_expectations.datasource.data_connector
         include_schema_name: true
-        class_name: InferredAssetSqlDataConnector
         introspection_directives:
           schema_name: dwh
+        class_name: InferredAssetSqlDataConnector
+        module_name: great_expectations.datasource.data_connector
         name: dwh_inferred_data_connector_name
+    class_name: Datasource
+    module_name: great_expectations.datasource
 config_variables_file_path: uncommitted/config_variables.yml
 
 # The plugins_directory will be added to your python path for custom modules
@@ -114,8 +114,8 @@ anonymous_usage_statistics:
   data_context_id: b25cb2e2-4999-427c-93b4-7597f9e172a9
 include_rendered_content:
   expectation_suite: false
-  globally: false
   expectation_validation_result: false
+  globally: false
 notebooks:
 fluent_datasources:
   fluent_dwh_source:
