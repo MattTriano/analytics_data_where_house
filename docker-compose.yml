@@ -176,7 +176,7 @@ services:
     restart: always
 
   db_admin:
-    image: adwh_pgadmin:7.4
+    image: adwh_pgadmin:7.5
     build:
       context: ./
       dockerfile: ./Dockerfiles/pgadmin4.Dockerfile

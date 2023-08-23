@@ -18,8 +18,6 @@ datasources:
     class_name: Datasource
     module_name: great_expectations.datasource
     execution_engine:
-      class_name: SqlAlchemyExecutionEngine
-      module_name: great_expectations.execution_engine
       credentials:
         host: dwh_db
         port: '5432'
@@ -27,6 +25,8 @@ datasources:
         password: ${DWH_POSTGRES_PASSWORD}
         database: ${DWH_POSTGRES_DB}
         drivername: postgresql
+      class_name: SqlAlchemyExecutionEngine
+      module_name: great_expectations.execution_engine
     data_connectors:
       default_runtime_data_connector_name:
         name: default_runtime_data_connector_name
@@ -113,9 +113,9 @@ anonymous_usage_statistics:
   data_context_id: b25cb2e2-4999-427c-93b4-7597f9e172a9
   enabled: true
 include_rendered_content:
-  globally: false
   expectation_suite: false
   expectation_validation_result: false
+  globally: false
 notebooks:
 fluent_datasources:
   fluent_dwh_source:
