@@ -55,19 +55,19 @@ nav:
     - "Validating Data":
       - dev_guide/validation/index.md
       - "Sample Workflow": dev_guide/validation/new_workflow.md
-      - "Defining a Datasource": dev_guide/validation/data_source_setup.md
-      - "Setting (data) Expectations":
-        - "Manual Workflow": dev_guide/validation/manually_setting_expectations.md
-        - "Data Assistant Workflow": dev_guide/validation/data_assistant_workflow.md
-      - "Setting Checkpoints": dev_guide/making_expectation_suites.md
+      # - "Defining a Datasource": dev_guide/validation/data_source_setup.md
+      # - "Setting (data) Expectations":
+        # - "Manual Workflow": dev_guide/validation/manually_setting_expectations.md
+        # - "Data Assistant Workflow": dev_guide/validation/data_assistant_workflow.md
+      # - "Setting Checkpoints": dev_guide/making_expectation_suites.md
     - "Engineering Features":
       - dev_guide/feature_engineering/index.md
       - "Geospatial Features": dev_guide/feature_engineering/geospatial.md
       - "Time Series Features": dev_guide/feature_engineering/time_series.md
   - "Data Sources":
     - 'Socrata ELT': data_sources/socrata.md
-  - "Overview":
-    - "Workflow Patterns": overview/pipeline_patterns.md
+  # - "Overview":
+    # - "Workflow Patterns": overview/pipeline_patterns.md
 
 plugins:
   - search
