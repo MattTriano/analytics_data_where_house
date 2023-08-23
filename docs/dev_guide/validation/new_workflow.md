@@ -265,7 +265,7 @@ validator.expect_column_unique_value_count_to_be_between(
     * "SUMMARY"
     * "COMPLETE"
 
-    ### "BASIC"
+    **"BASIC"**
 
     ```python
     validator.expect_column_value_lengths_to_be_between(
@@ -298,7 +298,7 @@ validator.expect_column_unique_value_count_to_be_between(
     }
     ```
 
-    ### "BOOLEAN_ONLY"
+    **"BOOLEAN_ONLY"**
 
     ```python
     validator.expect_column_value_lengths_to_be_between(
@@ -322,7 +322,7 @@ validator.expect_column_unique_value_count_to_be_between(
     }
     ```
 
-    ### "SUMMARY"
+    **"SUMMARY"**
 
     ```python
     validator.expect_column_value_lengths_to_be_between(
@@ -356,7 +356,7 @@ validator.expect_column_unique_value_count_to_be_between(
     }
     ```
 
-    ### "COMPLETE"
+    **"COMPLETE"**
 
     ```python
     validator.expect_column_value_lengths_to_be_between(

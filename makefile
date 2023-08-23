@@ -87,15 +87,6 @@ create_warehouse_infra:
 		 mkdir -p /opt/airflow/dbt/models/feature &&\
 		 mkdir -p /opt/airflow/dbt/models/dwh"
 
-build_python_img:
-	docker compose build --no-cache py-utils 2>&1 | tee logs/python_build_logs_$(run_time).txt
-
-start_python_container:
-	docker compose up -d py-utils
-
-get_py_utils_shell: start_python_container
-	docker compose exec py-utils /bin/bash
-
 run_tests:
 	docker compose exec airflow-scheduler /bin/bash -c \
 		"cd /opt/airflow && python -m pytest -s"
