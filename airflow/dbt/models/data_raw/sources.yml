@@ -44,6 +44,7 @@ sources:
       - name: cook_county_sao_case_initiation_data
       - name: cook_county_sao_case_intake_data
       - name: cook_county_sao_case_sentencing_data
+      - name: gross_rent_by_cook_county_il_tract
       - name: illinois_census_tracts_2022
       - name: nyc_parcel_sales
       - name: temp_cc_hh_earnings_in_last_12mo_by_tract
@@ -84,6 +85,7 @@ sources:
       - name: temp_cook_county_sao_case_initiation_data
       - name: temp_cook_county_sao_case_intake_data
       - name: temp_cook_county_sao_case_sentencing_data
+      - name: temp_gross_rent_by_cook_county_il_tract
       - name: temp_illinois_census_tracts_2022
       - name: temp_nyc_parcel_sales
       - name: temp_united_states_counties_2022

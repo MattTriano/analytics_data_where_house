@@ -174,6 +174,12 @@ COOK_COUNTY_NEIGHBORHOOD_BOUNDARIES = SocrataTable(
     schedule="0 4 3 3 *",
 )
 
+COOK_COUNTY_PARCEL_ADDRESSES = SocrataTable(
+    table_id="3723-97qp",
+    table_name="cook_county_parcel_addresses",
+    schedule="10 7 4 * *",
+)
+
 COOK_COUNTY_PARCEL_LOCATIONS = SocrataTable(
     table_id="c49d-89sn",
     table_name="cook_county_parcel_locations",
