@@ -3,7 +3,7 @@
 Preprequisites:
 To use this system, Docker is the only absolutely necessary prerequisite.
 
-Having `GNU make` and core python on your host system will enable you to use included `makefile` recipes and scripts to streamline setup and common operations, but you could get by without them (although you'll have to figure more out).
+Having `GNU make` and a basic python distribution (with the ability to make `venv`s) on your host system will enable you to use included `makefile` recipes and scripts to streamline setup and common operations, but you could get by without them (although you'll have to figure more out).
 
 ## Setting up credentials
 After cloning this project, `cd` into your local repo, run this `make` command and enter appropriate responses to the prompts. You may want to have a password generator open.

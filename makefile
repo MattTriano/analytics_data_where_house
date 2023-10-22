@@ -1,5 +1,5 @@
-SHELL = /bin/bash
-.phony: startup shutdown quiet_startup restart make_credentials serve_dbt_docs \
+SHELL := /bin/bash
+.PHONY: startup shutdown quiet_startup restart make_credentials serve_dbt_docs \
 	build_images init_airflow initialize_system create_warehouse_infra update_dbt_packages \
 	dbt_generate_docs build_python_img get_py_utils_shell make_fernet_key run_tests \
 	build_images_no_cache
@@ -15,21 +15,34 @@ run_time := "$(shell date '+%Y_%m_%d__%H_%M_%S')"
 PROJECT_NAME := $(shell basename $(MAKEFILE_DIR_PATH) | tr '[:upper:]' '[:lower:]')
 
 $(VENV_PATH):
-	python -m venv $(VENV_PATH); \
-	source $(VENV_PATH)/bin/activate; \
-	python -m pip install --upgrade pip; \
+	$(eval PYTHON := $(shell command -v python || command -v python3))
+	@if [ -z "$(PYTHON)" ]; then \
+		echo "No Python interpreter found!"; \
+		exit 1; \
+	fi
+	@if ! $(PYTHON) -c "import ensurepip" 2>/dev/null; then \
+		echo "The 'ensurepip' module is required to create a venv, but is not available."; \
+		echo "On Debian/Ubuntu, you may need to install the 'python3-venv' package:"; \
+		echo "    sudo apt install python3-venv"; \
+		echo "Or if you don't have sudo privileges, install conda."; \
+		echo "Then try again." ;\
+		exit 1; \
+	fi
+	$(PYTHON) -m venv $(VENV_PATH)
+	@. $(VENV_PATH)/bin/activate && \
+	python -m pip install --upgrade pip && \
 	python -m pip install -Ur $(STARTUP_DIR)venv_reqs.txt
 
 make_venv: | $(VENV_PATH)
 
 make_credentials: | make_venv
-	source $(VENV_PATH)/bin/activate; \
+	@. $(VENV_PATH)/bin/activate && \
 	python $(STARTUP_DIR)make_env.py \
 		--project_dir=$(MAKEFILE_DIR_PATH) \
 		--mode=interactive
 
 make_credentials_dev: | make_venv
-	source $(VENV_PATH)/bin/activate; \
+	@. $(VENV_PATH)/bin/activate && \
 	python $(STARTUP_DIR)make_env.py \
 		--project_dir=$(MAKEFILE_DIR_PATH) \
 		--mode=dev
