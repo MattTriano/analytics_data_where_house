@@ -4,7 +4,7 @@
 
 WITH records_with_basic_cleaning AS (
     SELECT
-        systemstop::smallint                                  AS systemstop,
+        split_part(systemstop, '.', 1)::smallint              AS systemstop,
         upper(public_nam::text)                               AS public_name,
         upper(dir::text)                                      AS dir,
         upper(street::text)                                   AS street,
