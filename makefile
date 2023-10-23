@@ -9,14 +9,13 @@ SHELL := /bin/bash
 MAKEFILE_FILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MAKEFILE_DIR_PATH := ${dir ${MAKEFILE_FILE_PATH}}
 STARTUP_DIR := ${MAKEFILE_DIR_PATH}.startup/
-VENV_PATH := $(MAKEFILE_DIR_PATH).venv
 run_time := "$(shell date '+%Y_%m_%d__%H_%M_%S')"
 
 PROJECT_NAME := $(shell basename $(MAKEFILE_DIR_PATH) | tr '[:upper:]' '[:lower:]')
 
-run_startup:
+make_credentials:
 	@if [ -f .env ] || [ -f .env.dwh ] || [ -f .env.superset ]; then \
-		echo "Some .env files already exist. Remove or rename them to run startup process."; \
+		echo "Some .env files already exist. Remove or rename them to rerun startup process."; \
 	else \
 		echo "Running startup scripts to create .env files with ADWH credentials."; \
 		docker build -t adwh_startup -f .startup/Dockerfile.startup .startup/; \
@@ -26,46 +25,17 @@ run_startup:
 		mv "${STARTUP_DIR}/.env.superset" "${MAKEFILE_DIR_PATH}/.env.superset"; \
 	fi
 
-$(VENV_PATH):
-	$(eval PYTHON := $(shell command -v python || command -v python3))
-	@if [ -z "$(PYTHON)" ]; then \
-		echo "No Python interpreter found!"; \
-		exit 1; \
-	fi
-	@if ! $(PYTHON) -c "import ensurepip" 2>/dev/null; then \
-		echo "The 'ensurepip' module is required to create a venv, but is not available."; \
-		echo "On Debian/Ubuntu, you may need to install the 'python3-venv' package:"; \
-		echo "    sudo apt install python3-venv"; \
-		echo "Or if you don't have sudo privileges, install conda."; \
-		echo "Then try again." ;\
-		exit 1; \
-	fi
-	$(PYTHON) -m venv $(VENV_PATH)
-	@. $(VENV_PATH)/bin/activate && \
-	python -m pip install --upgrade pip && \
-	python -m pip install -Ur $(STARTUP_DIR)venv_reqs.txt
-
-make_venv: | $(VENV_PATH)
-
-make_credentials: | make_venv
-	@. $(VENV_PATH)/bin/activate && \
-	python $(STARTUP_DIR)make_env.py \
-		--project_dir=$(MAKEFILE_DIR_PATH) \
-		--mode=interactive
-
-make_credentials_dev: | make_venv
-	@. $(VENV_PATH)/bin/activate && \
-	python $(STARTUP_DIR)make_env.py \
-		--project_dir=$(MAKEFILE_DIR_PATH) \
-		--mode=dev
 
 build_images:
+	echo "Building docker images and outputting build logs to ./logs/"; \
 	docker compose build 2>&1 | tee logs/where_house_build_logs_$(run_time).txt
 
 build_images_no_cache:
+	echo "Building docker images without using cached layers and outputting build logs to ./logs/"; \
 	docker compose build --no-cache 2>&1 | tee logs/where_house_build_logs_$(run_time).txt
 
 init_airflow: build_images
+	echo "Initializing Airflow"
 	docker compose up airflow-init
 
 initialize_system: build_images init_airflow
@@ -98,6 +68,7 @@ clean_dbt:
 	docker compose exec airflow-scheduler /bin/bash -c "mkdir -p /opt/airflow/dbt/target"
 
 create_warehouse_infra:
+	echo "Creating essential schemas, metadata-tracking tables, directories, and other infra."; \
 	docker compose exec airflow-scheduler /bin/bash -c \
 		"airflow dags unpause create_socrata_dataset_metadata_table &&\
 		 airflow dags trigger create_socrata_dataset_metadata_table &&\
@@ -113,6 +84,7 @@ create_warehouse_infra:
 		 mkdir -p /opt/airflow/dbt/models/dwh"
 
 run_tests:
+	echo "Running pytest in airflow-scheduler container."; \
 	docker compose exec airflow-scheduler /bin/bash -c \
 		"cd /opt/airflow && python -m pytest -s"
 

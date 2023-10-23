@@ -3,7 +3,7 @@
 Preprequisites:
 To use this system, Docker is the only absolutely necessary prerequisite.
 
-Having `GNU make` and a basic python distribution (with the ability to make `venv`s) on your host system will enable you to use included `makefile` recipes and scripts to streamline setup and common operations, but you could get by without them (although you'll have to figure more out).
+Having `GNU make` on your host system will enable you to use included `makefile` recipes to streamline setup and common operations, but if don't have and can't install it on your system, you can just manually run the commands from recipes in the `makefile` in the project's top-level directory.
 
 ## Setting up credentials
 After cloning this project, `cd` into your local repo, run this `make` command and enter appropriate responses to the prompts. You may want to have a password generator open.
@@ -38,6 +38,10 @@ You can still make geospatial Superset charts without an API key, but your geosp
 ![With Mapbox API key](/assets/imgs/superset/deckgl_polygon_chart_demo.png){ style="width:51%" }
 
 ## Initializing the system
+
+!!! warning "Before you initialize"
+
+	 If you want to change any credentials, do this before you start up the system. It's easiest to do this by renaming (or removing) all `.env` files, rerunning `make make_credentials`, and entering the desired credentials (and remember to remove your prior `.env` files if you kept them earlier). You can change many of the credentials after the system is up and running, but changing credentials for existing databases is not currently supported.
 
 On the first startup of the system (and after setting your credentials), run the commands below to
 1. build the platform's docker images, and initialize the airflow metadata database,
