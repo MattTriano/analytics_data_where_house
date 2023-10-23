@@ -14,6 +14,18 @@ run_time := "$(shell date '+%Y_%m_%d__%H_%M_%S')"
 
 PROJECT_NAME := $(shell basename $(MAKEFILE_DIR_PATH) | tr '[:upper:]' '[:lower:]')
 
+run_startup:
+	@if [ -f .env ] || [ -f .env.dwh ] || [ -f .env.superset ]; then \
+		echo "Some .env files already exist. Remove or rename them to run startup process."; \
+	else \
+		echo "Running startup scripts to create .env files with ADWH credentials."; \
+		docker build -t adwh_startup -f .startup/Dockerfile.startup .startup/; \
+		docker run --rm -it -v "${STARTUP_DIR}:/startup" adwh_startup; \
+		mv "${STARTUP_DIR}/.env" "${MAKEFILE_DIR_PATH}/.env"; \
+		mv "${STARTUP_DIR}/.env.dwh" "${MAKEFILE_DIR_PATH}/.env.dwh"; \
+		mv "${STARTUP_DIR}/.env.superset" "${MAKEFILE_DIR_PATH}/.env.superset"; \
+	fi
+
 $(VENV_PATH):
 	$(eval PYTHON := $(shell command -v python || command -v python3))
 	@if [ -z "$(PYTHON)" ]; then \

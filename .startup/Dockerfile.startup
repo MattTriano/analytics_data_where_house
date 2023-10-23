@@ -1,0 +1,6 @@
+FROM python:3.10-alpine
+RUN apk --no-cache add openssl
+WORKDIR /startup
+COPY . /startup
+RUN pip install --no-cache-dir -r venv_reqs.txt
+ENTRYPOINT [ "python", "make_env_docker.py" ]
