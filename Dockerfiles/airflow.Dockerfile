@@ -11,6 +11,7 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 USER airflow
+RUN mkdir -p /opt/airflow/.jupyter/share/jupyter/runtime
 COPY requirements/airflow_requirements.txt /requirements.txt
 RUN pip install --user --upgrade pip
 RUN pip install -v --no-cache-dir --user -r /requirements.txt

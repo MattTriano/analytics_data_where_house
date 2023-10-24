@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -175,7 +176,7 @@ if __name__ == "__main__":
         "file": ".env",
         "name": "AIRFLOW_UID",
         "group": "Airflow",
-        "set_value": get_user_uid().strip(),
+        "set_value": os.getenv("UID"),
     }
     env_var_dict[".env::AIRFLOW__CORE__FERNET_KEY"] = {
         "file": ".env",
