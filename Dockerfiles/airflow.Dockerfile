@@ -1,4 +1,4 @@
-FROM apache/airflow:2.7.2-python3.10
+FROM apache/airflow:2.9.3-python3.12
 USER root
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -12,5 +12,5 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 USER airflow
 COPY requirements/airflow_requirements.txt /requirements.txt
-RUN pip install --user --upgrade pip
-RUN pip install -v --no-cache-dir --user -r /requirements.txt
+RUN pip install --upgrade pip
+RUN pip install -v --no-cache-dir -r /requirements.txt
