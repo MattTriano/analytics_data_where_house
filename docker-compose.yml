@@ -33,8 +33,8 @@ x-airflow-common: &airflow-common
 
 x-superset-common: &superset-common
   build:
-    context: ./
-    dockerfile: Dockerfiles/superset.Dockerfile
+    context: ./docker/superset
+    dockerfile: superset.Dockerfile
   networks:
     - re_etl_net
   env_file:
