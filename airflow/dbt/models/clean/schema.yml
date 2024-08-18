@@ -9,23 +9,23 @@ models:
       - name: parcel_sale_id        
       - name: pin
         description: '{{ doc("parcels_cc_sales__pin") }}'
-        tests:
+        data_tests:
           - not_null
       - name: year
       - name: township_code
       - name: class
         description: '{{ doc("parcels_cc_sales__class") }}'
       - name: sale_date
-        tests:
+        data_tests:
           - not_null
         description: '{{ doc("parcels_cc_sales__sale_date") }}'
       - name: is_mydec_date
         description: '{{ doc("parcels_cc_sales__is_mydec_date") }}'
       - name: sale_price
-        tests:
+        data_tests:
           - not_null
       - name: sale_document_num
-        tests:
+        data_tests:
         - not_null
         description: '{{ doc("parcels_cc_sales__sale_document_num") }}'
       - name: sale_deed_type
@@ -44,28 +44,28 @@ models:
     description: '{{ doc("parcels_cc_sales") }}'
     columns:
       - name: parcel_sale_id
-        tests:
+        data_tests:
           - unique
           - not_null
       - name: pin
         description: '{{ doc("parcels_cc_sales__pin") }}'
-        tests:
+        data_tests:
           - not_null
       - name: year
       - name: township_code
       - name: class
         description: '{{ doc("parcels_cc_sales__class") }}'
       - name: sale_date
-        tests:
+        data_tests:
           - not_null
         description: '{{ doc("parcels_cc_sales__sale_date") }}'
       - name: is_mydec_date
         description: '{{ doc("parcels_cc_sales__is_mydec_date") }}'
       - name: sale_price
-        tests:
+        data_tests:
           - not_null
       - name: sale_document_num
-        tests:
+        data_tests:
         - not_null
         description: '{{ doc("parcels_cc_sales__sale_document_num") }}'
       - name: sale_deed_type
@@ -85,7 +85,7 @@ models:
     columns:
       - name: pin
         description: Property Index Number (uniquely defines a parcel of property).
-        tests:
+        data_tests:
           - not_null
 
   - name: cook_county_parcel_locations_clean
@@ -95,7 +95,7 @@ models:
     columns:        
       - name: pin
         description: '{{ doc("parcels_cc_locations__pin") }}'
-        tests:
+        data_tests:
           - unique
           - not_null
       - name: property_address

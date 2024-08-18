@@ -7,18 +7,18 @@ models:
     description: '{{ doc("parcels_cc_sales") }}'
     columns:
       - name: parcel_sale_id
-        tests:
+        data_tests:
           - unique
           - not_null
       - name: pin
         description: '{{ doc("parcels_cc_sales__pin") }}'
-        tests:
+        data_tests:
           - not_null
       - name: sale_price
-        tests:
+        data_tests:
           - not_null
       - name: sale_date
-        tests:
+        data_tests:
           - not_null
         description: '{{ doc("parcels_cc_sales__sale_date") }}'
       - name: last_sale_price

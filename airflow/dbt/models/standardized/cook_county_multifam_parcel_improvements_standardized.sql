@@ -19,7 +19,7 @@ WITH records_with_basic_cleaning AS (
         pin_num_landlines::smallint                           AS pin_num_landlines,
         year_built::smallint                                  AS year_built,
         building_sqft::int                                    AS building_sqft,
-        land_sqft::int                                        AS land_sqft,
+        land_sqft::bigint                                     AS land_sqft,
         num_bedrooms::smallint                                AS num_bedrooms,
         num_rooms::smallint                                   AS num_rooms,
         num_full_baths::smallint                              AS num_full_baths,
