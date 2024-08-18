@@ -6,7 +6,7 @@ models:
     columns:
       - name: pin
         description: Property Index Number (uniquely defines a parcel of property).
-        tests:
+        data_tests:
           # - unique
           - not_null
 
@@ -15,7 +15,7 @@ models:
     columns:
       - name: assessment_id
         description: Uniquely defines the assessments for a parcel for one tax-year.
-        tests:
+        data_tests:
           # - unique
           - not_null
       - name: pin
@@ -47,7 +47,7 @@ models:
     columns:
       - name: nbhd_id
         description: Uniquely identifies a neighborhood boundary.
-        tests:
+        data_tests:
           - unique
           - not_null
       - name: triad_name

@@ -19,7 +19,7 @@ from cc_utils.file_factory import (
 )
 from tasks.socrata_tasks import highlight_unfinished_dbt_standardized_stub
 
-from sources.tables import COOK_COUNTY_PARCEL_SALES as SOCRATA_TABLE
+from sources.tables import COOK_COUNTY_MULTIFAM_PARCEL_IMPROVEMENTS as SOCRATA_TABLE
 
 task_logger = logging.getLogger("airflow.task")
 
