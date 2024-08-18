@@ -2,8 +2,8 @@ version: "3.9"
 
 x-airflow-common: &airflow-common
   build:
-    context: ./
-    dockerfile: ./Dockerfiles/airflow.Dockerfile
+    context: ./docker/airflow
+    dockerfile: airflow.Dockerfile
   env_file:
     - .env
   environment: &airflow-common-env
@@ -68,8 +68,8 @@ services:
   ss_db:
     image: adwh_ss_db:14.5
     build:
-      context: ./
-      dockerfile: Dockerfiles/airflow_db.Dockerfile
+      context: ./docker/superset
+      dockerfile: postgres.Dockerfile
     env_file:
       - .env.superset
     networks:
@@ -120,8 +120,8 @@ services:
   airflow_db:
     image: adwh_airflow_pg_db:14.5
     build:
-      context: ./
-      dockerfile: Dockerfiles/airflow_db.Dockerfile
+      context: ./docker/airflow
+      dockerfile: airflow_db.Dockerfile
     shm_size: 4gb
     env_file:
       - .env
