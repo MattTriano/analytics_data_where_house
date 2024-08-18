@@ -102,8 +102,8 @@ services:
   redis:
     image: adwh_redis:7.0.8
     build:
-      context: ./
-      dockerfile: Dockerfiles/redis.Dockerfile
+      context: ./docker/redis
+      dockerfile: redis.Dockerfile
     ports:
       - "6379:6379"
     volumes:
@@ -148,8 +148,8 @@ services:
   dwh_db:
     image: adwh_dwh_postgis_db:15.3.3
     build:
-      context: ./
-      dockerfile: Dockerfiles/postgis.Dockerfile
+      context: ./docker/postgis
+      dockerfile: postgis.Dockerfile
     shm_size: 4gb
     env_file:
       - .env.dwh
@@ -178,8 +178,8 @@ services:
   db_admin:
     image: adwh_pgadmin:7.7
     build:
-      context: ./
-      dockerfile: ./Dockerfiles/pgadmin4.Dockerfile
+      context: ./docker/pgadmin
+      dockerfile: pgadmin4.Dockerfile
     env_file:
       - .env
     restart: always
@@ -195,8 +195,8 @@ services:
   dbt_proj:
     image: adwh_dbt:1.6.3
     build:
-      context: ./
-      dockerfile: ./Dockerfiles/dbt.Dockerfile
+      context: ./docker/dbt
+      dockerfile: dbt.Dockerfile
     env_file:
       - .env
     stdin_open: true
