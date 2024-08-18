@@ -2,8 +2,8 @@ version: "3.9"
 
 x-airflow-common: &airflow-common
   build:
-    context: ./
-    dockerfile: ./Dockerfiles/airflow.Dockerfile
+    context: ./docker/airflow
+    dockerfile: airflow.Dockerfile
   env_file:
     - .env
   environment: &airflow-common-env
@@ -33,8 +33,8 @@ x-airflow-common: &airflow-common
 
 x-superset-common: &superset-common
   build:
-    context: ./
-    dockerfile: Dockerfiles/superset.Dockerfile
+    context: ./docker/superset
+    dockerfile: superset.Dockerfile
   networks:
     - re_etl_net
   env_file:
@@ -68,8 +68,8 @@ services:
   ss_db:
     image: adwh_ss_db:14.5
     build:
-      context: ./
-      dockerfile: Dockerfiles/airflow_db.Dockerfile
+      context: ./docker/superset
+      dockerfile: postgres.Dockerfile
     env_file:
       - .env.superset
     networks:
@@ -102,8 +102,8 @@ services:
   redis:
     image: adwh_redis:7.0.8
     build:
-      context: ./
-      dockerfile: Dockerfiles/redis.Dockerfile
+      context: ./docker/redis
+      dockerfile: redis.Dockerfile
     ports:
       - "6379:6379"
     volumes:
@@ -120,8 +120,8 @@ services:
   airflow_db:
     image: adwh_airflow_pg_db:14.5
     build:
-      context: ./
-      dockerfile: Dockerfiles/airflow_db.Dockerfile
+      context: ./docker/airflow
+      dockerfile: airflow_db.Dockerfile
     shm_size: 4gb
     env_file:
       - .env
@@ -148,8 +148,8 @@ services:
   dwh_db:
     image: adwh_dwh_postgis_db:15.3.3
     build:
-      context: ./
-      dockerfile: Dockerfiles/postgis.Dockerfile
+      context: ./docker/postgis
+      dockerfile: postgis.Dockerfile
     shm_size: 4gb
     env_file:
       - .env.dwh
@@ -178,8 +178,8 @@ services:
   db_admin:
     image: adwh_pgadmin:7.7
     build:
-      context: ./
-      dockerfile: ./Dockerfiles/pgadmin4.Dockerfile
+      context: ./docker/pgadmin
+      dockerfile: pgadmin4.Dockerfile
     env_file:
       - .env
     restart: always
@@ -195,8 +195,8 @@ services:
   dbt_proj:
     image: adwh_dbt:1.6.3
     build:
-      context: ./
-      dockerfile: ./Dockerfiles/dbt.Dockerfile
+      context: ./docker/dbt
+      dockerfile: dbt.Dockerfile
     env_file:
       - .env
     stdin_open: true
