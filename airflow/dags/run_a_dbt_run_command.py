@@ -38,7 +38,7 @@ def run_specific_dbt_model_for_a_data_set(table_name: str, task_logger: Logger) 
         raise_exception = False
         for el in subproc_output.stdout.split("\n"):
             task_logger.info(f"{el}")
-            if re.search("(\d* of \d* ERROR)", el):
+            if re.search("(\\d* of \\d* ERROR)", el):
                 raise_exception = True
         if raise_exception:
             raise Exception("dbt model failed. Review the above outputs")
