@@ -75,13 +75,13 @@ CHICAGO_FOOD_INSPECTIONS = SocrataTable(
 CHICAGO_HOMICIDES_AND_SHOOTING_VICTIMIZATIONS = SocrataTable(
     table_id="gumc-mgzr",
     table_name="chicago_homicide_and_shooting_victimizations",
-    schedule="0 7,19 * * *",
+    schedule="30 12 * * 1",
 )
 
 CHICAGO_MURALS = SocrataTable(
     table_id="we8h-apcf",
     table_name="chicago_murals",
-    schedule="47 6 * * *",
+    schedule="47 6 3 * *",
 )
 
 CHICAGO_POLICE_BEAT_BOUNDARIES = SocrataTable(

@@ -20,6 +20,7 @@ sources:
       - name: chicago_cta_train_stations
       - name: chicago_food_inspections
       - name: chicago_homicide_and_shooting_victimizations
+      - name: chicago_murals
       - name: chicago_police_beat_boundaries
       - name: chicago_police_district_boundaries
       - name: chicago_police_stations
@@ -61,6 +62,7 @@ sources:
       - name: temp_chicago_cta_train_stations
       - name: temp_chicago_food_inspections
       - name: temp_chicago_homicide_and_shooting_victimizations
+      - name: temp_chicago_murals
       - name: temp_chicago_police_beat_boundaries
       - name: temp_chicago_police_district_boundaries
       - name: temp_chicago_police_stations

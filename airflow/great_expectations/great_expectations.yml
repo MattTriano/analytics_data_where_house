@@ -505,4 +505,16 @@ fluent_datasources:
         batch_metadata: {}
         table_name: gross_rent_by_cook_county_il_tract
         schema_name: data_raw
+      data_raw.temp_chicago_murals:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_murals
+        schema_name: data_raw
+      data_raw.chicago_murals:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_murals
+        schema_name: data_raw
     connection_string: ${GX_DWH_DB_CONN}

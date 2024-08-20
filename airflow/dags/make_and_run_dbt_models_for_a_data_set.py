@@ -19,7 +19,7 @@ from cc_utils.file_factory import (
 )
 from tasks.socrata_tasks import highlight_unfinished_dbt_standardized_stub
 
-from sources.tables import COOK_COUNTY_MULTIFAM_PARCEL_IMPROVEMENTS as SOCRATA_TABLE
+from sources.tables import CHICAGO_MURALS as SOCRATA_TABLE
 
 task_logger = logging.getLogger("airflow.task")
 
@@ -137,7 +137,7 @@ def run_dbt_models_for_a_data_set(table_name: str, task_logger: Logger) -> None:
         raise_exception = False
         for el in subproc_output.stdout.split("\n"):
             task_logger.info(f"{el}")
-            if re.search("(\d* of \d* ERROR)", el):
+            if re.search("(\\d* of \\d* ERROR)", el):
                 raise_exception = True
         if raise_exception:
             raise Exception("dbt model failed. Review the above outputs")
