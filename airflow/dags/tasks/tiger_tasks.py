@@ -178,7 +178,7 @@ def check_freshness(
     return freshness_check
 
 
-@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def fresher_source_data_available(task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
     freshness_check = ti.xcom_pull(
@@ -236,7 +236,7 @@ def request_and_ingest_fresh_data(
     return "ingested"
 
 
-@task(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def record_data_update(conn_id: str, task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
     freshness_check = ti.xcom_pull(
