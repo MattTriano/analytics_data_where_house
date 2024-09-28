@@ -147,7 +147,7 @@ def check_table_metadata(
     return metadata_3
 
 
-@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def fresher_source_data_available(
     socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
 ) -> str:
@@ -180,7 +180,7 @@ def download_fresh_data(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
     return socrata_metadata
 
 
-@task.branch(trigger_rule=TriggerRule.NONE_FAILED_OR_SKIPPED)
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def file_ext_branch_router(socrata_metadata: SocrataTableMetadata) -> str:
     dl_format = socrata_metadata.download_format
     if dl_format.lower() == "geojson":
