@@ -52,6 +52,90 @@ x-superset-common: &superset-common
       condition: service_healthy
 
 services:
+  om_db:
+    image: adwh_om_db:17.0
+    build:
+      context: ./docker/openmetadata
+      dockerfile: postgres.Dockerfile
+    command: "--work_mem=10MB"
+    env_file:
+      - .env.om_db
+    networks:
+      - re_etl_net
+    ports:
+      - "45432:5432"
+    volumes:
+      - re_om_db:/var/lib/postgresql/data/
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-d",
+          "${POSTGRES_DB}",
+          "-U",
+          "${POSTGRES_USER}"
+        ]
+      interval: 5s
+      retries: 5
+    restart: always
+
+  om_elastic:
+    image: adwh_om_elasticsearch:8.15.2
+    build:
+      context: ./docker/elastic
+      dockerfile: elastic.Dockerfile
+    env_file:
+      - .env.elastic
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1024m -Xmx1024m\
+      - xpack.security.enabled=true
+    networks:
+      - re_etl_net
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    healthcheck:
+      test: "curl -s http://localhost:9200/_cluster/health?pretty | grep status | grep -qE 'green|yellow' || exit 1"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    volumes:
+      - re_om_elastic:/usr/share/elasticsearch/data
+
+  om_server:
+    image: adwh_om_server:1.5.5
+    build:
+      context: ./docker/openmetadata
+      dockerfile: om_server.Dockerfile
+    env_file:
+      - .env.om_db
+      - .env.elastic
+    environment:
+      PIPELINE_SERVICE_CLIENT_ENDPOINT: ${PIPELINE_SERVICE_CLIENT_ENDPOINT:-http://ingestion:9090}
+      SERVER_HOST_API_URL: ${SERVER_HOST_API_URL:-http://openmetadata-server:8585/api}
+      DB_DRIVER_CLASS: ${DB_DRIVER_CLASS:-org.postgresql.Driver}
+      DB_SCHEME: ${DB_SCHEME:-postgresql}
+      DB_HOST: 'om_db'
+      DB_PORT: 5432
+    networks:
+      - re_etl_net
+    expose:
+      - 8585
+      - 8586
+    ports:
+      - "8585:8585"
+      - "8586:8586"
+    depends_on:
+      om_elastic:
+        condition: service_healthy
+      om_db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider",  "http://localhost:8586/healthcheck" ]
+    restart: always
+
   superset:
     <<: *superset-common
     image: adwh_superset:2.1.0
@@ -327,4 +411,6 @@ volumes:
   re_dwh_db:
   re_ss_db_vol:
   re_redis_vol:
+  re_om_db:
+  re_om_elastic:
   ss_core_vol:

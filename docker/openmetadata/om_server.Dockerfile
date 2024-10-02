@@ -1,0 +1,1 @@
+FROM openmetadata/server:1.5.5
