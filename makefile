@@ -14,6 +14,13 @@ run_time := "$(shell date '+%Y_%m_%d__%H_%M_%S')"
 PROJECT_NAME := $(shell basename $(MAKEFILE_DIR_PATH) | tr '[:upper:]' '[:lower:]')
 
 make_credentials:
+	@if [ -f "${MAKEFILE_DIR_PATH}/config/private_key.pem" ]; then \
+		echo "private_keys for openmetadata auth already exist, doing nothing"; \
+	else \
+		openssl genrsa -out "${MAKEFILE_DIR_PATH}/config/private_key.pem" 2048; \
+		openssl rsa -in "${MAKEFILE_DIR_PATH}/config/private_key.pem" -outform DER -pubout -out "${MAKEFILE_DIR_PATH}/config/public_key.der"; \
+		openssl pkcs8 -topk8 -inform PEM -outform DER -in "${MAKEFILE_DIR_PATH}/config/private_key.pem" -out "${MAKEFILE_DIR_PATH}/config/private_key.der" -nocrypt; \
+	fi
 	@if [ -f .env ] || [ -f .env.dwh ] || [ -f .env.superset ]; then \
 		echo "Some .env files already exist. Remove or rename them to rerun startup process."; \
 	else \

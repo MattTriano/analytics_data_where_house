@@ -69,12 +69,8 @@ services:
     healthcheck:
       test:
         [
-          "CMD",
-          "pg_isready",
-          "-d",
-          "${POSTGRES_DB}",
-          "-U",
-          "${POSTGRES_USER}"
+          "CMD-SHELL",
+          "pg_isready -h ss_db -d $${POSTGRES_DB} -U $${POSTGRES_USER}"
         ]
       interval: 5s
       retries: 5
@@ -89,20 +85,40 @@ services:
       - .env.elastic
     environment:
       - discovery.type=single-node
-      - ES_JAVA_OPTS=-Xms1024m -Xmx1024m\
-      - xpack.security.enabled=true
+      - ES_JAVA_OPTS=-Xms1024m -Xmx1024m
+      - xpack.security.enabled=false
+      - bootstrap.memory_lock=true
+      - logger.level=INFO
     networks:
       - re_etl_net
     ports:
       - "9200:9200"
       - "9300:9300"
     healthcheck:
-      test: "curl -s http://localhost:9200/_cluster/health?pretty | grep status | grep -qE 'green|yellow' || exit 1"
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 10
     volumes:
       - re_om_elastic:/usr/share/elasticsearch/data
+
+  om_init:
+    image: adwh_om_server:1.5.5
+    build:
+      context: ./docker/openmetadata
+      dockerfile: om_server.Dockerfile
+    command: "./bootstrap/openmetadata-ops.sh migrate"
+    env_file:
+      - .env.om_db
+      - .env.elastic
+      - .env.om_server
+    networks:
+      - re_etl_net
+    depends_on:
+      om_elastic:
+        condition: service_healthy
+      om_db:
+        condition: service_healthy
 
   om_server:
     image: adwh_om_server:1.5.5
@@ -112,13 +128,7 @@ services:
     env_file:
       - .env.om_db
       - .env.elastic
-    environment:
-      PIPELINE_SERVICE_CLIENT_ENDPOINT: ${PIPELINE_SERVICE_CLIENT_ENDPOINT:-http://ingestion:9090}
-      SERVER_HOST_API_URL: ${SERVER_HOST_API_URL:-http://openmetadata-server:8585/api}
-      DB_DRIVER_CLASS: ${DB_DRIVER_CLASS:-org.postgresql.Driver}
-      DB_SCHEME: ${DB_SCHEME:-postgresql}
-      DB_HOST: 'om_db'
-      DB_PORT: 5432
+      - .env.om_server
     networks:
       - re_etl_net
     expose:
@@ -132,6 +142,11 @@ services:
         condition: service_healthy
       om_db:
         condition: service_healthy
+      om_init:
+        condition: service_completed_successfully
+    volumes:
+      - ./config/public_key.der:/opt/openmetadata/conf/public_key.der:ro
+      - ./config/private_key.der:/opt/openmetadata/conf/private_key.der:ro
     healthcheck:
       test: [ "CMD", "wget", "-q", "--spider",  "http://localhost:8586/healthcheck" ]
     restart: always
