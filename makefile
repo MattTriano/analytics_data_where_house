@@ -14,7 +14,7 @@ STARTUP_DIR := ${MAKEFILE_DIR_PATH}.startup/
 run_time := "$(shell date '+%Y_%m_%d__%H_%M_%S')"
 
 PROJECT_NAME := $(shell basename $(MAKEFILE_DIR_PATH) | tr '[:upper:]' '[:lower:]')
-ADWH_SERVICES = $(shell docker compose ps --services --filter "status=running")
+ADWH_SERVICES = $(shell docker compose config --services)
 
 make_credentials:
 	@if [ -f "${MAKEFILE_DIR_PATH}/config/private_key.pem" ]; then \
@@ -60,11 +60,14 @@ get_service_logs:
 	@echo "Saving logs for running services:"
 	@for service in $(ADWH_SERVICES); do \
 		service_log_dir="$(LOG_DIR_ALL_SERVICES)/$$service"; \
-#		echo "service log dir: $$service_log_dir"; \
 		mkdir -p "$$service_log_dir"; \
-		fp="$$service_log_dir/$${service}__logs_$(run_time).log"; \
-		docker compose logs $$service > $$fp; \
-		echo "  $$service logs saved to $$fp"; \
+		if docker compose ps --services --filter "status=running" | grep -q "^$$service$$"; then \
+			fp="$$service_log_dir/$${service}__logs_$(run_time).log"; \
+			docker compose logs $$service > $$fp; \
+			echo "  $$service logs saved to $$fp"; \
+		else \
+			echo "  No container for service $$service found."; \
+		fi; \
 	done
 	@echo "All logs saved."
 

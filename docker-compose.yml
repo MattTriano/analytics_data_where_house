@@ -16,6 +16,7 @@ x-airflow-common: &airflow-common
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
   volumes:
     - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/dag_generated_configs:/opt/airflow/dag_generated_configs
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/data_raw:/opt/airflow/data_raw
