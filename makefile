@@ -1,17 +1,20 @@
 SHELL := /bin/bash
-.PHONY: startup shutdown quiet_startup restart make_credentials serve_dbt_docs \
+.PHONY: up down up_quiet get_service_logs restart make_credentials serve_dbt_docs \
 	build_images init_airflow initialize_system create_warehouse_infra update_dbt_packages \
-	dbt_generate_docs build_python_img get_py_utils_shell make_fernet_key run_tests \
+	dbt_generate_docs get_py_utils_shell make_fernet_key run_tests \
 	build_images_no_cache
 	
 .DEFAULT_GOAL: startup
 
 MAKEFILE_FILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MAKEFILE_DIR_PATH := ${dir ${MAKEFILE_FILE_PATH}}
+LOG_DIR := $(MAKEFILE_DIR_PATH)/logs
+LOG_DIR_ALL_SERVICES := $(LOG_DIR)/services
 STARTUP_DIR := ${MAKEFILE_DIR_PATH}.startup/
 run_time := "$(shell date '+%Y_%m_%d__%H_%M_%S')"
 
 PROJECT_NAME := $(shell basename $(MAKEFILE_DIR_PATH) | tr '[:upper:]' '[:lower:]')
+ADWH_SERVICES = $(shell docker compose ps --services --filter "status=running")
 
 make_credentials:
 	@if [ -f "${MAKEFILE_DIR_PATH}/config/private_key.pem" ]; then \
@@ -47,13 +50,26 @@ init_airflow: build_images
 
 initialize_system: build_images init_airflow
 
-startup:
+up:
 	docker compose up
 
-quiet_startup:
+up_quiet:
 	docker compose up -d
 
-shutdown:
+get_service_logs:
+	@echo "Saving logs for running services:"
+	@for service in $(ADWH_SERVICES); do \
+		service_log_dir="$(LOG_DIR_ALL_SERVICES)/$$service"; \
+#		echo "service log dir: $$service_log_dir"; \
+		mkdir -p "$$service_log_dir"; \
+		fp="$$service_log_dir/$${service}__logs_$(run_time).log"; \
+		docker compose logs $$service > $$fp; \
+		echo "  $$service logs saved to $$fp"; \
+	done
+	@echo "All logs saved."
+
+
+down: get_service_logs
 	docker compose down
 
 restart:

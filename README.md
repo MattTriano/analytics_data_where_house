@@ -72,7 +72,7 @@ To get the system up and running:
 
 5. Set up a connection between superset and your data warehouse as shown [here](https://docs.analytics-data-where-house.dev/setup/superset_setup/).
 
-A more complete walkthrough of setup instructions is available [here](https://docs.analytics-data-where-house.dev/setup/getting_started/), but the steps above are sufficent to start collecting and then visualizing and exploring data in this system.
+A more complete walkthrough of setup instructions is available [here](https://docs.analytics-data-where-house.dev/setup/getting_started/), but the steps above are sufficient to start collecting and then visualizing and exploring data in this system.
 
 ## Usage
 
