@@ -5,3 +5,4 @@ RUN apt-get update \
       && apt-get autoremove -yqq --purge \
       && apt-get clean \
       && rm -rf /var/lib/apt/lists/*
+COPY 11_extensions.sql /docker-entrypoint-initdb.d/
