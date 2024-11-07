@@ -3,7 +3,7 @@ SHELL := /bin/bash
 	build_images init_airflow initialize_system create_warehouse_infra update_dbt_packages \
 	dbt_generate_docs get_py_utils_shell make_fernet_key run_tests \
 	build_images_no_cache
-	
+
 .DEFAULT_GOAL: startup
 
 MAKEFILE_FILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -16,7 +16,7 @@ run_time := "$(shell date '+%Y_%m_%d__%H_%M_%S')"
 PROJECT_NAME := $(shell basename $(MAKEFILE_DIR_PATH) | tr '[:upper:]' '[:lower:]')
 ADWH_SERVICES = $(shell docker compose config --services)
 
-make_credentials:
+make_open_metadata_pks:
 	@if [ -f "${MAKEFILE_DIR_PATH}/config/private_key.pem" ]; then \
 		echo "private_keys for openmetadata auth already exist, doing nothing"; \
 	else \
@@ -24,7 +24,9 @@ make_credentials:
 		openssl rsa -in "${MAKEFILE_DIR_PATH}/config/private_key.pem" -outform DER -pubout -out "${MAKEFILE_DIR_PATH}/config/public_key.der"; \
 		openssl pkcs8 -topk8 -inform PEM -outform DER -in "${MAKEFILE_DIR_PATH}/config/private_key.pem" -out "${MAKEFILE_DIR_PATH}/config/private_key.der" -nocrypt; \
 	fi
-	@if [ -f .env ] || [ -f .env.dwh ] || [ -f .env.superset ]; then \
+
+make_credentials: make_open_metadata_pks
+	@if ls .env* >/dev/null 2>&1; then \
 		echo "Some .env files already exist. Remove or rename them to rerun startup process."; \
 	else \
 		echo "Running startup scripts to create .env files with ADWH credentials."; \
@@ -33,6 +35,8 @@ make_credentials:
 		mv "${STARTUP_DIR}/.env" "${MAKEFILE_DIR_PATH}/.env"; \
 		mv "${STARTUP_DIR}/.env.dwh" "${MAKEFILE_DIR_PATH}/.env.dwh"; \
 		mv "${STARTUP_DIR}/.env.superset" "${MAKEFILE_DIR_PATH}/.env.superset"; \
+		mv "${STARTUP_DIR}/.env.om_db" "${MAKEFILE_DIR_PATH}/.env.om_db"; \
+		mv "${STARTUP_DIR}/.env.om_server" "${MAKEFILE_DIR_PATH}/.env.om_server"; \
 	fi
 
 

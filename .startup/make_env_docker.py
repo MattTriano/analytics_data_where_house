@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 import subprocess
 from typing import Dict, List, Optional
+import uuid
 import urllib
 
 from make_fernet_key import generate_fernet_key_value
@@ -117,8 +118,16 @@ def get_distinct_dot_env_file_names(env_var_payloads: List) -> List:
 
 
 def create_dot_env_files(output_dir: Path, env_var_dict: Dict) -> None:
+    all_lines_all_files = prepare_dot_env_file_lines(output_dir, env_var_dict)
+    for file_name, lines in all_lines_all_files.items():
+        with open(file_name, "x") as f:
+            f.write(lines)
+
+
+def prepare_dot_env_file_lines(output_dir: Path, env_var_dict: Dict) -> None:
     env_var_payloads = get_env_var_payloads(env_var_dict=env_var_dict)
     dot_env_file_names = get_distinct_dot_env_file_names(env_var_payloads=env_var_payloads)
+    all_lines_all_files = {}
     for file_name in dot_env_file_names:
         file_payloads = [p for p in env_var_payloads if p["file"] == file_name]
         distinct_groups_in_file = list(set([p["group"] for p in file_payloads]))
@@ -131,18 +140,20 @@ def create_dot_env_files(output_dir: Path, env_var_dict: Dict) -> None:
                 file_lines.append(f"{file_group_payload['name']}={file_group_payload['set_value']}")
             file_lines.append("")
         file_out_path = output_dir.joinpath(file_name)
-        with open(file_out_path, "x") as f:
-            all_file_lines = "".join([f"{line}\n" for line in file_lines])
-            all_file_lines = all_file_lines.replace("\n\n\n", "\n\n")
-            all_file_lines = re.sub(r"(\n\n)$", "\n", all_file_lines)
-            f.write(all_file_lines)
+        all_file_lines = "".join([f"{line}\n" for line in file_lines])
+        all_file_lines = all_file_lines.replace("\n\n\n", "\n\n")
+        all_file_lines = re.sub(r"(\n\n)$", "\n", all_file_lines)
+        all_lines_all_files[str(file_out_path)] = all_file_lines
+    return all_lines_all_files
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--startup_dir", default=".", help="The project's top-level directory")
     parser.add_argument(
-        "--mode", default="interactive", help="Credential-defining process: options: ['interactive', 'dev']"
+        "--mode",
+        default="interactive",
+        help="Credential-defining process: options: ['interactive', 'dev']",
     )
     args = parser.parse_args()
 
@@ -202,4 +213,18 @@ if __name__ == "__main__":
         "group": "Superset",
         "set_value": "",
     }
+    env_var_dict[".env.om_server::FERNET_KEY"] = {
+        "file": ".env.om_server",
+        "name": "FERNET_KEY",
+        "group": "Open Metadata Server",
+        "set_value": secret_key,
+    }
+    env_var_dict[".env.om_server::JWT_KEY_ID"] = {
+        "file": ".env.om_server",
+        "name": "JWT_KEY_ID",
+        "group": "Open Metadata Server",
+        "set_value": str(uuid.uuid4()),
+    }
+    # file_lines = prepare_dot_env_file_lines(output_dir=output_dir, env_var_dict=env_var_dict)
+    # print(file_lines)
     create_dot_env_files(output_dir=output_dir, env_var_dict=env_var_dict)
