@@ -40,7 +40,7 @@ Don't worry about the **Server group** field, the default is fine.
 
 * **Host name/address:** `airflow_db`
     * This is defined [here](https://github.com/MattTriano/analytics_data_where_house/blob/c75869ba6fae5c033e6601b9203fd178148f2777/docker-compose.yml#L34) in the `docker-compose.yml` file
-* **Port:** 5432 
+* **Port:** 5432
     * This is the database's port number inside the container, as defined to the right of the colon [here](https://github.com/MattTriano/analytics_data_where_house/blob/c75869ba6fae5c033e6601b9203fd178148f2777/docker-compose.yml#L44).
 * **Username:** the `POSTGRES_USER` value in your `.env` file.
 * **Password:** the `POSTGRES_PASSWORD` value in your `.env` file.
@@ -66,7 +66,7 @@ Repeat the process to connect to the data warehouse database.
 
 * **Host name/address:** `dwh_db`
     * This is defined [here](https://github.com/MattTriano/analytics_data_where_house/blob/c75869ba6fae5c033e6601b9203fd178148f2777/docker-compose.yml#L61) in the `docker-compose.yml` file
-* **Port:** 5432 
+* **Port:** 5432
     * This is the database's port number inside the container, as defined to the right of the colon [here](https://github.com/MattTriano/analytics_data_where_house/blob/c75869ba6fae5c033e6601b9203fd178148f2777/docker-compose.yml#L71)
 * **Username:** the `DWH_POSTGRES_USER` value in your `.env` file
 * **Password:** the `DWH_POSTGRES_PASSWORD` value in your `.env` file

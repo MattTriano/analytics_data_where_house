@@ -17,3 +17,4 @@ Work through these steps to set up all ADWH credentials and services. It should 
 1. [Set up your credentials and build the images](/setup/getting_started)
 2. [Configure database connections for Superset](/setup/superset_setup)
 3. [Configure database connections for pgAdmin4](/setup/pgAdmin4)
+4. [Configure database connections and ingestions for OpenMetadata](/setup/openMetadata)

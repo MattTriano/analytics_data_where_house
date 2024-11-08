@@ -16,6 +16,7 @@ x-airflow-common: &airflow-common
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
   volumes:
     - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/dag_generated_configs:/opt/airflow/dag_generated_configs
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/data_raw:/opt/airflow/data_raw
@@ -52,6 +53,105 @@ x-superset-common: &superset-common
       condition: service_healthy
 
 services:
+  om_db:
+    image: adwh_om_db:17.0
+    build:
+      context: ./docker/openmetadata
+      dockerfile: postgres.Dockerfile
+    command: "--work_mem=10MB"
+    env_file:
+      - .env.om_db
+    networks:
+      - re_etl_net
+    ports:
+      - "45432:5432"
+    volumes:
+      - re_om_db:/var/lib/postgresql/data/
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h ss_db -d $${POSTGRES_DB} -U $${POSTGRES_USER}"
+        ]
+      interval: 5s
+      retries: 5
+    restart: always
+
+  om_elastic:
+    image: adwh_om_elasticsearch:8.15.2
+    build:
+      context: ./docker/elastic
+      dockerfile: elastic.Dockerfile
+    env_file:
+      - .env.elastic
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1024m -Xmx1024m
+      - xpack.security.enabled=false
+      - bootstrap.memory_lock=true
+      - logger.level=INFO
+    networks:
+      - re_etl_net
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    volumes:
+      - re_om_elastic:/usr/share/elasticsearch/data
+
+  om_init:
+    image: adwh_om_server:1.5.8
+    build:
+      context: ./docker/openmetadata
+      dockerfile: om_server.Dockerfile
+    command: "./bootstrap/openmetadata-ops.sh migrate"
+    env_file:
+      - .env.om_db
+      - .env.elastic
+      - .env.om_server
+    networks:
+      - re_etl_net
+    depends_on:
+      om_elastic:
+        condition: service_healthy
+      om_db:
+        condition: service_healthy
+
+  om_server:
+    image: adwh_om_server:1.5.8
+    build:
+      context: ./docker/openmetadata
+      dockerfile: om_server.Dockerfile
+    env_file:
+      - .env.om_db
+      - .env.elastic
+      - .env.om_server
+    networks:
+      - re_etl_net
+    expose:
+      - 8585
+      - 8586
+    ports:
+      - "8585:8585"
+      - "8586:8586"
+    depends_on:
+      om_elastic:
+        condition: service_healthy
+      om_db:
+        condition: service_healthy
+      om_init:
+        condition: service_completed_successfully
+    volumes:
+      - ./config/public_key.der:/opt/openmetadata/conf/public_key.der:ro
+      - ./config/private_key.der:/opt/openmetadata/conf/private_key.der:ro
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider",  "http://localhost:8586/healthcheck" ]
+    restart: always
+
   superset:
     <<: *superset-common
     image: adwh_superset:2.1.0
@@ -160,6 +260,7 @@ services:
       - "5431:5432"
     volumes:
       - re_dwh_db:/var/lib/postgresql/data/
+      - ./docker/postgis/postgresql.conf:/var/lib/postgresql/data/postgresql.conf
     healthcheck:
       test:
         [
@@ -327,4 +428,6 @@ volumes:
   re_dwh_db:
   re_ss_db_vol:
   re_redis_vol:
+  re_om_db:
+  re_om_elastic:
   ss_core_vol:

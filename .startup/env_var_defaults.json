@@ -328,5 +328,284 @@
       "<PASSWORD>": ".env.superset::POSTGRES_PASSWORD",
       "<DB>": ".env.superset::POSTGRES_DB"
     }
+  },
+  ".env.om_db::POSTGRES_USER": {
+    "file": ".env.om_db",
+    "name": "POSTGRES_USER",
+    "group": "Open Metadata DB",
+    "default_value": "POSTGRES_USER",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_db::DB_USER": {
+    "file": ".env.om_db",
+    "name": "DB_USER",
+    "group": "Open Metadata DB",
+    "default_value": "DB_USER",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "is_uri": false,
+    "env_var_mappings": {
+      "DWH_POSTGRES_USER": ".env.om_db::POSTGRES_USER"
+    }
+  },
+  ".env.om_db::POSTGRES_PASSWORD": {
+    "file": ".env.om_db",
+    "name": "POSTGRES_PASSWORD",
+    "group": "Open Metadata DB",
+    "default_value": "POSTGRES_PASSWORD",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_db::DB_USER_PASSWORD": {
+    "file": ".env.om_db",
+    "name": "DB_USER_PASSWORD",
+    "group": "Open Metadata DB",
+    "default_value": "DB_USER_PASSWORD",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "is_uri": false,
+    "env_var_mappings": {
+      "DWH_POSTGRES_USER": ".env.om_db::POSTGRES_PASSWORD"
+    }
+  },
+  ".env.om_db::POSTGRES_DB": {
+    "file": ".env.om_db",
+    "name": "POSTGRES_DB",
+    "group": "Open Metadata DB",
+    "default_value": "POSTGRES_DB",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_db::OM_DATABASE": {
+    "file": ".env.om_db",
+    "name": "OM_DATABASE",
+    "group": "Open Metadata DB",
+    "default_value": "openmetadata_db",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "is_uri": false,
+    "env_var_mappings": {
+      "DWH_POSTGRES_USER": ".env.om_db::POSTGRES_DB"
+    }
+  },
+  ".env.om_server::SERVER_PORT": {
+    "file": ".env.om_server",
+    "name": "SERVER_PORT",
+    "group": "Open Metadata Server",
+    "default_value": "8585",
+    "user_input": true,
+    "valid_pattern": "^[\\d]{4,5}$",
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::SERVER_ADMIN_PORT": {
+    "file": ".env.om_server",
+    "name": "SERVER_ADMIN_PORT",
+    "group": "Open Metadata Server",
+    "default_value": "8586",
+    "user_input": true,
+    "valid_pattern": "^[\\d]{4,5}$",
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::OPENMETADATA_CLUSTER_NAME": {
+    "file": ".env.om_server",
+    "name": "OPENMETADATA_CLUSTER_NAME",
+    "group": "Open Metadata Server",
+    "default_value": "openmetadata",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::PIPELINE_SERVICE_CLIENT_ENDPOINT": {
+    "file": ".env.om_server",
+    "name": "PIPELINE_SERVICE_CLIENT_ENDPOINT",
+    "group": "Open Metadata Server",
+    "default_value": "http://airflow-webserver:8080",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::SERVER_HOST_API_URL": {
+    "file": ".env.om_server",
+    "name": "SERVER_HOST_API_URL",
+    "group": "Open Metadata Server",
+    "default_value": "http://om_server:8585/api",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::DB_DRIVER_CLASS": {
+    "file": ".env.om_server",
+    "name": "DB_DRIVER_CLASS",
+    "group": "Open Metadata Server",
+    "default_value": "org.postgresql.Driver",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::DB_SCHEME": {
+    "file": ".env.om_server",
+    "name": "DB_SCHEME",
+    "group": "Open Metadata Server",
+    "default_value": "postgresql",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::DB_HOST": {
+    "file": ".env.om_server",
+    "name": "DB_HOST",
+    "group": "Open Metadata Server",
+    "default_value": "om_db",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::DB_PORT": {
+    "file": ".env.om_server",
+    "name": "DB_PORT",
+    "group": "Open Metadata Server",
+    "default_value": "5432",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::AUTHENTICATION_PROVIDER": {
+    "file": ".env.om_server",
+    "name": "AUTHENTICATION_PROVIDER",
+    "group": "Open Metadata Server",
+    "default_value": "basic",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::AUTHORIZER_ADMIN_PRINCIPALS": {
+    "file": ".env.om_server",
+    "name": "AUTHORIZER_ADMIN_PRINCIPALS",
+    "group": "Open Metadata Server",
+    "default_value": "admin",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "is_list": true,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::AUTHORIZER_PRINCIPAL_DOMAIN": {
+    "file": ".env.om_server",
+    "name": "AUTHORIZER_PRINCIPAL_DOMAIN",
+    "group": "Open Metadata Server",
+    "default_value": "open-metadata.org",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::AUTHORIZER_CLASS_NAME": {
+    "file": ".env.om_server",
+    "name": "AUTHORIZER_CLASS_NAME",
+    "group": "Open Metadata Server",
+    "default_value": "org.openmetadata.service.security.DefaultAuthorizer",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::AUTHORIZER_REQUEST_FILTER": {
+    "file": ".env.om_server",
+    "name": "AUTHORIZER_REQUEST_FILTER",
+    "group": "Open Metadata Server",
+    "default_value": "org.openmetadata.service.security.JwtFilter",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::RSA_PUBLIC_KEY_FILE_PATH": {
+    "file": ".env.om_server",
+    "name": "RSA_PUBLIC_KEY_FILE_PATH",
+    "group": "Open Metadata Server",
+    "default_value": "/opt/openmetadata/conf/public_key.der",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::RSA_PRIVATE_KEY_FILE_PATH": {
+    "file": ".env.om_server",
+    "name": "RSA_PRIVATE_KEY_FILE_PATH",
+    "group": "Open Metadata Server",
+    "default_value": "/opt/openmetadata/conf/private_key.der",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::JWT_ISSUER": {
+    "file": ".env.om_server",
+    "name": "JWT_ISSUER",
+    "group": "Open Metadata Server",
+    "default_value": "local-openmetadata",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::AIRFLOW_USERNAME": {
+    "file": ".env.om_server",
+    "name": "AIRFLOW_USERNAME",
+    "group": "Open Metadata Server",
+    "default_value": "AIRFLOW_USERNAME",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "is_uri": false,
+    "env_var_mappings": {
+      "DWH_POSTGRES_USER": ".env::_AIRFLOW_WWW_USER_USERNAME"
+    }
+  },
+  ".env.om_server::AIRFLOW_PASSWORD": {
+    "file": ".env.om_server",
+    "name": "AIRFLOW_PASSWORD",
+    "group": "Open Metadata Server",
+    "default_value": "AIRFLOW_PASSWORD",
+    "user_input": false,
+    "dependant_on_other_env_vars": true,
+    "is_uri": false,
+    "env_var_mappings": {
+      "DWH_POSTGRES_USER": ".env::_AIRFLOW_WWW_USER_PASSWORD"
+    }
+  },
+  ".env.om_server::WEB_CONF_URI_PATH": {
+    "file": ".env.om_server",
+    "name": "WEB_CONF_URI_PATH",
+    "group": "Open Metadata Server",
+    "default_value": "/api",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.elastic::ELASTICSEARCH_HOST": {
+    "file": ".env.elastic",
+    "name": "ELASTICSEARCH_HOST",
+    "group": "Open Metadata Elasticsearch",
+    "default_value": "om_elastic",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.elastic::ELASTICSEARCH_PORT": {
+    "file": ".env.elastic",
+    "name": "ELASTICSEARCH_PORT",
+    "group": "Open Metadata Elasticsearch",
+    "default_value": "9200",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.elastic::ELASTICSEARCH_SCHEME": {
+    "file": ".env.elastic",
+    "name": "ELASTICSEARCH_SCHEME",
+    "group": "Open Metadata Elasticsearch",
+    "default_value": "http",
+    "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.elastic::ELASTICSEARCH_USER": {
+    "file": ".env.elastic",
+    "name": "ELASTICSEARCH_USER",
+    "group": "Open Metadata Elasticsearch",
+    "default_value": "elastic",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "dependant_on_other_env_vars": false
   }
 }

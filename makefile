@@ -1,20 +1,32 @@
 SHELL := /bin/bash
-.PHONY: startup shutdown quiet_startup restart make_credentials serve_dbt_docs \
+.PHONY: up down up_quiet get_service_logs restart make_credentials serve_dbt_docs \
 	build_images init_airflow initialize_system create_warehouse_infra update_dbt_packages \
-	dbt_generate_docs build_python_img get_py_utils_shell make_fernet_key run_tests \
+	dbt_generate_docs get_py_utils_shell make_fernet_key run_tests \
 	build_images_no_cache
-	
+
 .DEFAULT_GOAL: startup
 
 MAKEFILE_FILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MAKEFILE_DIR_PATH := ${dir ${MAKEFILE_FILE_PATH}}
+LOG_DIR := $(MAKEFILE_DIR_PATH)/logs
+LOG_DIR_ALL_SERVICES := $(LOG_DIR)/services
 STARTUP_DIR := ${MAKEFILE_DIR_PATH}.startup/
 run_time := "$(shell date '+%Y_%m_%d__%H_%M_%S')"
 
 PROJECT_NAME := $(shell basename $(MAKEFILE_DIR_PATH) | tr '[:upper:]' '[:lower:]')
+ADWH_SERVICES = $(shell docker compose config --services)
 
-make_credentials:
-	@if [ -f .env ] || [ -f .env.dwh ] || [ -f .env.superset ]; then \
+make_open_metadata_pks:
+	@if [ -f "${MAKEFILE_DIR_PATH}/config/private_key.pem" ]; then \
+		echo "private_keys for openmetadata auth already exist, doing nothing"; \
+	else \
+		openssl genrsa -out "${MAKEFILE_DIR_PATH}/config/private_key.pem" 2048; \
+		openssl rsa -in "${MAKEFILE_DIR_PATH}/config/private_key.pem" -outform DER -pubout -out "${MAKEFILE_DIR_PATH}/config/public_key.der"; \
+		openssl pkcs8 -topk8 -inform PEM -outform DER -in "${MAKEFILE_DIR_PATH}/config/private_key.pem" -out "${MAKEFILE_DIR_PATH}/config/private_key.der" -nocrypt; \
+	fi
+
+make_credentials: make_open_metadata_pks
+	@if ls .env* >/dev/null 2>&1; then \
 		echo "Some .env files already exist. Remove or rename them to rerun startup process."; \
 	else \
 		echo "Running startup scripts to create .env files with ADWH credentials."; \
@@ -23,6 +35,8 @@ make_credentials:
 		mv "${STARTUP_DIR}/.env" "${MAKEFILE_DIR_PATH}/.env"; \
 		mv "${STARTUP_DIR}/.env.dwh" "${MAKEFILE_DIR_PATH}/.env.dwh"; \
 		mv "${STARTUP_DIR}/.env.superset" "${MAKEFILE_DIR_PATH}/.env.superset"; \
+		mv "${STARTUP_DIR}/.env.om_db" "${MAKEFILE_DIR_PATH}/.env.om_db"; \
+		mv "${STARTUP_DIR}/.env.om_server" "${MAKEFILE_DIR_PATH}/.env.om_server"; \
 	fi
 
 
@@ -40,13 +54,25 @@ init_airflow: build_images
 
 initialize_system: build_images init_airflow
 
-startup:
+up:
 	docker compose up
 
-quiet_startup:
+up_quiet:
 	docker compose up -d
 
-shutdown:
+get_service_logs:
+	@echo "Saving logs for ADWH services:"
+	@for service in $(ADWH_SERVICES); do \
+		service_log_dir="$(LOG_DIR_ALL_SERVICES)/$$service"; \
+		mkdir -p "$$service_log_dir"; \
+		fp="$$service_log_dir/$${service}__logs_$(run_time).log"; \
+		docker compose logs $$service > $$fp; \
+		echo "  $$service logs saved to $$fp"; \
+	done
+	@echo "All logs saved."
+
+
+down: get_service_logs
 	docker compose down
 
 restart:
