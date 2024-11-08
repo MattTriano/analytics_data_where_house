@@ -395,7 +395,6 @@
       "DWH_POSTGRES_USER": ".env.om_db::POSTGRES_DB"
     }
   },
-
   ".env.om_server::SERVER_PORT": {
     "file": ".env.om_server",
     "name": "SERVER_PORT",
@@ -480,6 +479,27 @@
     "group": "Open Metadata Server",
     "default_value": "basic",
     "user_input": false,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::AUTHORIZER_ADMIN_PRINCIPALS": {
+    "file": ".env.om_server",
+    "name": "AUTHORIZER_ADMIN_PRINCIPALS",
+    "group": "Open Metadata Server",
+    "default_value": "admin",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
+    "is_list": true,
+    "dependant_on_other_env_vars": false
+  },
+  ".env.om_server::AUTHORIZER_PRINCIPAL_DOMAIN": {
+    "file": ".env.om_server",
+    "name": "AUTHORIZER_PRINCIPAL_DOMAIN",
+    "group": "Open Metadata Server",
+    "default_value": "open-metadata.org",
+    "user_input": true,
+    "valid_pattern": null,
+    "invalid_substrings": "[\\s]",
     "dependant_on_other_env_vars": false
   },
   ".env.om_server::AUTHORIZER_CLASS_NAME": {
