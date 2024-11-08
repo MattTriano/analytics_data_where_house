@@ -61,17 +61,13 @@ up_quiet:
 	docker compose up -d
 
 get_service_logs:
-	@echo "Saving logs for running services:"
+	@echo "Saving logs for ADWH services:"
 	@for service in $(ADWH_SERVICES); do \
 		service_log_dir="$(LOG_DIR_ALL_SERVICES)/$$service"; \
 		mkdir -p "$$service_log_dir"; \
-		if docker compose ps --services --filter "status=running" | grep -q "^$$service$$"; then \
-			fp="$$service_log_dir/$${service}__logs_$(run_time).log"; \
-			docker compose logs $$service > $$fp; \
-			echo "  $$service logs saved to $$fp"; \
-		else \
-			echo "  No container for service $$service found."; \
-		fi; \
+		fp="$$service_log_dir/$${service}__logs_$(run_time).log"; \
+		docker compose logs $$service > $$fp; \
+		echo "  $$service logs saved to $$fp"; \
 	done
 	@echo "All logs saved."
 
