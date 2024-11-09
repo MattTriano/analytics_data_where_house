@@ -6,6 +6,7 @@ import subprocess
 from airflow.decorators import dag, task
 from airflow.models.baseoperator import chain
 
+from tasks.maintenance.backup import backup_and_lightly_verify_postgres_db
 
 task_logger = logging.getLogger("airflow.task")
 
@@ -43,7 +44,8 @@ def dumpall_dwh_db(task_logger: Logger) -> None:
     tags=["utility", "maintenance"],
 )
 def backup_dwh_db():
-    dump_db_1 = dumpall_dwh_db(task_logger=task_logger)
+    # dump_db_1 = dumpall_dwh_db(task_logger=task_logger)
+    dump_db_1 = backup_and_lightly_verify_postgres_db(conn_id="dwh_db_conn")
     chain(dump_db_1)
 
 

@@ -7,9 +7,9 @@
 dev_utils/
 airflow/dags/dev_experiments/
 
-
 notes/
 sandbox/
+scraps/
 **/logs
 airflow/data_raw
 airflow/backups
