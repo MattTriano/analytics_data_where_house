@@ -1,4 +1,6 @@
+from contextlib import contextmanager
 import datetime as dt
+import logging
 from pathlib import Path
 import re
 import subprocess
@@ -58,3 +60,12 @@ def produce_offset_and_nrows_counts_for_pd_read_csv(file_path: Path, rows_per_ba
     nrow_nums = [rows_per_batch for el in offsets]
     nrow_and_offset_nums = [{"offset": el[0], "nrows": el[1]} for el in zip(offsets, nrow_nums)]
     return nrow_and_offset_nums
+
+
+def log_as_info(logger: logging.Logger, msg: str) -> None:
+    try:
+        original_level = logger.level
+        logger.setLevel(logging.INFO)
+        logger.info(msg)
+    finally:
+        logger.setLevel(original_level)
