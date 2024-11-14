@@ -24,6 +24,7 @@ from cc_utils.file_factory import (
     format_dbt_stub_for_clean_stage,
 )
 from cc_utils.socrata import SocrataTable, SocrataTableMetadata
+from cc_utils.transform import run_dbt_dataset_transformations
 from cc_utils.utils import (
     get_local_data_raw_dir,
     get_lines_in_geojson_file,
@@ -563,20 +564,18 @@ def make_dbt_data_raw_model(conn_id: str, task_logger: Logger, **kwargs) -> Socr
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def update_data_raw_table(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
+def update_data_raw_table(task_logger: Logger, **kwargs) -> str:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(
         task_ids="update_socrata_table.raw_data_validation_tg.validation_endpoint"
     )
-    dbt_cmd = f"""cd /opt/airflow/dbt && \
-                  dbt --warn-error-options \
-                        '{{"include": "all", "exclude": [UnusedResourceConfigPath]}}' \
-                  run --select re_dbt.data_raw.{socrata_metadata.table_name}"""
-    log_as_info(task_logger, f"dbt run command: {dbt_cmd}")
-    subproc_output = subprocess.run(dbt_cmd, shell=True, capture_output=True, text=True)
-    for el in subproc_output.stdout.split("\n"):
-        log_as_info(task_logger, f"{el}")
-    return socrata_metadata
+    result = run_dbt_dataset_transformations(
+        dataset_name=socrata_metadata.table_name,
+        task_logger=task_logger,
+        schema="data_raw",
+    )
+    log_as_info(task_logger, f"dbt transform result: {result}")
+    return "data_raw_updated"
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
