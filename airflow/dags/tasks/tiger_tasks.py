@@ -29,6 +29,8 @@ from cc_utils.db import (
 from cc_utils.file_factory import (
     make_dbt_data_raw_model_file,
 )
+from cc_utils.transform import run_dbt_dataset_transformations
+from cc_utils.utils import log_as_info
 from cc_utils.validation import (
     run_checkpoint,
     check_if_checkpoint_exists,
@@ -40,10 +42,11 @@ from cc_utils.validation import (
 @task
 def get_tiger_catalog(task_logger: Logger) -> TIGERCatalog:
     tiger_catalog = TIGERCatalog()
-    task_logger.info(f"Available TIGER vintages:")
+    log_as_info(task_logger, f"Available TIGER vintages:")
     for vintage_row in tiger_catalog.dataset_vintages.iterrows():
-        task_logger.info(
-            f"  - {vintage_row[1]['clean_name']} (last modified {vintage_row[1]['last_modified']})"
+        log_as_info(
+            task_logger,
+            f"  - {vintage_row[1]['clean_name']} (last modified {vintage_row[1]['last_modified']})",
         )
     return tiger_catalog
 
@@ -59,13 +62,14 @@ def get_entity_vintage_metadata(
     )
     year = tiger_dataset.vintage_year
     entity_files = vintages.entity_files_metadata.copy()
-    task_logger.info(
+    log_as_info(
+        task_logger,
         f"Entity vintage metadata for vintage {year} for {tiger_dataset.entity_name} entities:"
         + f"\n  last_modified: {entity_files['last_modified'].values[0]}"
-        + f"\n  Files: {entity_files['is_file'].sum()}"
+        + f"\n  Files: {entity_files['is_file'].sum()}",
     )
     entity_vintage = vintages.get_entity_file_metadata(geography=tiger_dataset.geography)
-    task_logger.info(f"entities after filtering: {len(entity_vintage)}")
+    log_as_info(task_logger, f"entities after filtering: {len(entity_vintage)}")
     return vintages
 
 
@@ -84,11 +88,11 @@ def record_source_freshness_check(
             "time_of_check": [dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")],
         }
     )
-    task_logger.info(f"dataset name:          {freshness_check_record['dataset_name']}")
-    task_logger.info(
-        f"dataset last_modified: {freshness_check_record['source_data_last_modified']}"
+    log_as_info(task_logger, f"dataset name:          {freshness_check_record['dataset_name']}")
+    log_as_info(
+        task_logger, f"dataset last_modified: {freshness_check_record['source_data_last_modified']}"
     )
-    task_logger.info(f"dataset time_of_check: {freshness_check_record['time_of_check']}")
+    log_as_info(task_logger, f"dataset time_of_check: {freshness_check_record['time_of_check']}")
 
     engine = get_pg_engine(conn_id=conn_id)
     metadata_table = get_reflected_db_table(
@@ -133,8 +137,9 @@ def get_latest_local_freshness_check(
     )
     latest_dataset_check_df = latest_dataset_check_df.drop(columns=["rn"])
     source_last_modified = latest_dataset_check_df["source_data_last_modified"].max()
-    task_logger.info(
-        f"Last_modified datetime of latest local dataset update: {source_last_modified}."
+    log_as_info(
+        task_logger,
+        f"Last_modified datetime of latest local dataset update: {source_last_modified}.",
     )
     return latest_dataset_check_df
 
@@ -150,8 +155,8 @@ def organize_freshness_check_results(task_logger: Logger, **kwargs) -> TIGERData
             task_ids="update_tiger_table.check_freshness.get_latest_local_freshness_check"
         ),
     )
-    task_logger.info(f"Source_freshness records: {len(freshness_check.source_freshness)}")
-    task_logger.info(f"local_freshness records: {len(freshness_check.local_freshness)}")
+    log_as_info(task_logger, f"Source_freshness records: {len(freshness_check.source_freshness)}")
+    log_as_info(task_logger, f"local_freshness records: {len(freshness_check.local_freshness)}")
     return freshness_check
 
 
@@ -186,13 +191,13 @@ def fresher_source_data_available(task_logger: Logger, **kwargs) -> str:
     )
     dataset_in_local_dwh = len(freshness_check.local_freshness) > 0
 
-    task_logger.info(f"Dataset in local dwh: {dataset_in_local_dwh}")
-    task_logger.info(f"freshness_check.local_freshness: {freshness_check.local_freshness}")
+    log_as_info(task_logger, f"Dataset in local dwh: {dataset_in_local_dwh}")
+    log_as_info(task_logger, f"freshness_check.local_freshness: {freshness_check.local_freshness}")
     if dataset_in_local_dwh:
         local_last_modified = freshness_check.local_freshness["source_data_last_modified"].max()
-        task_logger.info(f"Local dataset last modified: {local_last_modified}")
+        log_as_info(task_logger, f"Local dataset last modified: {local_last_modified}")
         source_last_modified = freshness_check.source_freshness["source_data_last_modified"].max()
-        task_logger.info(f"Source dataset last modified: {source_last_modified}")
+        log_as_info(task_logger, f"Source dataset last modified: {source_last_modified}")
         local_dataset_is_fresh = local_last_modified >= source_last_modified
         if local_dataset_is_fresh:
             return "update_tiger_table.local_data_is_fresh"
@@ -216,11 +221,13 @@ def request_and_ingest_fresh_data(
         task_ids="update_tiger_table.check_freshness.organize_freshness_check_results"
     )
     source_freshness = freshness_check.source_freshness
-    task_logger.info(f"source_freshness:    {source_freshness} (type: {type(source_freshness)})")
+    log_as_info(
+        task_logger, f"source_freshness:    {source_freshness} (type: {type(source_freshness)})"
+    )
     engine = get_pg_engine(conn_id=conn_id)
     full_gdf = vintages.get_entity_data(geography=tiger_dataset.geography)
-    task_logger.info(f"Rows in returned TIGER dataset:    {len(full_gdf)}")
-    task_logger.info(f"Columns in returned TIGER dataset: {full_gdf.columns}")
+    log_as_info(task_logger, f"Rows in returned TIGER dataset:    {len(full_gdf)}")
+    log_as_info(task_logger, f"Columns in returned TIGER dataset: {full_gdf.columns}")
     full_gdf["vintage_year"] = tiger_dataset.vintage_year
     full_gdf["source_data_updated"] = source_freshness["source_data_last_modified"]
     full_gdf["ingestion_check_time"] = source_freshness["time_of_check"]
@@ -249,7 +256,7 @@ def record_data_update(conn_id: str, task_logger: Logger, **kwargs) -> str:
         engine=engine,
         query=f"""SELECT * FROM metadata.dataset_metadata WHERE id = {dataset_id}""",
     )
-    task_logger.info(f"General metadata record pre-update: {pre_update_record}")
+    log_as_info(task_logger, f"General metadata record pre-update: {pre_update_record}")
     metadata_table = get_reflected_db_table(
         engine=engine, table_name="dataset_metadata", schema_name="metadata"
     )
@@ -259,12 +266,12 @@ def record_data_update(conn_id: str, task_logger: Logger, **kwargs) -> str:
         .values(local_data_updated=True)
     )
     execute_dml_orm_query(engine=engine, dml_stmt=update_query, logger=task_logger)
-    task_logger.info(f"dataset_id: {dataset_id}")
+    log_as_info(task_logger, f"dataset_id: {dataset_id}")
     post_update_record = execute_result_returning_query(
         engine=engine,
         query=f"""SELECT * FROM metadata.dataset_metadata WHERE id = {dataset_id}""",
     )
-    task_logger.info(f"General metadata record post-update: {post_update_record}")
+    log_as_info(task_logger, f"General metadata record post-update: {post_update_record}")
     return "success"
 
 
@@ -286,10 +293,12 @@ def register_temp_table_asset(
 def table_checkpoint_exists(tiger_dataset: TIGERDataset, task_logger: Logger) -> str:
     checkpoint_name = f"data_raw.temp_{tiger_dataset.dataset_name}"
     if check_if_checkpoint_exists(checkpoint_name=checkpoint_name, task_logger=task_logger):
-        task_logger.info(f"GE checkpoint for {checkpoint_name} exists")
+        log_as_info(task_logger, f"GE checkpoint for {checkpoint_name} exists")
         return "update_tiger_table.raw_data_validation_tg.run_temp_table_checkpoint"
     else:
-        task_logger.info(f"GE checkpoint for {checkpoint_name} doesn't exist yet. Make it maybe?")
+        log_as_info(
+            task_logger, f"GE checkpoint for {checkpoint_name} doesn't exist yet. Make it maybe?"
+        )
         return "update_tiger_table.raw_data_validation_tg.validation_endpoint"
 
 
@@ -299,11 +308,12 @@ def run_temp_table_checkpoint(tiger_dataset: TIGERDataset, task_logger: Logger) 
     checkpoint_run_results = run_checkpoint(
         checkpoint_name=checkpoint_name, task_logger=task_logger
     )
-    task_logger.info(
-        f"list_validation_results:      {checkpoint_run_results.list_validation_results()}"
+    log_as_info(
+        task_logger,
+        f"list_validation_results:      {checkpoint_run_results.list_validation_results()}",
     )
-    task_logger.info(f"validation success:      {checkpoint_run_results.success}")
-    task_logger.info(f"dir(checkpoint_run_results): {dir(checkpoint_run_results)}")
+    log_as_info(task_logger, f"validation success:      {checkpoint_run_results.success}")
+    log_as_info(task_logger, f"dir(checkpoint_run_results): {dir(checkpoint_run_results)}")
     return checkpoint_run_results
 
 
@@ -318,7 +328,7 @@ def raw_data_validation_tg(
     tiger_dataset: TIGERDataset,
     task_logger: Logger,
 ):
-    task_logger.info(f"Entered raw_data_validation_tg task_group")
+    log_as_info(task_logger, f"Entered raw_data_validation_tg task_group")
     register_asset_1 = register_temp_table_asset(
         datasource_name=datasource_name, tiger_dataset=tiger_dataset, task_logger=task_logger
     )
@@ -341,12 +351,12 @@ def table_exists_in_data_raw(tiger_dataset: TIGERDataset, conn_id: str, task_log
     tables_in_data_raw_schema = get_data_table_names_in_schema(
         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
     )
-    task_logger.info(f"tables_in_data_raw_schema: {tables_in_data_raw_schema}")
+    log_as_info(task_logger, f"tables_in_data_raw_schema: {tables_in_data_raw_schema}")
     if tiger_dataset.dataset_name not in tables_in_data_raw_schema:
-        task_logger.info(f"Table {tiger_dataset.dataset_name} not in data_raw; creating.")
+        log_as_info(task_logger, f"Table {tiger_dataset.dataset_name} not in data_raw; creating.")
         return "update_tiger_table.persist_new_raw_data_tg.create_table_in_data_raw"
     else:
-        task_logger.info(f"Table {tiger_dataset.dataset_name} in data_raw; skipping.")
+        log_as_info(task_logger, f"Table {tiger_dataset.dataset_name} in data_raw; skipping.")
         return "update_tiger_table.persist_new_raw_data_tg.dbt_data_raw_model_exists"
 
 
@@ -354,7 +364,7 @@ def table_exists_in_data_raw(tiger_dataset: TIGERDataset, conn_id: str, task_log
 def create_table_in_data_raw(tiger_dataset: TIGERDataset, conn_id: str, task_logger: Logger) -> str:
     try:
         table_name = tiger_dataset.dataset_name
-        task_logger.info(f"Creating table data_raw.{table_name}")
+        log_as_info(task_logger, f"Creating table data_raw.{table_name}")
         postgres_hook = PostgresHook(postgres_conn_id=conn_id)
         conn = postgres_hook.get_conn()
         cur = conn.cursor()
@@ -372,8 +382,8 @@ def create_table_in_data_raw(tiger_dataset: TIGERDataset, conn_id: str, task_log
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def dbt_data_raw_model_exists(tiger_dataset: TIGERDataset, task_logger: Logger) -> str:
     dbt_data_raw_model_dir = Path(f"/opt/airflow/dbt/models/data_raw")
-    task_logger.info(f"dbt data_raw model dir ('{dbt_data_raw_model_dir}')")
-    task_logger.info(f"Dir exists? {dbt_data_raw_model_dir.is_dir()}")
+    log_as_info(task_logger, f"dbt data_raw model dir ('{dbt_data_raw_model_dir}')")
+    log_as_info(task_logger, f"Dir exists? {dbt_data_raw_model_dir.is_dir()}")
     table_model_path = dbt_data_raw_model_dir.joinpath(f"{tiger_dataset.dataset_name}.sql")
     if table_model_path.is_file():
         return "update_tiger_table.persist_new_raw_data_tg.update_data_raw_table"
@@ -386,20 +396,18 @@ def make_dbt_data_raw_model(tiger_dataset: TIGERDataset, conn_id: str, task_logg
     make_dbt_data_raw_model_file(
         table_name=tiger_dataset.dataset_name, engine=get_pg_engine(conn_id=conn_id)
     )
-    task_logger.info(f"Leaving make_dbt_data_raw_model")
+    log_as_info(task_logger, f"Leaving make_dbt_data_raw_model")
     return "dbt_file_made"
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def update_data_raw_table(tiger_dataset: TIGERDataset, task_logger: Logger) -> str:
-    dbt_cmd = f"""cd /opt/airflow/dbt && \
-                  dbt --warn-error-options \
-                        '{{"include": "all", "exclude": [UnusedResourceConfigPath]}}' \
-                  run --select re_dbt.data_raw.{tiger_dataset.dataset_name}"""
-    task_logger.info(f"dbt run command: {dbt_cmd}")
-    subproc_output = subprocess.run(dbt_cmd, shell=True, capture_output=True, text=True)
-    for el in subproc_output.stdout.split("\n"):
-        task_logger.info(f"{el}")
+    result = run_dbt_dataset_transformations(
+        dataset_name=tiger_dataset.dataset_name,
+        task_logger=task_logger,
+        schema="data_raw",
+    )
+    log_as_info(task_logger, f"dbt transform result: {result}")
     return "data_raw_updated"
 
 

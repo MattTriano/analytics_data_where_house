@@ -2,8 +2,8 @@
 {% set source_cols = [
     "work_zone_type", "injuries_fatal", "workers_present_i", "injuries_non_incapacitating",
     "crash_record_id", "injuries_incapacitating", "injuries_no_indication", "latitude",
-    "lighting_condition", "street_no", "injuries_unknown", "device_condition", "rd_no",
-    "crash_date", "private_property_i", "trafficway_type", "traffic_control_device", "road_defect",
+    "lighting_condition", "street_no", "injuries_unknown", "device_condition", "crash_date",
+    "private_property_i", "trafficway_type", "traffic_control_device", "road_defect",
     "damage", "crash_date_est_i", "longitude", "crash_month", "street_name", "crash_day_of_week",
     "crash_hour", "first_crash_type", "injuries_reported_not_evident", "statements_taken_i",
     "num_units", "most_severe_injury", "date_police_notified", "photos_taken_i",
