@@ -7,7 +7,7 @@ WITH records_with_basic_cleaning AS (
         upper(crash_record_id::text)                          AS crash_record_id,
         crash_date::timestamptz
             AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS crash_date,
-        'REDACTED'                                            AS rd_no,
+        upper(rd_no::text)                                    AS rd_no,
         street_no::int                                        AS street_no,
         upper(street_direction::char(1))                      AS street_direction,
         upper(street_name::text)                              AS street_name,
