@@ -2,8 +2,8 @@
 {% set source_cols = [
     "work_zone_type", "injuries_fatal", "workers_present_i", "injuries_non_incapacitating",
     "crash_record_id", "injuries_incapacitating", "injuries_no_indication", "latitude",
-    "lighting_condition", "street_no", "injuries_unknown", "device_condition", "crash_date",
-    "private_property_i", "trafficway_type", "traffic_control_device", "road_defect",
+    "lighting_condition", "street_no", "injuries_unknown", "device_condition", "rd_no",
+    "crash_date", "private_property_i", "trafficway_type", "traffic_control_device", "road_defect",
     "damage", "crash_date_est_i", "longitude", "crash_month", "street_name", "crash_day_of_week",
     "crash_hour", "first_crash_type", "injuries_reported_not_evident", "statements_taken_i",
     "num_units", "most_severe_injury", "date_police_notified", "photos_taken_i",
@@ -21,13 +21,19 @@ WITH records_in_data_raw_table AS (
 ),
 
 -- selecting all distinct records from the latest data pull (in the "temp" table)
+current_pull AS (
+    SELECT
+        {% for sc in source_cols %}{% if sc == 'rd_no' %}'REDACTED' AS {% endif %}{{ sc }},{% endfor %}
+        {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
+    FROM {{ source('data_raw', 'temp_chicago_traffic_crashes') }}
+),
 current_pull_with_distinct_combos_numbered AS (
     SELECT *,
         row_number() over(partition by
             {% for sc in source_cols %}{{ sc }},{% endfor %}
             {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
         ) as rn
-    FROM {{ source('data_raw', 'temp_chicago_traffic_crashes') }}
+    FROM current_pull
 ),
 distinct_records_in_current_pull AS (
     SELECT
