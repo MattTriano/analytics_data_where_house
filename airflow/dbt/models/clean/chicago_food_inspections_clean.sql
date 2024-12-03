@@ -13,7 +13,7 @@ WITH std_data AS (
     FROM {{ ref('chicago_food_inspections_standardized') }}
 ),
 
--- keeps the most recently updated version of each record 
+-- keeps the most recently updated version of each record
 std_records_numbered_latest_first AS (
     SELECT *,
         row_number() over(partition by {{record_id}} ORDER BY source_data_updated DESC) as rn

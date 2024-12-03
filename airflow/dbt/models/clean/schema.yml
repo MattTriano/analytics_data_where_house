@@ -6,7 +6,7 @@ models:
       schema: clean
     description: '{{ doc("parcels_cc_sales") }}'
     columns:
-      - name: parcel_sale_id        
+      - name: parcel_sale_id
       - name: pin
         description: '{{ doc("parcels_cc_sales__pin") }}'
         data_tests:
@@ -92,7 +92,7 @@ models:
     config:
       schema: clean
     description: '{{ doc("parcels_cc_locations") }}'
-    columns:        
+    columns:
       - name: pin
         description: '{{ doc("parcels_cc_locations__pin") }}'
         data_tests:
