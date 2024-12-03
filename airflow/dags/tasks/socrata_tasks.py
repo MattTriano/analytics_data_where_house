@@ -747,14 +747,12 @@ def dbt_make_clean_model(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
 def run_dbt_models__standardized_onward(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
-    dbt_cmd = f"""cd /opt/airflow/dbt && \
-                  dbt --warn-error-options \
-                        '{{"include": "all", "exclude": [UnusedResourceConfigPath]}}' \
-                  run --select re_dbt.standardized.{socrata_metadata.table_name}_standardized+"""
-    log_as_info(task_logger, f"dbt run command: {dbt_cmd}")
-    subproc_output = subprocess.run(dbt_cmd, shell=True, capture_output=True, text=True)
-    for el in subproc_output.stdout.split("\n"):
-        log_as_info(task_logger, f"{el}")
+    result = run_dbt_dataset_transformations(
+        dataset_name=socrata_metadata.table_name,
+        task_logger=task_logger,
+        schema="standardized",
+        run_downstream=True,
+    )
     return socrata_metadata
 
 
