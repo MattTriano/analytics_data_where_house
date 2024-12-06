@@ -1,0 +1,32 @@
+unit_tests:
+  - name: chicago_towed_vehicles_clean_initial_full_refresh
+    model: chicago_towed_vehicles_clean
+    overrides:
+      macros:
+        is_incremental: false
+    given:
+      - input: ref('chicago_towed_vehicles_standardized')
+        format: dict
+        rows:
+          # Case 1: a record where multiple distinct versions were ingested to data_raw
+          - vehicle_tow_id: '1'
+            inventory_number: '111111'
+            tow_date: '2024-05-22'
+            plate: '123456A'
+            towed_to_address: '701 N. Sacramento'
+            source_data_updated: '2024-12-01T11:01:39Z'
+          - vehicle_tow_id: '1'
+            inventory_number: '111111'
+            tow_date: '2024-05-22'
+            plate: '123456A'
+            towed_to_address: '10300 S. Doty'
+            source_data_updated: '2024-12-01T22:46:51Z'
+    expect:
+      rows:
+        # Case 1: Should just retain the latest record version
+        - vehicle_tow_id: '1'
+          inventory_number: '111111'
+          tow_date: '2024-05-22'
+          plate: '123456A'
+          towed_to_address: '10300 S. Doty'
+          source_data_updated: '2024-12-01T22:46:51Z'

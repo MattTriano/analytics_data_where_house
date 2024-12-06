@@ -29,7 +29,7 @@ from cc_utils.db import (
 from cc_utils.file_factory import (
     make_dbt_data_raw_model_file,
 )
-from cc_utils.transform import run_dbt_dataset_transformations
+from cc_utils.transform import format_dbt_run_cmd, execute_dbt_cmd
 from cc_utils.utils import log_as_info
 from cc_utils.validation import (
     run_checkpoint,
@@ -402,11 +402,12 @@ def make_dbt_data_raw_model(tiger_dataset: TIGERDataset, conn_id: str, task_logg
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def update_data_raw_table(tiger_dataset: TIGERDataset, task_logger: Logger) -> str:
-    result = run_dbt_dataset_transformations(
+    dbt_cmd = format_dbt_run_cmd(
         dataset_name=tiger_dataset.dataset_name,
-        task_logger=task_logger,
         schema="data_raw",
+        run_downstream=False,
     )
+    result = execute_dbt_cmd(dbt_cmd=dbt_cmd, task_logger=task_logger)
     log_as_info(task_logger, f"dbt transform result: {result}")
     return "data_raw_updated"
 
