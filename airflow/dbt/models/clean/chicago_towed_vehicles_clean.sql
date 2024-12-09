@@ -13,6 +13,4 @@
     updated_at_col='source_data_updated'
 ) %}
 
-{% do log("Generated SQL: " ~ query, info=True) %}
-
 {{ query }}
