@@ -8,7 +8,7 @@ WITH records_with_basic_cleaning AS (
         upper(station_name::text)                             AS station_name,
         upper(short_name::text)                               AS short_name,
         upper(status::text)                                   AS status,
-        latitude::double precision.                           AS latitude,
+        latitude::double precision                            AS latitude,
         longitude::double precision                           AS longitude,
         docks_in_service::bigint                              AS docks_in_service,
         total_docks::bigint                                   AS total_docks,

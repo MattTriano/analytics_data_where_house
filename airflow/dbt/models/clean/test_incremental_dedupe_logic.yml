@@ -16,22 +16,37 @@ unit_tests:
             inventory_number: '111111'
             tow_date: '2024-05-22'
             plate: '123456A'
-            towed_to_address: '701 N. Sacramento'
+            towed_to_address: '701 N. SACRAMENTO'
             source_data_updated: '2024-12-01T11:01:39Z'
+
           - vehicle_tow_id: '1'
             inventory_number: '111111'
             tow_date: '2024-05-22'
             plate: '123456A'
-            towed_to_address: '10300 S. Doty'
+            towed_to_address: '10300 S. DOTY'
             source_data_updated: '2024-12-01T22:46:51Z'
+
+          - vehicle_tow_id: '2'
+            inventory_number: '111112'
+            tow_date: '2024-05-24'
+            plate: 'B123321'
+            towed_to_address: '10300 S. DOTY'
+            source_data_updated: '2024-12-04T08:13:25Z'
     expect:
       rows:
         - vehicle_tow_id: '1'
           inventory_number: '111111'
           tow_date: '2024-05-22'
           plate: '123456A'
-          towed_to_address: '10300 S. Doty'
+          towed_to_address: '10300 S. DOTY'
           source_data_updated: '2024-12-01T22:46:51Z'
+
+        - vehicle_tow_id: '2'
+          inventory_number: '111112'
+          tow_date: '2024-05-24'
+          plate: 'B123321'
+          towed_to_address: '10300 S. DOTY'
+          source_data_updated: '2024-12-04T08:13:25Z'
 
   - name: chicago_towed_vehicles_clean_incremental_mode_basic_case
     description: >
@@ -49,13 +64,14 @@ unit_tests:
             inventory_number: '111111'
             tow_date: '2024-05-22'
             plate: '123456A'
-            towed_to_address: '701 N. Sacramento'
+            towed_to_address: '701 N. SACRAMENTO'
             source_data_updated: '2024-12-01T11:01:39Z'
+
           - vehicle_tow_id: '2'
             inventory_number: '111112'
             tow_date: '2024-05-24'
             plate: 'B123321'
-            towed_to_address: '10300 S. Doty'
+            towed_to_address: '10300 S. DOTY'
             source_data_updated: '2024-12-04T08:13:25Z'
       - input: this
         rows:
@@ -63,7 +79,7 @@ unit_tests:
             inventory_number: '111111'
             tow_date: '2024-05-22'
             plate: '123456A'
-            towed_to_address: '701 N. Sacramento'
+            towed_to_address: '701 N. SACRAMENTO'
             source_data_updated: '2024-12-01T11:01:39Z'
     expect:
       rows:
@@ -71,6 +87,121 @@ unit_tests:
           inventory_number: '111112'
           tow_date: '2024-05-24'
           plate: 'B123321'
-          towed_to_address: '10300 S. Doty'
+          towed_to_address: '10300 S. DOTY'
           source_data_updated: '2024-12-04T08:13:25Z'
 
+  - name: chicago_towed_vehicles_clean_incremental_mode_update_case
+    description: >
+      Scenario: a new record is added along with an existing record
+        that has changed.
+    model: chicago_towed_vehicles_clean
+    overrides:
+      macros:
+        is_incremental: true
+    given:
+      - input: ref('chicago_towed_vehicles_standardized')
+        format: dict
+        rows:
+          - vehicle_tow_id: '1'
+            inventory_number: '111111'
+            tow_date: '2024-05-22'
+            plate: '123456A'
+            towed_to_address: '701 N. SACRAMENTO'
+            source_data_updated: '2024-12-01T11:01:39Z'
+
+          - vehicle_tow_id: '1'
+            inventory_number: '111111'
+            tow_date: '2024-05-22'
+            plate: '123456A'
+            towed_to_address: '10300 S. DOTY'
+            source_data_updated: '2024-12-01T22:46:51Z'
+
+          - vehicle_tow_id: '1'
+            inventory_number: '111111'
+            tow_date: '2024-05-22'
+            plate: '123456A'
+            towed_to_address: '400 E. LOWER WACKER'
+            source_data_updated: '2024-11-30T18:16:54Z'
+
+          - vehicle_tow_id: '2'
+            inventory_number: '111112'
+            tow_date: '2024-05-24'
+            plate: 'B123321'
+            towed_to_address: '10300 S. DOTY'
+            source_data_updated: '2024-12-04T08:13:25Z'
+      - input: this
+        rows:
+          - vehicle_tow_id: '1'
+            inventory_number: '111111'
+            tow_date: '2024-05-22'
+            plate: '123456A'
+            towed_to_address: '400 E. LOWER WACKER'
+            source_data_updated: '2024-11-30T18:16:54Z'
+    expect:
+      rows:
+        - vehicle_tow_id: '1'
+          inventory_number: '111111'
+          tow_date: '2024-05-22'
+          plate: '123456A'
+          towed_to_address: '10300 S. DOTY'
+          source_data_updated: '2024-12-01T22:46:51Z'
+
+        - vehicle_tow_id: '2'
+          inventory_number: '111112'
+          tow_date: '2024-05-24'
+          plate: 'B123321'
+          towed_to_address: '10300 S. DOTY'
+          source_data_updated: '2024-12-04T08:13:25Z'
+
+  - name: chicago_towed_vehicles_clean_incremental_mode_no_update_case
+    description: >
+      Scenario: There are new records in the latest pull but somehow they're from a
+        time before records that are already in the output model.
+        (This situation can happen when the timestamp column used to identify
+          new|updated records reflects a time that won't change, but if the column
+          reflects the time the record was updated, this situation can't happen.)
+    model: chicago_towed_vehicles_clean
+    overrides:
+      macros:
+        is_incremental: true
+    given:
+      - input: ref('chicago_towed_vehicles_standardized')
+        format: dict
+        rows:
+          - vehicle_tow_id: '1'
+            inventory_number: '111111'
+            tow_date: '2024-05-22'
+            plate: '123456A'
+            towed_to_address: '701 N. SACRAMENTO'
+            source_data_updated: '2024-12-01T11:01:39Z'
+
+          - vehicle_tow_id: '1'
+            inventory_number: '111111'
+            tow_date: '2024-05-22'
+            plate: '123456A'
+            towed_to_address: '10300 S. DOTY'
+            source_data_updated: '2024-12-01T22:46:51Z'
+
+          - vehicle_tow_id: '1'
+            inventory_number: '111111'
+            tow_date: '2024-05-22'
+            plate: '123456A'
+            towed_to_address: '400 E. LOWER WACKER'
+            source_data_updated: '2024-11-30T18:16:54Z'
+
+          - vehicle_tow_id: '2'
+            inventory_number: '111112'
+            tow_date: '2024-05-24'
+            plate: 'B123321'
+            towed_to_address: '10300 S. DOTY'
+            source_data_updated: '2024-12-04T08:13:25Z'
+      - input: this
+        rows:
+          - vehicle_tow_id: '2'
+            inventory_number: '111112'
+            tow_date: '2024-05-24'
+            plate: 'B123321'
+            towed_to_address: '10300 S. DOTY'
+            source_data_updated: '2024-12-04T08:13:25Z'
+    expect:
+      rows: []
