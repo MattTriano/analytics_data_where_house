@@ -8,7 +8,7 @@ import subprocess
 from airflow.decorators import dag, task
 from airflow.utils.trigger_rule import TriggerRule
 
-from sources.tables import CHICAGO_CTA_BUS_STOPS as SOCRATA_TABLE
+from sources.tables import CHICAGO_DIVVY_STATIONS as SOCRATA_TABLE
 from cc_utils.utils import log_as_info
 
 task_logger = logging.getLogger("airflow.task")

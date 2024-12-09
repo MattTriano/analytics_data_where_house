@@ -108,6 +108,12 @@ CHICAGO_POTHOLES_PATCHED = SocrataTable(
     schedule="47 8 * * *",
 )
 
+CHICAGO_RECYCLING_DROPOFF_SITES = SocrataTable(
+    table_id="27cy-fdic",
+    table_name="chicago_recycling_dropoff_sites",
+    schedule="53 4 1 */3 *",
+)
+
 CHICAGO_RED_LIGHT_CAMERA_VIOLATIONS = SocrataTable(
     table_id="spqx-js37",
     table_name="chicago_red_light_camera_violations",
