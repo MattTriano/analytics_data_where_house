@@ -24,7 +24,7 @@ from cc_utils.file_factory import (
     format_dbt_stub_for_clean_stage,
 )
 from cc_utils.socrata import SocrataTable, SocrataTableMetadata
-from cc_utils.transform import run_dbt_dataset_transformations
+from cc_utils.transform import format_dbt_run_cmd, execute_dbt_cmd
 from cc_utils.utils import (
     get_local_data_raw_dir,
     get_lines_in_geojson_file,
@@ -569,11 +569,12 @@ def update_data_raw_table(task_logger: Logger, **kwargs) -> str:
     socrata_metadata = ti.xcom_pull(
         task_ids="update_socrata_table.raw_data_validation_tg.validation_endpoint"
     )
-    result = run_dbt_dataset_transformations(
+    dbt_cmd = format_dbt_run_cmd(
         dataset_name=socrata_metadata.table_name,
-        task_logger=task_logger,
         schema="data_raw",
+        run_downstream=False,
     )
+    result = execute_dbt_cmd(dbt_cmd=dbt_cmd, task_logger=task_logger)
     log_as_info(task_logger, f"dbt transform result: {result}")
     return "data_raw_updated"
 
@@ -747,14 +748,12 @@ def dbt_make_clean_model(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
 def run_dbt_models__standardized_onward(task_logger: Logger, **kwargs) -> SocrataTableMetadata:
     ti = kwargs["ti"]
     socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
-    dbt_cmd = f"""cd /opt/airflow/dbt && \
-                  dbt --warn-error-options \
-                        '{{"include": "all", "exclude": [UnusedResourceConfigPath]}}' \
-                  run --select re_dbt.standardized.{socrata_metadata.table_name}_standardized+"""
-    log_as_info(task_logger, f"dbt run command: {dbt_cmd}")
-    subproc_output = subprocess.run(dbt_cmd, shell=True, capture_output=True, text=True)
-    for el in subproc_output.stdout.split("\n"):
-        log_as_info(task_logger, f"{el}")
+    dbt_cmd = format_dbt_run_cmd(
+        dataset_name=socrata_metadata.table_name,
+        schema="standardized",
+        run_downstream=True,
+    )
+    result = execute_dbt_cmd(dbt_cmd=dbt_cmd, task_logger=task_logger)
     return socrata_metadata
 
 

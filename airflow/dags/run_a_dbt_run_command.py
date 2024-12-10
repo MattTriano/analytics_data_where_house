@@ -8,7 +8,8 @@ import subprocess
 from airflow.decorators import dag, task
 from airflow.utils.trigger_rule import TriggerRule
 
-from sources.tables import CHICAGO_CTA_BUS_STOPS as SOCRATA_TABLE
+from sources.tables import CHICAGO_DIVVY_STATIONS as SOCRATA_TABLE
+from cc_utils.utils import log_as_info
 
 task_logger = logging.getLogger("airflow.task")
 
@@ -26,24 +27,24 @@ task_logger = logging.getLogger("airflow.task")
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def run_specific_dbt_model_for_a_data_set(table_name: str, task_logger: Logger) -> None:
     dbt_cmd = f"""cd /opt/airflow/dbt && \
-                  dbt --warn-error run --select \
-                  re_dbt.standardized.chicago_cta_bus_stops_standardized+"""
+                  dbt --warn-error run --full-refresh --select \
+                  re_dbt.clean.chicago_towed_vehicles*+"""
     task_logger.info(f"dbt run command: {dbt_cmd}")
     try:
         subproc_output = subprocess.run(
             dbt_cmd, shell=True, capture_output=True, text=True, check=False
         )
-        task_logger.info(f"subproc_output.stderr: {subproc_output.stderr}")
-        task_logger.info(f"subproc_output.stdout: {subproc_output.stdout}")
+        log_as_info(task_logger, f"subproc_output.stderr: {subproc_output.stderr}")
+        log_as_info(task_logger, f"subproc_output.stdout: {subproc_output.stdout}")
         raise_exception = False
         for el in subproc_output.stdout.split("\n"):
-            task_logger.info(f"{el}")
+            log_as_info(task_logger, f"{el}")
             if re.search("(\\d* of \\d* ERROR)", el):
                 raise_exception = True
         if raise_exception:
             raise Exception("dbt model failed. Review the above outputs")
     except subprocess.CalledProcessError as err:
-        task_logger.info(f"Error {err} while running dbt models. {type(err)}")
+        log_as_info(task_logger, f"Error {err} while running dbt models. {type(err)}")
         raise
 
 
