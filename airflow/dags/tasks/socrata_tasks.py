@@ -95,54 +95,27 @@ def ingest_into_table(
 
 
 @task
-def get_socrata_table_metadata(
-    socrata_table: SocrataTable, task_logger: Logger
-) -> SocrataTableMetadata:
+def get_socrata_table_metadata(socrata_table: SocrataTable, task_logger: Logger) -> bool:
     context = get_current_context()
-    # log_as_info(task_logger, f"dir(context): {dir(context)}, keys: {context.keys()}")
-    # log_as_info(task_logger, f"context['ti']: {context['ti']}, dir(context['ti']): {dir(context['ti'])}")
-    log_as_info(task_logger, f"context['ti'].task_id: {context['ti'].task_id}")
-    log_as_info(task_logger, f"context['ti'].task_display_name: {context['ti'].task_display_name}")
-    log_as_info(task_logger, f"context['ti'].task: {context['ti'].task}")
-    log_as_info(task_logger, f"context['ti'].get_previous_ti(): {context['ti'].get_previous_ti()}")
-    # log_as_info(task_logger, f"context['ti'].previous_ti: {context['ti'].previous_ti}") # deprecated
-    # log_as_info(task_logger, f"context['ti'].previous_ti_success: {context['ti'].previous_ti_success}") # deprecated
-    log_as_info(task_logger, f"context['ti'].metadata: {context['ti'].metadata}")
-    log_as_info(task_logger, f"context['ti'].hostname: {context['ti'].hostname}")
-    log_as_info(task_logger, f"context['ti'].run_id: {context['ti'].run_id}")
-    log_as_info(task_logger, f"context['ti'].pid: {context['ti'].pid}")
-    log_as_info(task_logger, f"context['ti'].job_id: {context['ti'].job_id}")
-    log_as_info(task_logger, f"context['ti'].updated_at: {context['ti'].updated_at}")
-    log_as_info(task_logger, f"context['ti'].key: {context['ti'].key}")
-    log_as_info(task_logger, f"context['ti'].log: {context['ti'].log}")
-    log_as_info(task_logger, f"context['ti'].command_as_list(): {context['ti'].command_as_list()}")
-    log_as_info(task_logger, f"context['ti'].queue: {context['ti'].queue}")
-    log_as_info(task_logger, f"context['ti'].is_premature: {context['ti'].is_premature}")
-    log_as_info(task_logger, f"context['ti'].raw: {context['ti'].raw}")
-    log_as_info(task_logger, f"context['ti'].executor_config: {context['ti'].executor_config}")
-    log_as_info(task_logger, f"context['ti'].next_kwargs: {context['ti'].next_kwargs}")
-    log_as_info(task_logger, f"context['ti'].next_method: {context['ti'].next_method}")
-    log_as_info(task_logger, f"context['ti'].registry: {context['ti'].registry}")
-
     socrata_metadata = SocrataTableMetadata(socrata_table=socrata_table)
     log_as_info(
         task_logger,
         f"Retrieved metadata for socrata table {socrata_metadata.table_name} and table_id"
         + f" {socrata_metadata.table_id}.",
     )
-    log_as_info(task_logger, f" --- socrata_metadata pre push:      {socrata_metadata}")
+    log_as_info(task_logger, f" --- socrata_metadata:      {socrata_metadata.metadata}")
     context["ti"].xcom_push(key="socrata_metadata_key", value=socrata_metadata)
-    log_as_info(task_logger, f" --- socrata_metadata post push:      {socrata_metadata}")
-    return socrata_metadata
+    return True
 
 
 @task
 def extract_table_freshness_info(
-    socrata_metadata: SocrataTableMetadata,
     conn_id: str,
     task_logger: Logger,
-) -> SocrataTableMetadata:
+) -> bool:
     engine = get_pg_engine(conn_id=conn_id)
+    context = get_current_context()
+    socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     socrata_metadata.check_warehouse_data_freshness(engine=engine)
     log_as_info(
         task_logger,
@@ -150,23 +123,26 @@ def extract_table_freshness_info(
         + f"Fresh source data available: {socrata_metadata.data_freshness_check['updated_data_available']} "
         + f"Fresh source metadata available: {socrata_metadata.data_freshness_check['updated_metadata_available']}",
     )
-    return socrata_metadata
+    context["ti"].xcom_push(key="socrata_metadata_key", value=socrata_metadata)
+    return True
 
 
 @task
 def ingest_table_freshness_check_metadata(
-    socrata_metadata: SocrataTableMetadata,
     conn_id: str,
     task_logger: Logger,
-) -> None:
+) -> bool:
     engine = get_pg_engine(conn_id=conn_id)
+    context = get_current_context()
+    socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     socrata_metadata.insert_current_freshness_check_to_db(engine=engine)
     log_as_info(
         task_logger,
         f"Ingested table freshness check results into metadata table.  "
         + f"Freshness check id: {socrata_metadata.freshness_check_id}",
     )
-    return socrata_metadata
+    context["ti"].xcom_push(key="socrata_metadata_key", value=socrata_metadata)
+    return True
 
 
 @task_group
@@ -174,23 +150,18 @@ def check_table_metadata(
     socrata_table: SocrataTable, conn_id: str, task_logger: Logger
 ) -> SocrataTableMetadata:
     metadata_1 = get_socrata_table_metadata(socrata_table=socrata_table, task_logger=task_logger)
-    metadata_2 = extract_table_freshness_info(metadata_1, conn_id=conn_id, task_logger=task_logger)
-    metadata_3 = ingest_table_freshness_check_metadata(
-        metadata_2, conn_id=conn_id, task_logger=task_logger
-    )
+    metadata_2 = extract_table_freshness_info(conn_id=conn_id, task_logger=task_logger)
+    metadata_3 = ingest_table_freshness_check_metadata(conn_id=conn_id, task_logger=task_logger)
 
     chain(metadata_1, metadata_2, metadata_3)
     return metadata_3
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def fresher_source_data_available(
-    socrata_metadata: SocrataTableMetadata, conn_id: str, task_logger: Logger
-) -> str:
+def fresher_source_data_available(conn_id: str, task_logger: Logger) -> str:
     context = get_current_context()
     task_group_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
-    # socrata_metadata_from_xcom = context["ti"].xcom_pull(key="socrata_metadata_key")
-    # log_as_info(task_logger, f" --- socrata_metadata_from_xcom:      {socrata_metadata_from_xcom}")
+    socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     tables_in_data_raw_schema = get_data_table_names_in_schema(
         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
     )
@@ -234,9 +205,7 @@ def file_ext_branch_router(socrata_metadata: SocrataTableMetadata) -> str:
 
 
 @task
-def drop_temp_table(
-    route_str: str, conn_id: str, task_logger: Logger
-) -> SocrataTableMetadata:
+def drop_temp_table(route_str: str, conn_id: str, task_logger: Logger) -> SocrataTableMetadata:
     context = get_current_context()
     socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
 
@@ -372,18 +341,12 @@ def get_geospatial_load_indices(
 
 @task
 def ingest_geojson_data(
-    start_index: int, end_index: int, conn_id: str, task_logger: Logger, **kwargs
-) -> None:
+    start_index: int, end_index: int, conn_id: str, task_logger: Logger
+) -> bool:
     try:
-        ti = kwargs["ti"]
-        socrata_metadata = ti.xcom_pull(
-            task_ids="update_socrata_table.load_data_tg.load_geojson_data.drop_temp_table"
-        )
         context = get_current_context()
         task_group_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
-        sm_xcom = context["ti"].xcom_pull(key="socrata_metadata_key")
-        log_as_info(task_logger, f"sm_xcom: {sm_xcom}, table_name: {sm_xcom.table_name}, source_data_last_updated: {sm_xcom.data_freshness_check['source_data_last_updated']}")
-        log_as_info(task_logger, f"socrata_metadata: {socrata_metadata}, table_name: {socrata_metadata.table_name}, source_data_last_updated: {socrata_metadata.data_freshness_check['source_data_last_updated']}")
+        socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
 
         engine = get_pg_engine(conn_id=conn_id)
         temp_table_name = f"temp_{socrata_metadata.table_name}"
@@ -412,6 +375,7 @@ def ingest_geojson_data(
             task_logger,
             f"Successfully ingested records {start_index} to {end_index} using gpd.to_postgis()",
         )
+        return True
     except Exception as e:
         task_logger.error(
             f"Failed to ingest geojson file to temp table. Error: {e}, {type(e)}",
@@ -476,16 +440,17 @@ def register_temp_table_asset(datasource_name: str, task_logger: Logger) -> str:
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def socrata_table_checkpoint_exists(task_logger: Logger) -> str:
     context = get_current_context()
+    task_group_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
     socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     checkpoint_name = f"data_raw.temp_{socrata_metadata.socrata_table.table_name}"
     if check_if_checkpoint_exists(checkpoint_name=checkpoint_name, task_logger=task_logger):
         log_as_info(task_logger, f"GE checkpoint for {checkpoint_name} exists")
-        return "update_socrata_table.raw_data_validation_tg.run_socrata_checkpoint"
+        return f"{task_group_id_prefix}run_socrata_checkpoint"
     else:
         log_as_info(
             task_logger, f"GE checkpoint for {checkpoint_name} doesn't exist yet. Make it maybe?"
         )
-        return "update_socrata_table.raw_data_validation_tg.validation_endpoint"
+        return f"{task_group_id_prefix}validation_endpoint"
 
 
 @task
@@ -506,10 +471,8 @@ def run_socrata_checkpoint(task_logger: Logger) -> SocrataTableMetadata:
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def validation_endpoint(**kwargs) -> SocrataTableMetadata:
-    ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(task_ids="update_socrata_table.download_fresh_data")
-    return socrata_metadata
+def validation_endpoint() -> bool:
+    return True
 
 
 @task_group
@@ -552,16 +515,9 @@ def table_exists_in_data_raw(conn_id: str, task_logger: Logger) -> str:
 
 
 @task
-def create_table_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> SocrataTableMetadata:
-    ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(
-        task_ids="update_socrata_table.raw_data_validation_tg.validation_endpoint"
-    )
+def create_table_in_data_raw(conn_id: str, task_logger: Logger) -> SocrataTableMetadata:
     context = get_current_context()
-    task_group_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
-    sm_xcom = context["ti"].xcom_pull(key="socrata_metadata_key")
-    log_as_info(task_logger, f"sm_xcom: {sm_xcom}, table_name: {sm_xcom.table_name}, source_data_last_updated: {sm_xcom.data_freshness_check['source_data_last_updated']}")
-    log_as_info(task_logger, f"socrata_metadata: {socrata_metadata}, table_name: {socrata_metadata.table_name}, source_data_last_updated: {socrata_metadata.data_freshness_check['source_data_last_updated']}")
+    socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     try:
         table_name = socrata_metadata.table_name
         log_as_info(task_logger, f"Creating table data_raw.{table_name}")
@@ -580,28 +536,24 @@ def create_table_in_data_raw(conn_id: str, task_logger: Logger, **kwargs) -> Soc
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def dbt_data_raw_model_exists(task_logger: Logger, **kwargs) -> str:
-    ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(
-        task_ids="update_socrata_table.raw_data_validation_tg.validation_endpoint"
-    )
+def dbt_data_raw_model_exists(task_logger: Logger) -> str:
+    context = get_current_context()
+    task_group_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
+    socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     dbt_data_raw_model_dir = Path(f"/opt/airflow/dbt/models/data_raw")
     log_as_info(task_logger, f"dbt data_raw model dir ('{dbt_data_raw_model_dir}')")
     log_as_info(task_logger, f"Dir exists? {dbt_data_raw_model_dir.is_dir()}")
     table_model_path = dbt_data_raw_model_dir.joinpath(f"{socrata_metadata.table_name}.sql")
     if table_model_path.is_file():
-        return "update_socrata_table.persist_new_raw_data_tg.update_data_raw_table"
+        return f"{task_group_id_prefix}update_data_raw_table"
     else:
-        return "update_socrata_table.persist_new_raw_data_tg.make_dbt_data_raw_model"
+        return f"{task_group_id_prefix}make_dbt_data_raw_model"
 
 
 @task(retries=1)
-def make_dbt_data_raw_model(conn_id: str, task_logger: Logger, **kwargs) -> SocrataTableMetadata:
-    ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(
-        task_ids="update_socrata_table.raw_data_validation_tg.validation_endpoint"
-    )
-
+def make_dbt_data_raw_model(conn_id: str, task_logger: Logger) -> SocrataTableMetadata:
+    context = get_current_context()
+    socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     make_dbt_data_raw_model_file(
         table_name=socrata_metadata.table_name, engine=get_pg_engine(conn_id=conn_id)
     )
@@ -610,11 +562,9 @@ def make_dbt_data_raw_model(conn_id: str, task_logger: Logger, **kwargs) -> Socr
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def update_data_raw_table(task_logger: Logger, **kwargs) -> str:
-    ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(
-        task_ids="update_socrata_table.raw_data_validation_tg.validation_endpoint"
-    )
+def update_data_raw_table(task_logger: Logger) -> str:
+    context = get_current_context()
+    socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     dbt_cmd = format_dbt_run_cmd(
         dataset_name=socrata_metadata.table_name,
         schema="data_raw",
@@ -641,12 +591,10 @@ def register_data_raw_table_asset(datasource_name: str, task_logger: Logger) -> 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def update_result_of_check_in_metadata_table(
-    conn_id: str, task_logger: Logger, data_updated: bool, **kwargs
+    conn_id: str, task_logger: Logger, data_updated: bool
 ) -> SocrataTableMetadata:
-    ti = kwargs["ti"]
-    socrata_metadata = ti.xcom_pull(
-        task_ids="update_socrata_table.check_table_metadata.ingest_table_freshness_check_metadata"
-    )
+    context = get_current_context()
+    socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     log_as_info(
         task_logger, f"Updating table_metadata record id #{socrata_metadata.freshness_check_id}."
     )
@@ -663,9 +611,7 @@ def persist_new_raw_data_tg(conn_id: str, datasource_name: str, task_logger: Log
     log_as_info(task_logger, f"Entered persist_new_raw_data_tg task_group")
     table_exists_1 = table_exists_in_data_raw(conn_id=conn_id, task_logger=task_logger)
     create_data_raw_table_1 = create_table_in_data_raw(conn_id=conn_id, task_logger=task_logger)
-    dbt_data_raw_model_exists_1 = dbt_data_raw_model_exists(
-        task_logger=task_logger, temp_table=False
-    )
+    dbt_data_raw_model_exists_1 = dbt_data_raw_model_exists(task_logger=task_logger)
     make_dbt_data_raw_model_1 = make_dbt_data_raw_model(conn_id=conn_id, task_logger=task_logger)
     update_data_raw_table_1 = update_data_raw_table(task_logger=task_logger)
     register_data_raw_asset_1 = register_data_raw_table_asset(
@@ -859,7 +805,7 @@ def update_socrata_table(
         socrata_table=socrata_table, conn_id=conn_id, task_logger=task_logger
     )
     fresh_source_data_available_1 = fresher_source_data_available(
-        socrata_metadata=metadata_1, conn_id=conn_id, task_logger=task_logger
+        conn_id=conn_id, task_logger=task_logger
     )
     extract_data_1 = download_fresh_data(task_logger=task_logger)
     load_data_tg_1 = load_data_tg(
