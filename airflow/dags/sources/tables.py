@@ -13,7 +13,7 @@ CHICAGO_AFFORDABLE_RENTAL_HOUSING = SocrataTable(
 )
 
 CHICAGO_BIKE_PATHS = SocrataTable(
-    table_id="3w5d-sru8",
+    table_id="hvv9-38ut",
     table_name="chicago_bike_paths",
     schedule="0 22 10 */3 *",
 )
@@ -43,7 +43,7 @@ CHICAGO_CRIMES = SocrataTable(
 )
 
 CHICAGO_CTA_TRAIN_LINES = SocrataTable(
-    table_id="53r7-y88m",
+    table_id="xbyr-jnvx",
     table_name="chicago_cta_train_lines",
     schedule="20 5 1 * *",
 )
