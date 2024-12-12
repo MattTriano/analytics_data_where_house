@@ -13,3 +13,4 @@ scraps/
 **/logs
 airflow/data_raw
 airflow/backups
+diagramming
