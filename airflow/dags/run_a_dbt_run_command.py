@@ -8,7 +8,7 @@ import subprocess
 from airflow.decorators import dag, task
 from airflow.utils.trigger_rule import TriggerRule
 
-from sources.tables import CHICAGO_DIVVY_STATIONS as SOCRATA_TABLE
+from sources.tables import NYC_PARCEL_SALES as SOCRATA_TABLE
 from cc_utils.utils import log_as_info
 
 task_logger = logging.getLogger("airflow.task")
@@ -28,7 +28,7 @@ task_logger = logging.getLogger("airflow.task")
 def run_specific_dbt_model_for_a_data_set(table_name: str, task_logger: Logger) -> None:
     dbt_cmd = f"""cd /opt/airflow/dbt && \
                   dbt --warn-error run --full-refresh --select \
-                  re_dbt.clean.chicago_towed_vehicles*+"""
+                  re_dbt.standardized.{table_name}_standardized+"""
     task_logger.info(f"dbt run command: {dbt_cmd}")
     try:
         subproc_output = subprocess.run(
