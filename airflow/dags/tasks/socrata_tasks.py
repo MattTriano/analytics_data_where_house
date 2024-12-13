@@ -14,24 +14,24 @@ from airflow.utils.trigger_rule import TriggerRule
 
 from cc_utils.cleanup import standardize_column_names
 from cc_utils.db import (
-    get_pg_engine,
-    get_data_table_names_in_schema,
     execute_structural_command,
+    get_data_table_names_in_schema,
+    get_pg_engine,
 )
 from cc_utils.file_factory import (
-    make_dbt_data_raw_model_file,
-    write_lines_to_file,
     format_dbt_stub_for_standardized_stage,
     format_dbt_stub_for_clean_stage,
+    make_dbt_data_raw_model_file,
+    write_lines_to_file,
 )
 from cc_utils.socrata import SocrataTable, SocrataTableMetadata
-from cc_utils.transform import format_dbt_run_cmd, execute_dbt_cmd
+from cc_utils.transform import execute_dbt_cmd, format_dbt_run_cmd
 from cc_utils.utils import (
-    get_local_data_raw_dir,
     get_lines_in_geojson_file,
+    get_local_data_raw_dir,
     get_task_group_id_prefix,
-    produce_slice_indices_for_gpd_read_file,
     log_as_info,
+    produce_slice_indices_for_gpd_read_file,
 )
 from cc_utils.validation import (
     run_checkpoint,
@@ -135,9 +135,9 @@ def download_fresh_data(task_logger: Logger) -> bool:
     context = get_current_context()
     socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     output_file_path = get_local_file_path(socrata_metadata=socrata_metadata)
-    log_as_info(task_logger, f"Started downloading data at {dt.datetime.utcnow()} UTC")
+    log_as_info(task_logger, f"Started downloading data at {dt.datetime.now(dt.UTC)} UTC")
     urlretrieve(url=socrata_metadata.data_download_url, filename=output_file_path)
-    log_as_info(task_logger, f"Finished downloading data at {dt.datetime.utcnow()} UTC")
+    log_as_info(task_logger, f"Finished downloading data at {dt.datetime.now(dt.UTC)} UTC")
     return True
 
 
@@ -168,13 +168,13 @@ def drop_temp_table(route_str: str, conn_id: str, task_logger: Logger) -> bool:
             query=f"DROP TABLE IF EXISTS {full_temp_table_name} CASCADE;",
             engine=engine,
         )
-        return True
     except Exception as e:
         raise Exception(f"Failed to drop temp table {full_temp_table_name}. Error: {e}, {type(e)}")
+    return True
 
 
 @task
-def create_temp_data_raw_table(conn_id: str, task_logger: Logger) -> None:
+def create_temp_data_raw_table(conn_id: str, task_logger: Logger) -> bool:
     context = get_current_context()
     socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     table_name = f"temp_{socrata_metadata.table_name}"
@@ -207,9 +207,9 @@ def create_temp_data_raw_table(conn_id: str, task_logger: Logger) -> None:
         table_create_obj = a_table._create_table_setup()
         table_create_obj.create(bind=engine)
         log_as_info(task_logger, f"Successfully created table 'data_raw.{table_name}'")
-        return True
     else:
         raise FileNotFoundError(f"File not found in expected location.")
+    return True
 
 
 @task
@@ -258,9 +258,9 @@ def ingest_csv_data(conn_id: str, task_logger: Logger) -> bool:
         log_as_info(
             task_logger, f"Successfully ingested csv data into {full_temp_table_name} via COPY."
         )
-        return True
     except Exception as e:
         log_as_info(task_logger, f"Failed to ingest flat file to temp table. Error: {e}, {type(e)}")
+    return True
 
 
 @task_group
@@ -322,12 +322,12 @@ def ingest_geojson_data(
             task_logger,
             f"Successfully ingested records {start_index} to {end_index} using gpd.to_postgis()",
         )
-        return True
     except Exception as e:
         task_logger.error(
             f"Failed to ingest geojson file to temp table. Error: {e}, {type(e)}",
             exc_info=True,
         )
+    return True
 
 
 @task_group
@@ -463,11 +463,11 @@ def create_table_in_data_raw(conn_id: str, task_logger: Logger) -> bool:
             f"CREATE TABLE data_raw.{table_name} (LIKE data_raw.temp_{table_name} INCLUDING ALL);"
         )
         conn.commit()
-        return True
     except Exception as e:
         print(
             f"Failed to create data_raw table {table_name} from temp_{table_name}. Error: {e}, {type(e)}"
         )
+    return True
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -511,7 +511,7 @@ def update_data_raw_table(task_logger: Logger) -> str:
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def register_data_raw_table_asset(datasource_name: str, task_logger: Logger) -> str:
+def register_data_raw_table_asset(datasource_name: str, task_logger: Logger) -> bool:
     context = get_current_context()
     socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     datasource = get_datasource(datasource_name=datasource_name, task_logger=task_logger)
@@ -687,9 +687,9 @@ def run_dbt_models__standardized_onward(task_logger: Logger) -> bool:
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def endpoint(task_logger: Logger) -> None:
+def endpoint(task_logger: Logger) -> bool:
     log_as_info(task_logger, "Ending run")
-    return "end"
+    return True
 
 
 @task_group

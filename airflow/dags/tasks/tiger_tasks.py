@@ -85,7 +85,7 @@ def record_source_freshness_check(
         {
             "dataset_name": [tiger_dataset.dataset_name],
             "source_data_last_modified": [entity_vintage["last_modified"].max()],
-            "time_of_check": [dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")],
+            "time_of_check": [dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")],
         }
     )
     log_as_info(task_logger, f"dataset name:          {freshness_check_record['dataset_name']}")
