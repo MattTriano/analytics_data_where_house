@@ -52,6 +52,16 @@ CC_HH_EARNINGS_IN_LAST_12MO_BY_TRACT = CensusVariableGroupDataset(
     schedule="40 5 20 3,9 *",
 )
 
+CC_HH_INCOME_IN_LAST_12MO_BY_TRACT = CensusVariableGroupDataset(
+    dataset_name="cc_hh_income_in_last_12mo_by_tract",
+    api_call_obj=CensusVariableGroupAPICall(
+        dataset_base_url="http://api.census.gov/data/2023/acs/acs5",
+        group_name="B19001",
+        geographies=COOK_COUNTY_CENSUS_TRACTS,
+    ),
+    schedule="30 5 5 5,11 *",
+)
+
 CC_HH_INTERNET_ACCESS_BY_AGE_BY_TRACT = CensusVariableGroupDataset(
     dataset_name="cc_hh_internet_access_by_age_by_tract",
     api_call_obj=CensusVariableGroupAPICall(

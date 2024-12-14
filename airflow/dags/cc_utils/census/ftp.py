@@ -22,7 +22,7 @@ class CensusTableMetadata:
     def __init__(self, metadata_url: str = BASE_URL):
         self.metadata_url = re.sub("/$", "", metadata_url)
         self.page_metadata = self.get_page_metadata()
-        self.time_of_check = dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        self.time_of_check = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         self.data_freshness_check = self.initialize_data_freshness_check()
 
     def parse_census_metadata_page(self, resp: requests.models.Response) -> pd.DataFrame:

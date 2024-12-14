@@ -1,8 +1,8 @@
 {% set dataset_name = "chicago_vacant_and_abandoned_buildings" %}
-{% set ck_cols = ["violation_number", "property_address", "entity_or_person_s_"] %}
+{% set ck_cols = ["violation_number", "property_address", "entity_or_person"] %}
 {% set record_id = "vacant_bldg_violation_id" %}
 {% set base_cols = [
-    "vacant_bldg_violation_id", "violation_number", "property_address", "entity_or_persons",
+    "vacant_bldg_violation_id", "violation_number", "property_address", "entity_or_person",
     "issued_date", "violation_type", "docket_number", "last_hearing_date", "issuing_department",
     "disposition_description", "total_fines", "interest_amount", "total_administrative_costs",
     "original_total_amount_due", "collection_costs_or_attorney_fees", "court_cost", "total_paid",

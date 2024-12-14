@@ -4,14 +4,13 @@ import json
 from logging import Logger
 import re
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import pandas as pd
 import requests
 from sqlalchemy.engine.base import Engine
 from sqlalchemy import select, insert, update
 
-# for airflow container
 from cc_utils.db import (
     execute_result_returning_query,
     get_reflected_db_table,
@@ -47,7 +46,7 @@ class SocrataTableMetadata:
             response_json = response.json()
             metadata = {
                 "_id": self.table_id,
-                "time_of_collection": dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "time_of_collection": dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             }
             metadata.update(response_json["results"][0])
             return metadata
@@ -260,7 +259,7 @@ class SocrataTableMetadata:
         )
         return results_df
 
-    def initialize_data_freshness_check_record(self) -> None:
+    def initialize_data_freshness_check_record(self) -> dict[str, Any]:
         """There's probably a better name for this idea than 'table_check_metadata'. The goal
         is to see if fresh data is available, log the results of that freshness-check in the dwh,
         and then triger data refreshing if appropriate."""

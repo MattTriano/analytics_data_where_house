@@ -179,7 +179,7 @@ class CensusAPIDatasetSource:
         self.geographies_df = get_dataset_geography_metadata(geog_url=self.geographies_url)
         self.groups_df = get_dataset_groups_metadata(groups_url=self.groups_url)
         self.tags_df = get_dataset_tags_metadata(tags_url=self.tags_url)
-        self.time_of_check = dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        self.time_of_check = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     def set_dataset_metadata_urls(self):
         if (self.metadata_catalog_df["dataset_base_url"] == self.base_url).sum() == 0:

@@ -20,7 +20,7 @@ POSTGRES_CONN_ID = "dwh_db_conn"
 @task
 def request_and_ingest_dataset_metadata_catalog(conn_id: str, task_logger: Logger) -> str:
     catalog_df = get_dataset_metadata_catalog(dataset_base_url="https://api.census.gov/data.json")
-    catalog_df["time_of_check"] = dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    catalog_df["time_of_check"] = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
     task_logger.info(f"Datasets in Census API Dataset Metadata Catalog: {len(catalog_df)}")
     engine = get_pg_engine(conn_id=conn_id)
     api_dataset_metadata_table = get_reflected_db_table(

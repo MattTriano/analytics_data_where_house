@@ -5,6 +5,8 @@ from pathlib import Path
 import re
 import subprocess
 
+from airflow.models.taskinstance import TaskInstance
+
 
 def typeset_zulu_tz_datetime_str(datetime_str: str) -> dt.datetime:
     datetime_str = re.sub("Z$", " +0000", datetime_str)
@@ -60,6 +62,14 @@ def produce_offset_and_nrows_counts_for_pd_read_csv(file_path: Path, rows_per_ba
     nrow_nums = [rows_per_batch for el in offsets]
     nrow_and_offset_nums = [{"offset": el[0], "nrows": el[1]} for el in zip(offsets, nrow_nums)]
     return nrow_and_offset_nums
+
+
+def get_task_group_id_prefix(task_instance: TaskInstance) -> str:
+    task_id_parts = task_instance.task_id.split(".")
+    if len(task_id_parts) > 1:
+        return ".".join(task_id_parts[:-1]) + "."
+    else:
+        return ""
 
 
 def log_as_info(logger: logging.Logger, msg: str) -> None:

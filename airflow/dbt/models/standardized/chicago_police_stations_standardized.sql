@@ -8,11 +8,11 @@ WITH records_with_basic_cleaning AS (
         CASE
             WHEN upper(district) = 'HEADQUARTERS' THEN 'HQ'
             ELSE lpad(upper(district::char(2)), 2, '0')
-        END                               AS district,        
-        upper(address::text)              AS address,        
+        END                               AS district,
+        upper(address::text)              AS address,
         upper(city::text)                 AS city,
         upper(zip::text)                  AS zip,
-        upper(state::text)                AS state,        
+        upper(state::text)                AS state,
         upper(phone::text)                AS phone,
         upper(tty::text)                  AS tty,
         upper(fax::text)                  AS fax,

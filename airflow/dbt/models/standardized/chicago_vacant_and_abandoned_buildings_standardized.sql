@@ -1,12 +1,12 @@
 {{ config(materialized='view') }}
-{% set ck_cols = ["violation_number", "property_address", "entity_or_person_s_"] %}
+{% set ck_cols = ["violation_number", "property_address", "entity_or_person"] %}
 {% set record_id = "vacant_bldg_violation_id" %}
 
 WITH records_with_basic_cleaning AS (
     SELECT
         upper(violation_number::text)                         AS violation_number,
         upper(property_address::text)                         AS property_address,
-        upper(entity_or_person_s_::text)                      AS entity_or_persons,
+        upper(entity_or_person_s_::text)                      AS entity_or_person,
         issued_date::date                                     AS issued_date,
         upper(violation_type::text)                           AS violation_type,
         upper(docket_number::text)                            AS docket_number,
@@ -24,7 +24,10 @@ WITH records_with_basic_cleaning AS (
         current_amount_due::numeric(8,2)                      AS current_amount_due,
         latitude::double precision                            AS latitude,
         longitude::double precision                           AS longitude,
-        geometry::GEOMETRY(POINT, 4326)                       AS geometry,
+        CASE
+            WHEN ST_IsEmpty(geometry) THEN NULL
+            ELSE geometry::geometry(Point, 4326)
+        END                                                   AS geometry,
         source_data_updated::timestamptz
             AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS source_data_updated,
         ingestion_check_time::timestamptz

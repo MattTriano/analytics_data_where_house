@@ -7,6 +7,7 @@ sources:
       - raw
     tables:
       - name: cc_hh_earnings_in_last_12mo_by_tract
+      - name: cc_hh_income_in_last_12mo_by_tract
       - name: cc_hh_internet_access_by_age_by_tract
       - name: cc_housing_units_by_tract
       - name: cc_planning_db_housing_and_demos_by_bg
@@ -17,6 +18,7 @@ sources:
       - name: chicago_community_area_boundaries
       - name: chicago_crimes
       - name: chicago_cta_bus_stops
+      - name: chicago_cta_train_lines
       - name: chicago_cta_train_stations
       - name: chicago_divvy_stations
       - name: chicago_food_inspections
@@ -50,6 +52,7 @@ sources:
       - name: illinois_census_tracts_2022
       - name: nyc_parcel_sales
       - name: temp_cc_hh_earnings_in_last_12mo_by_tract
+      - name: temp_cc_hh_income_in_last_12mo_by_tract
       - name: temp_cc_hh_internet_access_by_age_by_tract
       - name: temp_cc_housing_units_by_tract
       - name: temp_cc_planning_db_housing_and_demos_by_bg
@@ -60,6 +63,7 @@ sources:
       - name: temp_chicago_community_area_boundaries
       - name: temp_chicago_crimes
       - name: temp_chicago_cta_bus_stops
+      - name: temp_chicago_cta_train_lines
       - name: temp_chicago_cta_train_stations
       - name: temp_chicago_divvy_stations
       - name: temp_chicago_food_inspections
@@ -93,6 +97,8 @@ sources:
       - name: temp_illinois_census_tracts_2022
       - name: temp_nyc_parcel_sales
       - name: temp_united_states_counties_2022
+      - name: temp_united_states_counties_2024
       - name: temp_united_states_rails_2022
       - name: united_states_counties_2022
+      - name: united_states_counties_2024
       - name: united_states_rails_2022

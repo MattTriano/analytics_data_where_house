@@ -5,19 +5,20 @@ import subprocess
 
 from airflow.decorators import task, task_group
 from airflow.models.baseoperator import chain
-from airflow.utils.edgemodifier import Label
+from airflow.operators.python import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
 import pandas as pd
 from sqlalchemy import insert, update
 
-from cc_utils.cleanup import standardize_column_names
 from cc_utils.census.tiger import (
     TIGERCatalog,
     TIGERGeographicEntityVintage,
     TIGERDataset,
     TIGERDatasetFreshnessCheck,
 )
+from cc_utils.cleanup import standardize_column_names
 from cc_utils.db import (
     get_pg_engine,
     get_data_table_names_in_schema,
@@ -30,7 +31,7 @@ from cc_utils.file_factory import (
     make_dbt_data_raw_model_file,
 )
 from cc_utils.transform import format_dbt_run_cmd, execute_dbt_cmd
-from cc_utils.utils import log_as_info
+from cc_utils.utils import get_task_group_id_prefix, log_as_info
 from cc_utils.validation import (
     run_checkpoint,
     check_if_checkpoint_exists,
@@ -54,7 +55,8 @@ def get_tiger_catalog(task_logger: Logger) -> TIGERCatalog:
 @task
 def get_entity_vintage_metadata(
     tiger_dataset: TIGERDataset, tiger_catalog: TIGERCatalog, task_logger: Logger
-) -> TIGERGeographicEntityVintage:
+) -> bool:
+    context = get_current_context()
     vintages = TIGERGeographicEntityVintage(
         entity_name=tiger_dataset.entity_name,
         year=tiger_dataset.vintage_year,
@@ -70,22 +72,24 @@ def get_entity_vintage_metadata(
     )
     entity_vintage = vintages.get_entity_file_metadata(geography=tiger_dataset.geography)
     log_as_info(task_logger, f"entities after filtering: {len(entity_vintage)}")
-    return vintages
+    context["ti"].xcom_push(key="entity_vintage_key", value=vintages)
+    return True
 
 
 @task
 def record_source_freshness_check(
     tiger_dataset: TIGERDataset,
-    vintages: TIGERGeographicEntityVintage,
     conn_id: str,
     task_logger: Logger,
 ) -> pd.DataFrame:
+    context = get_current_context()
+    vintages = context["ti"].xcom_pull(key="entity_vintage_key")
     entity_vintage = vintages.get_entity_file_metadata(geography=tiger_dataset.geography)
     freshness_check_record = pd.DataFrame(
         {
             "dataset_name": [tiger_dataset.dataset_name],
             "source_data_last_modified": [entity_vintage["last_modified"].max()],
-            "time_of_check": [dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")],
+            "time_of_check": [dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")],
         }
     )
     log_as_info(task_logger, f"dataset name:          {freshness_check_record['dataset_name']}")
@@ -145,25 +149,25 @@ def get_latest_local_freshness_check(
 
 
 @task
-def organize_freshness_check_results(task_logger: Logger, **kwargs) -> TIGERDatasetFreshnessCheck:
-    ti = kwargs["ti"]
+def organize_freshness_check_results(task_logger: Logger) -> bool:
+    context = get_current_context()
+    tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
     freshness_check = TIGERDatasetFreshnessCheck(
-        source_freshness=ti.xcom_pull(
-            task_ids="update_tiger_table.check_freshness.record_source_freshness_check"
+        source_freshness=context["ti"].xcom_pull(
+            task_ids=f"{tg_id_prefix}record_source_freshness_check"
         ),
-        local_freshness=ti.xcom_pull(
-            task_ids="update_tiger_table.check_freshness.get_latest_local_freshness_check"
+        local_freshness=context["ti"].xcom_pull(
+            task_ids=f"{tg_id_prefix}get_latest_local_freshness_check"
         ),
     )
     log_as_info(task_logger, f"Source_freshness records: {len(freshness_check.source_freshness)}")
     log_as_info(task_logger, f"local_freshness records: {len(freshness_check.local_freshness)}")
-    return freshness_check
+    context["ti"].xcom_push(key="freshness_check_key", value=freshness_check)
+    return True
 
 
 @task_group
-def check_freshness(
-    tiger_dataset: TIGERDataset, conn_id: str, task_logger: Logger
-) -> TIGERDatasetFreshnessCheck:
+def check_freshness(tiger_dataset: TIGERDataset, conn_id: str, task_logger: Logger) -> None:
     tiger_catalog = get_tiger_catalog(task_logger=task_logger)
     local_dataset_freshness = get_latest_local_freshness_check(
         tiger_dataset=tiger_dataset, conn_id=conn_id, task_logger=task_logger
@@ -173,22 +177,19 @@ def check_freshness(
     )
     source_dataset_freshness = record_source_freshness_check(
         tiger_dataset=tiger_dataset,
-        vintages=entity_vintages,
         conn_id=conn_id,
         task_logger=task_logger,
     )
     freshness_check = organize_freshness_check_results(task_logger=task_logger)
     chain(local_dataset_freshness, freshness_check)
-    chain(source_dataset_freshness, freshness_check)
-    return freshness_check
+    chain(entity_vintages, source_dataset_freshness, freshness_check)
 
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def fresher_source_data_available(task_logger: Logger, **kwargs) -> str:
-    ti = kwargs["ti"]
-    freshness_check = ti.xcom_pull(
-        task_ids="update_tiger_table.check_freshness.organize_freshness_check_results"
-    )
+def fresher_source_data_available(task_logger: Logger) -> str:
+    context = get_current_context()
+    tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
+    freshness_check = context["ti"].xcom_pull(key="freshness_check_key")
     dataset_in_local_dwh = len(freshness_check.local_freshness) > 0
 
     log_as_info(task_logger, f"Dataset in local dwh: {dataset_in_local_dwh}")
@@ -200,26 +201,22 @@ def fresher_source_data_available(task_logger: Logger, **kwargs) -> str:
         log_as_info(task_logger, f"Source dataset last modified: {source_last_modified}")
         local_dataset_is_fresh = local_last_modified >= source_last_modified
         if local_dataset_is_fresh:
-            return "update_tiger_table.local_data_is_fresh"
-    return "update_tiger_table.request_and_ingest_fresh_data"
+            return f"{tg_id_prefix}local_data_is_fresh"
+    return f"{tg_id_prefix}request_and_ingest_fresh_data"
 
 
 @task
-def local_data_is_fresh(task_logger: Logger):
-    return "hi"
+def local_data_is_fresh(task_logger: Logger) -> bool:
+    return True
 
 
 @task
 def request_and_ingest_fresh_data(
-    tiger_dataset: TIGERDataset, conn_id: str, task_logger: Logger, **kwargs
-):
-    ti = kwargs["ti"]
-    vintages = ti.xcom_pull(
-        task_ids="update_tiger_table.check_freshness.get_entity_vintage_metadata"
-    )
-    freshness_check = ti.xcom_pull(
-        task_ids="update_tiger_table.check_freshness.organize_freshness_check_results"
-    )
+    tiger_dataset: TIGERDataset, conn_id: str, task_logger: Logger
+) -> bool:
+    context = get_current_context()
+    vintages = context["ti"].xcom_pull(key="entity_vintage_key")
+    freshness_check = context["ti"].xcom_pull(key="freshness_check_key")
     source_freshness = freshness_check.source_freshness
     log_as_info(
         task_logger, f"source_freshness:    {source_freshness} (type: {type(source_freshness)})"
@@ -240,15 +237,13 @@ def request_and_ingest_fresh_data(
         if_exists="replace",
         chunksize=100000,
     )
-    return "ingested"
+    return True
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def record_data_update(conn_id: str, task_logger: Logger, **kwargs) -> str:
-    ti = kwargs["ti"]
-    freshness_check = ti.xcom_pull(
-        task_ids="update_tiger_table.check_freshness.organize_freshness_check_results"
-    )
+def record_data_update(conn_id: str, task_logger: Logger) -> bool:
+    context = get_current_context()
+    freshness_check = context["ti"].xcom_pull(key="freshness_check_key")
     engine = get_pg_engine(conn_id=conn_id)
 
     dataset_id = freshness_check.source_freshness["id"].max()
@@ -272,7 +267,7 @@ def record_data_update(conn_id: str, task_logger: Logger, **kwargs) -> str:
         query=f"""SELECT * FROM metadata.dataset_metadata WHERE id = {dataset_id}""",
     )
     log_as_info(task_logger, f"General metadata record post-update: {post_update_record}")
-    return "success"
+    return True
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -292,14 +287,16 @@ def register_temp_table_asset(
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def table_checkpoint_exists(tiger_dataset: TIGERDataset, task_logger: Logger) -> str:
     checkpoint_name = f"data_raw.temp_{tiger_dataset.dataset_name}"
+    context = get_current_context()
+    tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
     if check_if_checkpoint_exists(checkpoint_name=checkpoint_name, task_logger=task_logger):
         log_as_info(task_logger, f"GE checkpoint for {checkpoint_name} exists")
-        return "update_tiger_table.raw_data_validation_tg.run_temp_table_checkpoint"
+        return f"{tg_id_prefix}run_temp_table_checkpoint"
     else:
         log_as_info(
             task_logger, f"GE checkpoint for {checkpoint_name} doesn't exist yet. Make it maybe?"
         )
-        return "update_tiger_table.raw_data_validation_tg.validation_endpoint"
+        return f"{tg_id_prefix}validation_endpoint"
 
 
 @task
@@ -348,16 +345,18 @@ def raw_data_validation_tg(
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def table_exists_in_data_raw(tiger_dataset: TIGERDataset, conn_id: str, task_logger: Logger) -> str:
+    context = get_current_context()
+    tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
     tables_in_data_raw_schema = get_data_table_names_in_schema(
         engine=get_pg_engine(conn_id=conn_id), schema_name="data_raw"
     )
     log_as_info(task_logger, f"tables_in_data_raw_schema: {tables_in_data_raw_schema}")
     if tiger_dataset.dataset_name not in tables_in_data_raw_schema:
         log_as_info(task_logger, f"Table {tiger_dataset.dataset_name} not in data_raw; creating.")
-        return "update_tiger_table.persist_new_raw_data_tg.create_table_in_data_raw"
+        return f"{tg_id_prefix}create_table_in_data_raw"
     else:
         log_as_info(task_logger, f"Table {tiger_dataset.dataset_name} in data_raw; skipping.")
-        return "update_tiger_table.persist_new_raw_data_tg.dbt_data_raw_model_exists"
+        return f"{tg_id_prefix}dbt_data_raw_model_exists"
 
 
 @task
@@ -381,23 +380,25 @@ def create_table_in_data_raw(tiger_dataset: TIGERDataset, conn_id: str, task_log
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def dbt_data_raw_model_exists(tiger_dataset: TIGERDataset, task_logger: Logger) -> str:
+    context = get_current_context()
+    tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
     dbt_data_raw_model_dir = Path(f"/opt/airflow/dbt/models/data_raw")
     log_as_info(task_logger, f"dbt data_raw model dir ('{dbt_data_raw_model_dir}')")
     log_as_info(task_logger, f"Dir exists? {dbt_data_raw_model_dir.is_dir()}")
     table_model_path = dbt_data_raw_model_dir.joinpath(f"{tiger_dataset.dataset_name}.sql")
     if table_model_path.is_file():
-        return "update_tiger_table.persist_new_raw_data_tg.update_data_raw_table"
+        return f"{tg_id_prefix}update_data_raw_table"
     else:
-        return "update_tiger_table.persist_new_raw_data_tg.make_dbt_data_raw_model"
+        return f"{tg_id_prefix}make_dbt_data_raw_model"
 
 
 @task(retries=1)
-def make_dbt_data_raw_model(tiger_dataset: TIGERDataset, conn_id: str, task_logger: Logger) -> str:
+def make_dbt_data_raw_model(tiger_dataset: TIGERDataset, conn_id: str, task_logger: Logger) -> bool:
     make_dbt_data_raw_model_file(
         table_name=tiger_dataset.dataset_name, engine=get_pg_engine(conn_id=conn_id)
     )
     log_as_info(task_logger, f"Leaving make_dbt_data_raw_model")
-    return "dbt_file_made"
+    return True
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -415,7 +416,7 @@ def update_data_raw_table(tiger_dataset: TIGERDataset, task_logger: Logger) -> s
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def register_data_raw_table_asset(
     datasource_name: str, tiger_dataset: TIGERDataset, task_logger: Logger
-) -> str:
+) -> bool:
     datasource = get_datasource(datasource_name=datasource_name, task_logger=task_logger)
     register_data_asset(
         schema_name="data_raw",
@@ -466,9 +467,7 @@ def update_tiger_table(
     freshness_check_1 = check_freshness(
         tiger_dataset=tiger_dataset, conn_id=conn_id, task_logger=task_logger
     )
-    update_available_1 = fresher_source_data_available(
-        freshness_check=freshness_check_1, task_logger=task_logger
-    )
+    update_available_1 = fresher_source_data_available(task_logger=task_logger)
     local_data_is_fresh_1 = local_data_is_fresh(task_logger=task_logger)
     update_data_1 = request_and_ingest_fresh_data(
         tiger_dataset=tiger_dataset, conn_id=conn_id, task_logger=task_logger

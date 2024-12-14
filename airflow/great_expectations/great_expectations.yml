@@ -541,4 +541,52 @@ fluent_datasources:
         batch_metadata: {}
         table_name: chicago_cta_train_stations
         schema_name: data_raw
+      data_raw.temp_chicago_bike_paths:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_bike_paths
+        schema_name: data_raw
+      data_raw.chicago_bike_paths:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_bike_paths
+        schema_name: data_raw
+      data_raw.temp_chicago_cta_train_lines:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_cta_train_lines
+        schema_name: data_raw
+      data_raw.chicago_cta_train_lines:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_cta_train_lines
+        schema_name: data_raw
+      data_raw.temp_united_states_counties_2024:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_united_states_counties_2024
+        schema_name: data_raw
+      data_raw.united_states_counties_2024:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: united_states_counties_2024
+        schema_name: data_raw
+      data_raw.temp_cc_hh_income_in_last_12mo_by_tract:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_cc_hh_income_in_last_12mo_by_tract
+        schema_name: data_raw
+      data_raw.cc_hh_income_in_last_12mo_by_tract:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: cc_hh_income_in_last_12mo_by_tract
+        schema_name: data_raw
     connection_string: ${GX_DWH_DB_CONN}
