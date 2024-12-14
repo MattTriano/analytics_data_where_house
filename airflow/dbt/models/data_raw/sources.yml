@@ -7,6 +7,7 @@ sources:
       - raw
     tables:
       - name: cc_hh_earnings_in_last_12mo_by_tract
+      - name: cc_hh_income_in_last_12mo_by_tract
       - name: cc_hh_internet_access_by_age_by_tract
       - name: cc_housing_units_by_tract
       - name: cc_planning_db_housing_and_demos_by_bg
@@ -51,6 +52,7 @@ sources:
       - name: illinois_census_tracts_2022
       - name: nyc_parcel_sales
       - name: temp_cc_hh_earnings_in_last_12mo_by_tract
+      - name: temp_cc_hh_income_in_last_12mo_by_tract
       - name: temp_cc_hh_internet_access_by_age_by_tract
       - name: temp_cc_housing_units_by_tract
       - name: temp_cc_planning_db_housing_and_demos_by_bg

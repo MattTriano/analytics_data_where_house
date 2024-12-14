@@ -5,6 +5,7 @@ import re
 
 from airflow.decorators import task, task_group
 from airflow.models.baseoperator import chain
+from airflow.operators.python import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.trigger_rule import TriggerRule
 from airflow.utils.edgemodifier import Label
@@ -30,7 +31,7 @@ from cc_utils.file_factory import (
     make_dbt_data_raw_model_file,
 )
 from cc_utils.transform import format_dbt_run_cmd, execute_dbt_cmd
-from cc_utils.utils import log_as_info
+from cc_utils.utils import get_task_group_id_prefix, log_as_info
 from cc_utils.validation import (
     run_checkpoint,
     check_if_checkpoint_exists,
@@ -155,19 +156,21 @@ def get_latest_local_freshness_check(
 
 
 @task
-def organize_freshness_check_results(task_logger: Logger, **kwargs) -> CensusDatasetFreshnessCheck:
-    ti = kwargs["ti"]
+def organize_freshness_check_results(task_logger: Logger) -> CensusDatasetFreshnessCheck:
+    context = get_current_context()
+    tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
     freshness_check = CensusDatasetFreshnessCheck(
-        dataset_source=ti.xcom_pull(
-            task_ids="update_census_table.check_freshness.get_source_dataset_metadata"
+        dataset_source=context["ti"].xcom_pull(
+            task_ids=f"{tg_id_prefix}get_source_dataset_metadata"
         ),
-        source_freshness=ti.xcom_pull(
-            task_ids="update_census_table.check_freshness.record_source_freshness_check"
+        source_freshness=context["ti"].xcom_pull(
+            task_ids=f"{tg_id_prefix}record_source_freshness_check"
         ),
-        local_freshness=ti.xcom_pull(
-            task_ids="update_census_table.check_freshness.get_latest_local_freshness_check"
+        local_freshness=context["ti"].xcom_pull(
+            task_ids=f"{tg_id_prefix}get_latest_local_freshness_check"
         ),
     )
+    context["ti"].xcom_push(key="freshness_check_key", value=freshness_check)
     return freshness_check
 
 
@@ -197,6 +200,8 @@ def check_freshness(
 def fresher_source_data_available(
     freshness_check: CensusDatasetFreshnessCheck, task_logger: Logger
 ) -> str:
+    context = get_current_context()
+    tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
     dataset_in_local_dwh = len(freshness_check.local_freshness) > 0
 
     log_as_info(task_logger, f"Dataset in local dwh: {dataset_in_local_dwh}")
@@ -208,23 +213,21 @@ def fresher_source_data_available(
         log_as_info(task_logger, f"Source dataset last modified: {source_last_modified}")
         local_dataset_is_fresh = local_last_modified >= source_last_modified
         if local_dataset_is_fresh:
-            return "update_census_table.local_data_is_fresh"
-    return "update_census_table.update_local_metadata.get_freshness_check_results"
+            return f"{tg_id_prefix}local_data_is_fresh"
+    return f"{tg_id_prefix}update_local_metadata.get_freshness_check_results"
 
 
 @task
-def get_freshness_check_results(task_logger: Logger, **kwargs) -> CensusDatasetFreshnessCheck:
-    ti = kwargs["ti"]
-    freshness_check = ti.xcom_pull(
-        task_ids="update_census_table.check_freshness.organize_freshness_check_results"
-    )
+def get_freshness_check_results(task_logger: Logger) -> CensusDatasetFreshnessCheck:
+    context = get_current_context()
+    freshness_check = context["ti"].xcom_pull(key="freshness_check_key")
     return freshness_check
 
 
 @task
 def ingest_dataset_metadata(
     freshness_check: CensusDatasetFreshnessCheck, conn_id: str, task_logger: Logger
-) -> str:
+) -> bool:
     metadata_df = freshness_check.dataset_source.metadata_catalog_df.copy()
     metadata_df["time_of_check"] = freshness_check.source_freshness["time_of_check"].max()
     log_as_info(task_logger, f"Dataset metadata columns:")
@@ -241,7 +244,7 @@ def ingest_dataset_metadata(
         .returning(metadata_table)
     )
     ingested_df = execute_result_returning_orm_query(engine=engine, select_query=insert_statement)
-    return "success"
+    return True
 
 
 @task
@@ -379,18 +382,16 @@ def update_local_metadata(conn_id: str, task_logger: Logger):
 
 
 @task
-def local_data_is_fresh(task_logger: Logger):
-    return "hi"
+def local_data_is_fresh(task_logger: Logger) -> bool:
+    return True
 
 
 @task
 def request_and_ingest_dataset(
-    census_dataset: CensusVariableGroupDataset, conn_id: str, task_logger: Logger, **kwargs
+    census_dataset: CensusVariableGroupDataset, conn_id: str, task_logger: Logger
 ) -> str:
-    ti = kwargs["ti"]
-    freshness_check = ti.xcom_pull(
-        task_ids="update_census_table.check_freshness.organize_freshness_check_results"
-    )
+    context = get_current_context()
+    freshness_check = context["ti"].xcom_pull(key="freshness_check_key")
     engine = get_pg_engine(conn_id=conn_id)
 
     dataset_df = census_dataset.api_call_obj.make_api_call()
@@ -423,11 +424,9 @@ def request_and_ingest_dataset(
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def record_data_update(conn_id: str, task_logger: Logger, **kwargs) -> str:
-    ti = kwargs["ti"]
-    freshness_check = ti.xcom_pull(
-        task_ids="update_census_table.check_freshness.organize_freshness_check_results"
-    )
+def record_data_update(conn_id: str, task_logger: Logger) -> bool:
+    context = get_current_context()
+    freshness_check = context["ti"].xcom_pull(key="freshness_check_key")
     engine = get_pg_engine(conn_id=conn_id)
 
     dataset_id = freshness_check.source_freshness["id"].max()
@@ -451,14 +450,13 @@ def record_data_update(conn_id: str, task_logger: Logger, **kwargs) -> str:
         query=f"""SELECT * FROM metadata.dataset_metadata WHERE id = {dataset_id}""",
     )
     log_as_info(task_logger, f"General metadata record post-update: {post_update_record}")
-    return "success"
+    return True
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def register_temp_table_asset(
     census_dataset: CensusVariableGroupDataset, datasource_name: str, task_logger: Logger
-) -> str:
-    task_logger.info
+) -> bool:
     datasource = get_datasource(datasource_name=datasource_name, task_logger=task_logger)
     register_data_asset(
         schema_name="data_raw",
@@ -471,15 +469,17 @@ def register_temp_table_asset(
 
 @task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
 def table_checkpoint_exists(census_dataset: CensusVariableGroupDataset, task_logger: Logger) -> str:
+    context = get_current_context()
+    tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
     checkpoint_name = f"data_raw.temp_{census_dataset.dataset_name}"
     if check_if_checkpoint_exists(checkpoint_name=checkpoint_name, task_logger=task_logger):
         log_as_info(task_logger, f"GE checkpoint for {checkpoint_name} exists")
-        return "update_census_table.raw_data_validation_tg.run_temp_table_checkpoint"
+        return f"{tg_id_prefix}run_temp_table_checkpoint"
     else:
         log_as_info(
             task_logger, f"GE checkpoint for {checkpoint_name} doesn't exist yet. Make it maybe?"
         )
-        return "update_census_table.raw_data_validation_tg.validation_endpoint"
+        return f"{tg_id_prefix}validation_endpoint"
 
 
 @task
@@ -569,29 +569,31 @@ def create_table_in_data_raw(
 def dbt_data_raw_model_exists(
     census_dataset: CensusVariableGroupDataset, task_logger: Logger
 ) -> str:
+    context = get_current_context()
+    tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
     dbt_data_raw_model_dir = Path(f"/opt/airflow/dbt/models/data_raw")
     log_as_info(task_logger, f"dbt data_raw model dir ('{dbt_data_raw_model_dir}')")
     log_as_info(task_logger, f"Dir exists? {dbt_data_raw_model_dir.is_dir()}")
     table_model_path = dbt_data_raw_model_dir.joinpath(f"{census_dataset.dataset_name}.sql")
     if table_model_path.is_file():
-        return "update_census_table.persist_new_raw_data_tg.update_data_raw_table"
+        return f"{tg_id_prefix}update_data_raw_table"
     else:
-        return "update_census_table.persist_new_raw_data_tg.make_dbt_data_raw_model"
+        return f"{tg_id_prefix}make_dbt_data_raw_model"
 
 
 @task(retries=1)
 def make_dbt_data_raw_model(
     census_dataset: CensusVariableGroupDataset, conn_id: str, task_logger: Logger
-) -> str:
+) -> bool:
     make_dbt_data_raw_model_file(
         table_name=census_dataset.dataset_name, engine=get_pg_engine(conn_id=conn_id)
     )
-    log_as_info(task_logger, f"Leaving make_dbt_data_raw_model")
-    return "dbt_file_made"
+    log_as_info(task_logger, f"dbt model file made, leaving make_dbt_data_raw_model")
+    return True
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
-def update_data_raw_table(census_dataset: CensusVariableGroupDataset, task_logger: Logger) -> str:
+def update_data_raw_table(census_dataset: CensusVariableGroupDataset, task_logger: Logger) -> bool:
     dbt_cmd = format_dbt_run_cmd(
         dataset_name=census_dataset.dataset_name,
         schema="data_raw",
@@ -599,7 +601,7 @@ def update_data_raw_table(census_dataset: CensusVariableGroupDataset, task_logge
     )
     result = execute_dbt_cmd(dbt_cmd=dbt_cmd, task_logger=task_logger)
     log_as_info(task_logger, f"dbt transform result: {result}")
-    return "data_raw_updated"
+    return True
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
