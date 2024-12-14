@@ -11,7 +11,7 @@ COOK_COUNTY_AREAWATERS_2022 = TIGERDataset(
     vintage_year=2022,
     entity_name="AREAWATER",
     geography=COOK_COUNTY_CENSUS_TRACTS,
-    schedule="30 3 2 * *",
+    schedule="30 3 2 */3 *",
 )
 
 COOK_COUNTY_ROADS_2022 = TIGERDataset(
@@ -19,7 +19,7 @@ COOK_COUNTY_ROADS_2022 = TIGERDataset(
     vintage_year=2022,
     entity_name="ROADS",
     geography=COOK_COUNTY_CENSUS_TRACTS,
-    schedule="25 3 2 * *",
+    schedule="25 3 2 */3 *",
 )
 
 ILLINOIS_CENSUS_TRACTS_2022 = TIGERDataset(
@@ -27,7 +27,7 @@ ILLINOIS_CENSUS_TRACTS_2022 = TIGERDataset(
     vintage_year=2022,
     entity_name="TRACT",
     geography=ILLINOIS_CENSUS_TRACTS,
-    schedule="5 4 3 * *",
+    schedule="5 4 3 */3 *",
 )
 
 UNITED_STATES_RAILS_2022 = TIGERDataset(
@@ -35,7 +35,7 @@ UNITED_STATES_RAILS_2022 = TIGERDataset(
     vintage_year=2022,
     entity_name="RAILS",
     geography=ENTIRE_UNITED_STATES,
-    schedule="15 4 3 * *",
+    schedule="15 4 3 */3 *",
 )
 
 UNITED_STATES_COUNTIES_2022 = TIGERDataset(
@@ -43,5 +43,13 @@ UNITED_STATES_COUNTIES_2022 = TIGERDataset(
     vintage_year=2022,
     entity_name="COUNTY",
     geography=UNITED_STATES_COUNTIES,
-    schedule="25 4 3 * *",
+    schedule="25 4 3 */3 *",
+)
+
+UNITED_STATES_COUNTIES_2024 = TIGERDataset(
+    base_dataset_name="united_states_counties",
+    vintage_year=2024,
+    entity_name="COUNTY",
+    geography=UNITED_STATES_COUNTIES,
+    schedule="35 4 3 */3 *",
 )

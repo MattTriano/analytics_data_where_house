@@ -95,6 +95,8 @@ sources:
       - name: temp_illinois_census_tracts_2022
       - name: temp_nyc_parcel_sales
       - name: temp_united_states_counties_2022
+      - name: temp_united_states_counties_2024
       - name: temp_united_states_rails_2022
       - name: united_states_counties_2022
+      - name: united_states_counties_2024
       - name: united_states_rails_2022
