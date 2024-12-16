@@ -490,7 +490,7 @@ def make_dbt_data_raw_model(conn_id: str, task_logger: Logger) -> bool:
     context = get_current_context()
     socrata_metadata = context["ti"].xcom_pull(key="socrata_metadata_key")
     make_dbt_data_raw_model_file(
-        table_name=socrata_metadata.table_name, engine=get_pg_engine(conn_id=conn_id)
+        dataset_name=socrata_metadata.table_name, engine=get_pg_engine(conn_id=conn_id)
     )
     log_as_info(task_logger, f"Leaving make_dbt_data_raw_model")
     return True

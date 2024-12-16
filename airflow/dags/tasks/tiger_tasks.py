@@ -395,7 +395,7 @@ def dbt_data_raw_model_exists(tiger_dataset: TIGERDataset, task_logger: Logger) 
 @task(retries=1)
 def make_dbt_data_raw_model(tiger_dataset: TIGERDataset, conn_id: str, task_logger: Logger) -> bool:
     make_dbt_data_raw_model_file(
-        table_name=tiger_dataset.dataset_name, engine=get_pg_engine(conn_id=conn_id)
+        dataset_name=tiger_dataset.dataset_name, engine=get_pg_engine(conn_id=conn_id)
     )
     log_as_info(task_logger, f"Leaving make_dbt_data_raw_model")
     return True
