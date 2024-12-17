@@ -1,4 +1,4 @@
-{{ config(materialized='table') }}
+{% set dataset_name = "chicago_homicide_and_shooting_victimizations" %}
 {% set source_cols = [
      "zip_code", "state_house_district", "area", "incident_fbi_cd", "incident_fbi_descr",
      "street_outreach_organization", "incident_primary", "latitude", "day_of_week", "unique_id",
@@ -37,29 +37,29 @@ distinct_records_in_current_pull AS (
 
 -- stacking the existing data with all distinct records from the latest pull
 data_raw_table_with_all_new_and_updated_records AS (
-     SELECT *
-     FROM records_in_data_raw_table
-          UNION ALL
-     SELECT *
-     FROM distinct_records_in_current_pull
+    SELECT *
+    FROM records_in_data_raw_table
+        UNION ALL
+    SELECT *
+    FROM distinct_records_in_current_pull
 ),
 
 -- selecting records that where source columns are distinct (keeping the earlier recovery
 --  when there are duplicates to chose from)
 data_raw_table_with_new_and_updated_records AS (
-     SELECT *,
-      row_number() over(partition by
-          {% for sc in source_cols %}{{ sc }}{{ "," if not loop.last }}{% endfor %}
-          ORDER BY retention_priority
-          ) as rn
-     FROM data_raw_table_with_all_new_and_updated_records
+    SELECT *,
+    row_number() over(partition by
+        {% for sc in source_cols %}{{ sc }}{{ "," if not loop.last }}{% endfor %}
+        ORDER BY retention_priority
+        ) as rn
+    FROM data_raw_table_with_all_new_and_updated_records
 ),
 distinct_records_for_data_raw_table AS (
-     SELECT
-          {% for sc in source_cols %}{{ sc }},{% endfor %}
-          {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
-     FROM data_raw_table_with_new_and_updated_records
-     WHERE rn = 1
+    SELECT
+        {% for sc in source_cols %}{{ sc }},{% endfor %}
+        {% for mc in metadata_cols %}{{ mc }}{{ "," if not loop.last }}{% endfor %}
+    FROM data_raw_table_with_new_and_updated_records
+    WHERE rn = 1
 )
 
 SELECT *
