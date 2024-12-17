@@ -121,6 +121,7 @@ def format_dbt_stub_for_data_raw_stage(dataset_name: str, engine: Engine) -> lis
         """) %}""",
         "",
         """{{- query -}}""",
+        "",
     ]
     return file_lines
 
@@ -269,7 +270,7 @@ def format_dbt_stub_for_clean_stage(table_name: str) -> list[str]:
         ck_cols_el,
         f"""{{% set record_id = "{record_col_el}" %}}""",
         *table_col_lines,
-        """{{% set updated_at_col = "source_data_updated" %}}""",
+        """{% set updated_at_col = "source_data_updated" %}""",
     ]
     cte_lines = [
         "",
