@@ -1,0 +1,68 @@
+unit_tests:
+  - name: store_all_distinct_record_versions_chicago_crimes
+    description: >
+      Scenario: Data-raw-stage distinct record identification and storage.
+        New data pulls are ingested to the "temp" table, then new and updated records
+        from that "temp" table are added to the persistent data_raw-stage table.
+    model: chicago_crimes
+    given:
+      - input: source('data_raw', 'temp_chicago_crimes')
+        rows:
+          - id: '00001'
+            date: '2023-07-28 02:31:00'
+            iucr: '0110'
+            primary_type: 'HOMICIDE'
+            description: 'FIRST DEGREE MURDER'
+            source_data_updated: '2023-07-05T19:32:45Z'
+            ingestion_check_time: '2023-07-06T04:10:04.411071Z'
+
+          - id: '00002'
+            date: '2012-08-05 22:00:00'
+            iucr: '031A'
+            primary_type: 'ROBBERY'
+            description: 'ARMED: HANDGUN'
+            source_data_updated: '2023-07-05T19:32:45Z'
+            ingestion_check_time: '2023-07-06T04:10:04.411071Z'
+
+      - input: source('data_raw', 'chicago_crimes')
+        rows:
+          - id: '00001'
+            date: '2023-07-28 02:31:00'
+            iucr: '041A'
+            primary_type: 'BATTERY'
+            description: 'AGGRAVATED: HANDGUN'
+            source_data_updated: '2023-06-05T19:37:04Z'
+            ingestion_check_time: '2023-06-06T04:17:32.411071Z'
+
+          - id: '00002'
+            date: '2012-08-05 22:00:00'
+            iucr: '031A'
+            primary_type: 'ROBBERY'
+            description: 'ARMED: HANDGUN'
+            source_data_updated: '2023-02-17T15:09:14Z'
+            ingestion_check_time: '2023-02-18T00:22:43.172531Z'
+    expect:
+      rows:
+        - id: '00001'
+          date: '2023-07-28 02:31:00'
+          iucr: '041A'
+          primary_type: 'BATTERN'
+          description: 'AGGRAVATED: HANDGUN'
+          source_data_updated: '2023-06-05T19:37:04Z'
+          ingestion_check_time: '2023-06-06T04:17:32.411071Z'
+
+        - id: '00001'
+          date: '2023-07-28 02:31:00'
+          iucr: '0110'
+          primary_type: 'HOMICIDE'
+          description: 'FIRST DEGREE MURDER'
+          source_data_updated: '2023-07-05T19:32:45Z'
+          ingestion_check_time: '2023-07-06T04:10:04.411071Z'
+
+        - id: '00002'
+          date: '2012-08-05 22:00:00'
+          iucr: '031A'
+          primary_type: 'ROBBERY'
+          description: 'ARMED: HANDGUN'
+          source_data_updated: '2023-02-17T15:09:14Z'
+          ingestion_check_time: '2023-02-18T00:22:43.172531Z'
