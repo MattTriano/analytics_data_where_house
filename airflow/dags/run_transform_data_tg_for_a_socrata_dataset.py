@@ -6,7 +6,7 @@ from pathlib import Path
 
 from cc_utils.utils import get_task_group_id_prefix
 from cc_utils.transform import execute_dbt_cmd
-from sources.tables import CHICAGO_VACANT_AND_ABANDONED_BUILDINGS as SOCRATA_TABLE
+from sources.tables import CHICAGO_DPH_ENVIRONMENTAL_ENFORCEMENTS as SOCRATA_TABLE
 from tasks.socrata_tasks import (
     dbt_make_clean_model,
     dbt_standardized_model_ready,
@@ -50,6 +50,7 @@ def run_dbt_std_model(table_name: str, task_logger: Logger) -> bool:
     dbt_cmd = f"""cd /opt/airflow/dbt && \
                   dbt --warn-error run --select \
                   re_dbt.standardized.{table_name}_standardized"""
+    log_as_info(task_logger, f"dbt_cmd: {dbt_cmd}")
     result = execute_dbt_cmd(dbt_cmd=dbt_cmd, task_logger=task_logger)
     return result
 
@@ -59,6 +60,7 @@ def run_dbt_clean_model(table_name: str, task_logger: Logger) -> bool:
     dbt_cmd = f"""cd /opt/airflow/dbt && \
                   dbt --warn-error run --select \
                   re_dbt.clean.{table_name}_clean"""
+    log_as_info(task_logger, f"dbt_cmd: {dbt_cmd}")
     result = execute_dbt_cmd(dbt_cmd=dbt_cmd, task_logger=task_logger)
     return result
 
@@ -104,7 +106,7 @@ def transform_data_tg(socrata_table, conn_id: str, task_logger: Logger):
     catchup=False,
     tags=["dbt", "utility"],
 )
-def run_socrata_transform_data_tg():
+def run_socrata_transform_data_tg_():
     metadata_1 = get_socrata_table_metadata(socrata_table=SOCRATA_TABLE, task_logger=task_logger)
     transform_data_1 = transform_data_tg(
         socrata_table=SOCRATA_TABLE, conn_id="dwh_db_conn", task_logger=task_logger
@@ -113,4 +115,4 @@ def run_socrata_transform_data_tg():
     chain(metadata_1, transform_data_1)
 
 
-run_socrata_transform_data_tg()
+run_socrata_transform_data_tg_()

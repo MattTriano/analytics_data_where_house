@@ -586,7 +586,7 @@ def make_dbt_data_raw_model(
     census_dataset: CensusVariableGroupDataset, conn_id: str, task_logger: Logger
 ) -> bool:
     make_dbt_data_raw_model_file(
-        table_name=census_dataset.dataset_name, engine=get_pg_engine(conn_id=conn_id)
+        dataset_name=census_dataset.dataset_name, engine=get_pg_engine(conn_id=conn_id)
     )
     log_as_info(task_logger, f"dbt model file made, leaving make_dbt_data_raw_model")
     return True

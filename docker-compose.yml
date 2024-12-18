@@ -315,7 +315,7 @@ services:
 
   airflow-webserver:
     <<: *airflow-common
-    image: adwh_airflow_webserver:2.10.3
+    image: adwh_airflow_webserver:2.10.4
     command: webserver
     ports:
       - "8080:8080"
@@ -338,7 +338,7 @@ services:
 
   airflow-scheduler:
     <<: *airflow-common
-    image: adwh_airflow_scheduler:2.10.3
+    image: adwh_airflow_scheduler:2.10.4
     command: scheduler
     healthcheck:
       test:
@@ -359,7 +359,7 @@ services:
 
   airflow-triggerer:
     <<: *airflow-common
-    image: adwh_airflow_triggerer:2.10.3
+    image: adwh_airflow_triggerer:2.10.4
     command: triggerer
     healthcheck:
       test:
@@ -378,7 +378,7 @@ services:
 
   airflow-init:
     <<: *airflow-common
-    image: adwh_airflow_init:2.10.3
+    image: adwh_airflow_init:2.10.4
     entrypoint: /bin/bash
     # yamllint disable rule:line-length
     command:
@@ -406,7 +406,7 @@ services:
 
   airflow-cli:
     <<: *airflow-common
-    image: adwh_airflow_cli:2.10.3
+    image: adwh_airflow_cli:2.10.4
     profiles:
       - debug
     environment:

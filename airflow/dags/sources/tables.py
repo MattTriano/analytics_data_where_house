@@ -66,6 +66,12 @@ CHICAGO_DIVVY_STATIONS = SocrataTable(
     schedule="35 5 1 * 1",
 )
 
+CHICAGO_DPH_ENVIRONMENTAL_ENFORCEMENTS = SocrataTable(
+    table_id="yqn4-3th2",
+    table_name="chicago_dph_environmental_enforcements",
+    schedule="35 2 1 2,5,8,10 *",
+)
+
 CHICAGO_FOOD_INSPECTIONS = SocrataTable(
     table_id="4ijn-s7e5",
     table_name="chicago_food_inspections",
