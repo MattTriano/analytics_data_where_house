@@ -13,11 +13,6 @@ models:
   - name: cook_county_parcel_value_assessments
     description: '{{ doc("parcels_cc_value_assessments") }}'
     columns:
-      - name: assessment_id
-        description: Uniquely defines the assessments for a parcel for one tax-year.
-        data_tests:
-          # - unique
-          - not_null
       - name: pin
       - name: tax_year
       - name: class
@@ -45,11 +40,6 @@ models:
   - name: cook_county_neighborhood_boundaries
     description: '{{ doc("parcels_cc_nbhd_boundaries") }}'
     columns:
-      - name: nbhd_id
-        description: Uniquely identifies a neighborhood boundary.
-        data_tests:
-          - unique
-          - not_null
       - name: triad_name
         description: >
           Reassessment of property in Cook County is done within a triennial cycle, meaning it occurs every three years. The Cook County Assessor's Office alternates reassessments between triads: the north and west suburbs, the south and west suburbs and the City of Chicago.

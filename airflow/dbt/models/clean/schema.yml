@@ -3,7 +3,7 @@ version: 2
 models:
   - name: cook_county_parcel_sales_standardized
     config:
-      schema: clean
+      schema: standardized
     description: '{{ doc("parcels_cc_sales") }}'
     columns:
       - name: parcel_sale_id
@@ -80,7 +80,7 @@ models:
 
   - name: cook_county_parcel_locations_standardized
     config:
-      schema: clean
+      schema: standardized
     description: '{{ doc("parcels_cc_locations") }}'
     columns:
       - name: pin
@@ -183,7 +183,7 @@ models:
 
   - name: cook_county_parcel_value_assessments_standardized
     config:
-      schema: clean
+      schema: standardized
 
   - name: cook_county_parcel_value_assessments_clean
     config:
@@ -191,8 +191,8 @@ models:
 
   - name: chicago_cta_train_stations_standardized
     config:
-      schema: clean
+      schema: standardized
 
   - name: cook_county_neighborhood_boundaries_standardized
     config:
-      schema: clean
+      schema: standardized

@@ -7,62 +7,128 @@ unit_tests:
     model: chicago_crimes
     given:
       - input: source('data_raw', 'temp_chicago_crimes')
-        rows:
-          - id: '00001'
-            date: '2023-07-28 02:31:00'
-            iucr: '0110'
-            primary_type: 'HOMICIDE'
-            description: 'FIRST DEGREE MURDER'
-            source_data_updated: '2023-07-05T19:32:45Z'
-            ingestion_check_time: '2023-07-06T04:10:04.411071Z'
-
-          - id: '00002'
-            date: '2012-08-05 22:00:00'
-            iucr: '031A'
-            primary_type: 'ROBBERY'
-            description: 'ARMED: HANDGUN'
-            source_data_updated: '2023-07-05T19:32:45Z'
-            ingestion_check_time: '2023-07-06T04:10:04.411071Z'
+        format: sql
+        rows: |
+          select
+            null as location_state, null as location_zip, null as x_coordinate, null as domestic,
+            null as latitude, null as updated_on,
+            'FIRST DEGREE MURDER'         as description,
+            null as location_address, null as arrest, null as location_city, null as year,
+            null as longitude, null as block, null as fbi_code, null as ward,
+            '00001'                       as id,
+            '2023-07-28 02:31:00'         as date,
+            null as beat, null as y_coordinate, null as community_area,
+            null as location_description, null as district,
+            '0110'                        as iucr,
+            null as case_number,
+            'HOMICIDE'                    as primary_type,
+            ST_GeomFromText('POINT(0 0)') as geometry,
+            '2023-07-05T19:32:45Z'        as source_data_updated,
+            '2023-07-06T04:10:04.411071Z' as ingestion_check_time
+          union all
+          select
+            null as location_state, null as location_zip, null as x_coordinate, null as domestic,
+            null as latitude, null as updated_on,
+            'ARMED: HANDGUN'              as description,
+            null as location_address, null as arrest, null as location_city, null as year,
+            null as longitude, null as block, null as fbi_code, null as ward,
+            '00002'                       as id,
+            '2012-08-05 22:00:00'         as date,
+            null as beat, null as y_coordinate, null as community_area,
+            null as location_description, null as district,
+            '031A'                        as iucr,
+            null as case_number,
+            'ROBBERY'                     as primary_type,
+            ST_GeomFromText('POINT(0 0)') as geometry,
+            '2023-07-05T19:32:45Z'        as source_data_updated,
+            '2023-07-06T04:10:04.411071Z' as ingestion_check_time
 
       - input: source('data_raw', 'chicago_crimes')
-        rows:
-          - id: '00001'
-            date: '2023-07-28 02:31:00'
-            iucr: '041A'
-            primary_type: 'BATTERY'
-            description: 'AGGRAVATED: HANDGUN'
-            source_data_updated: '2023-06-05T19:37:04Z'
-            ingestion_check_time: '2023-06-06T04:17:32.411071Z'
-
-          - id: '00002'
-            date: '2012-08-05 22:00:00'
-            iucr: '031A'
-            primary_type: 'ROBBERY'
-            description: 'ARMED: HANDGUN'
-            source_data_updated: '2023-02-17T15:09:14Z'
-            ingestion_check_time: '2023-02-18T00:22:43.172531Z'
+        format: sql
+        rows: |
+          select
+            null as location_state, null as location_zip, null as x_coordinate, null as domestic,
+            null as latitude, null as updated_on,
+            'AGGRAVATED: HANDGUN'         as description,
+            null as location_address, null as arrest, null as location_city, null as year,
+            null as longitude, null as block, null as fbi_code, null as ward,
+            '00001'                       as id,
+            '2023-07-28 02:31:00'         as date,
+            null as beat, null as y_coordinate, null as community_area,
+            null as location_description, null as district,
+            '041A'                        as iucr,
+            null as case_number,
+            'BATTERY'                     as primary_type,
+            ST_GeomFromText('POINT(0 0)') as geometry,
+            '2023-06-05T19:37:04Z'        as source_data_updated,
+            '2023-06-06T04:17:32.411071Z' as ingestion_check_time
+          union all
+          select
+            null as location_state, null as location_zip, null as x_coordinate, null as domestic,
+            null as latitude, null as updated_on,
+            'ARMED: HANDGUN'              as description,
+            null as location_address, null as arrest, null as location_city, null as year,
+            null as longitude, null as block, null as fbi_code, null as ward,
+            '00002'                       as id,
+            '2012-08-05 22:00:00'         as date,
+            null as beat, null as y_coordinate, null as community_area,
+            null as location_description, null as district,
+            '031A'                        as iucr,
+            null as case_number,
+            'ROBBERY'                     as primary_type,
+            ST_GeomFromText('POINT(0 0)') as geometry,
+            '2023-02-17T15:09:14Z'        as source_data_updated,
+            '2023-02-18T00:22:43.172531Z' as ingestion_check_time
     expect:
-      rows:
-        - id: '00001'
-          date: '2023-07-28 02:31:00'
-          iucr: '041A'
-          primary_type: 'BATTERN'
-          description: 'AGGRAVATED: HANDGUN'
-          source_data_updated: '2023-06-05T19:37:04Z'
-          ingestion_check_time: '2023-06-06T04:17:32.411071Z'
-
-        - id: '00001'
-          date: '2023-07-28 02:31:00'
-          iucr: '0110'
-          primary_type: 'HOMICIDE'
-          description: 'FIRST DEGREE MURDER'
-          source_data_updated: '2023-07-05T19:32:45Z'
-          ingestion_check_time: '2023-07-06T04:10:04.411071Z'
-
-        - id: '00002'
-          date: '2012-08-05 22:00:00'
-          iucr: '031A'
-          primary_type: 'ROBBERY'
-          description: 'ARMED: HANDGUN'
-          source_data_updated: '2023-02-17T15:09:14Z'
-          ingestion_check_time: '2023-02-18T00:22:43.172531Z'
+      format: sql
+      rows: |
+        select
+          null as location_state, null as location_zip, null as x_coordinate, null as domestic,
+          null as latitude, null as updated_on,
+          'AGGRAVATED: HANDGUN'         as description,
+          null as location_address, null as arrest, null as location_city, null as year,
+          null as longitude, null as block, null as fbi_code, null as ward,
+          '00001'                       as id,
+          '2023-07-28 02:31:00'         as date,
+          null as beat, null as y_coordinate, null as community_area,
+          null as location_description, null as district,
+          '041A'                        as iucr,
+          null as case_number,
+          'BATTERY'                     as primary_type,
+          ST_GeomFromText('POINT(0 0)') as geometry,
+          '2023-06-05T19:37:04Z'        as source_data_updated,
+          '2023-06-06T04:17:32.411071Z' as ingestion_check_time
+        union all
+        select
+          null as location_state, null as location_zip, null as x_coordinate, null as domestic,
+          null as latitude, null as updated_on,
+          'FIRST DEGREE MURDER'         as description,
+          null as location_address, null as arrest, null as location_city, null as year,
+          null as longitude, null as block, null as fbi_code, null as ward,
+          '00001'                       as id,
+          '2023-07-28 02:31:00'         as date,
+          null as beat, null as y_coordinate, null as community_area,
+          null as location_description, null as district,
+          '0110'                        as iucr,
+          null as case_number,
+          'HOMICIDE'                    as primary_type,
+          ST_GeomFromText('POINT(0 0)') as geometry,
+          '2023-07-05T19:32:45Z'        as source_data_updated,
+          '2023-07-06T04:10:04.411071Z' as ingestion_check_time
+        union all
+        select
+          null as location_state, null as location_zip, null as x_coordinate, null as domestic,
+          null as latitude, null as updated_on,
+          'ARMED: HANDGUN'              as description,
+          null as location_address, null as arrest, null as location_city, null as year,
+          null as longitude, null as block, null as fbi_code, null as ward,
+          '00002'                       as id,
+          '2012-08-05 22:00:00'         as date,
+          null as beat, null as y_coordinate, null as community_area,
+          null as location_description, null as district,
+          '031A'                        as iucr,
+          null as case_number,
+          'ROBBERY'                     as primary_type,
+          ST_GeomFromText('POINT(0 0)') as geometry,
+          '2023-02-17T15:09:14Z'        as source_data_updated,
+          '2023-02-18T00:22:43.172531Z' as ingestion_check_time
