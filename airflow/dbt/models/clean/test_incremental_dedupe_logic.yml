@@ -205,3 +205,47 @@ unit_tests:
             source_data_updated: '2024-12-04T08:13:25Z'
     expect:
       rows: []
+
+  - name: chicago_crimes_clean_initial_full_refresh
+    description: >
+      Scenario: Clean-stage deduplication.
+        Multiple distinct versions of records were ingested to data_raw and only the
+        latest version of each record should be retained.
+    model: chicago_crimes_clean
+    overrides:
+      macros:
+        is_incremental: false
+    given:
+      - input: ref('chicago_crimes_standardized')
+        format: dict
+        rows:
+          - id: '00001'
+            primary_type: 'HOMICIDE'
+            description: 'FIRST DEGREE MURDER'
+            arrest: false
+            source_data_updated: '2024-11-21T22:45:31Z'
+
+          - id: '00001'
+            primary_type: 'HOMICIDE'
+            description: 'FIRST DEGREE MURDER'
+            arrest: true
+            source_data_updated: '2024-12-01T15:26:57Z'
+
+          - id: '00002'
+            primary_type: 'ROBBERY'
+            description: 'ARMED: HANDGUN'
+            arrest: false
+            source_data_updated: '2024-10-24T08:13:25Z'
+    expect:
+      rows:
+        - id: '00001'
+          primary_type: 'HOMICIDE'
+          description: 'FIRST DEGREE MURDER'
+          arrest: true
+          source_data_updated: '2024-12-01T15:26:57Z'
+
+        - id: '00002'
+          primary_type: 'ROBBERY'
+          description: 'ARMED: HANDGUN'
+          arrest: false
+          source_data_updated: '2024-10-24T08:13:25Z'
