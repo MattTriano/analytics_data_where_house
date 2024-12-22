@@ -221,42 +221,326 @@ unit_tests:
         rows: |
           select
             1                                   as id,
+            null as case_number, null as date, null as updated_on,
             'HOMICIDE'                          as primary_type,
             'FIRST DEGREE MURDER'               as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
             false                               as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
             ST_GeomFromText('POINT(0 0)')       as geometry,
-            '2024-11-21T22:45:31Z'::timestamptz as source_data_updated
+            '2024-11-21T22:45:31Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
           union all
           select
             1                                   as id,
+            null as case_number, null as date, null as updated_on,
             'HOMICIDE'                          as primary_type,
             'FIRST DEGREE MURDER'               as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
             true                                as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
             ST_GeomFromText('POINT(0 0)')       as geometry,
-            '2024-12-01T15:26:57Z'::timestamptz as source_data_updated
+            '2024-12-01T15:26:57Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
           union all
           select
             2                                   as id,
+            null as case_number, null as date, null as updated_on,
             'ROBBERY'                           as primary_type,
             'ARMED: HANDGUN'                    as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
             false                               as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
             ST_GeomFromText('POINT(0 0)')       as geometry,
-            '2024-10-24T08:13:25Z'::timestamptz as source_data_updated
+            '2024-10-24T08:13:25Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
     expect:
       format: sql
       rows: |
         select
           1                                   as id,
+          null as case_number, null as date, null as updated_on,
           'HOMICIDE'                          as primary_type,
           'FIRST DEGREE MURDER'               as description,
+          null as iucr, null as fbi_code, null as location_description, null as domestic,
           true                                as arrest,
+          null as district, null as ward, null as beat, null as community_area, null as block,
+          null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
           ST_GeomFromText('POINT(0 0)')       as geometry,
-          '2024-12-01T15:26:57Z'::timestamptz as source_data_updated
+          '2024-12-01T15:26:57Z'::timestamptz as source_data_updated,
+          null as ingestion_check_time
         union all
         select
           2                                   as id,
+          null as case_number, null as date, null as updated_on,
           'ROBBERY'                           as primary_type,
           'ARMED: HANDGUN'                    as description,
+          null as iucr, null as fbi_code, null as location_description, null as domestic,
           false                               as arrest,
+          null as district, null as ward, null as beat, null as community_area, null as block,
+          null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
           ST_GeomFromText('POINT(0 0)')       as geometry,
-          '2024-10-24T08:13:25Z'::timestamptz as source_data_updated
+          '2024-10-24T08:13:25Z'::timestamptz as source_data_updated,
+          null as ingestion_check_time
+
+  - name: chicago_crimes_clean_incremental_mode_basic_case
+    description: >
+      Scenario: a new record is added along with an existing record
+        that hasn't changed.
+    model: chicago_crimes_clean
+    overrides:
+      macros:
+        is_incremental: true
+    given:
+      - input: ref('chicago_crimes_standardized')
+        format: sql
+        rows: |
+          select
+            1                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'HOMICIDE'                          as primary_type,
+            'FIRST DEGREE MURDER'               as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            false                               as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-11-21T22:45:31Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+          union all
+          select
+            2                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'ROBBERY'                           as primary_type,
+            'ARMED: HANDGUN'                    as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            false                               as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-10-24T08:13:25Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+      - input: this
+        format: sql
+        rows: |
+          select
+            2                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'ROBBERY'                           as primary_type,
+            'ARMED: HANDGUN'                    as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            false                               as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-10-24T08:13:25Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+    expect:
+      format: sql
+      rows: |
+        select
+            1                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'HOMICIDE'                          as primary_type,
+            'FIRST DEGREE MURDER'               as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            false                               as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-11-21T22:45:31Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+
+  - name: chicago_crimes_clean_incremental_mode_update_case
+    description: >
+      Scenario: a new record is added along with an existing record
+        that has changed.
+    model: chicago_crimes_clean
+    overrides:
+      macros:
+        is_incremental: true
+    given:
+      - input: ref('chicago_crimes_standardized')
+        format: sql
+        rows: |
+          select
+            3                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'BATTERY'                           as primary_type,
+            'AGGRAVATED - HANDGUN'              as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            false                               as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-11-21T22:45:31Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+          union all
+          select
+            3                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'BATTERY'                           as primary_type,
+            'AGGRAVATED - HANDGUN'               as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            true                                as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-12-01T15:26:57Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+          union all
+          select
+            3                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'HOMICIDE'                          as primary_type,
+            'FIRST DEGREE MURDER'               as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            true                                as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-12-13T09:14:29Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+          union all
+          select
+            2                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'ROBBERY'                           as primary_type,
+            'ARMED: HANDGUN'                    as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            false                               as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-10-24T08:13:25Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+      - input: this
+        format: sql
+        rows: |
+          select
+            3                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'BATTERY'                           as primary_type,
+            'AGGRAVATED - HANDGUN'               as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            true                                as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-12-01T15:26:57Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+          union all
+          select
+            2                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'ROBBERY'                           as primary_type,
+            'ARMED: HANDGUN'                    as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            false                               as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-10-24T08:13:25Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+    expect:
+      format: sql
+      rows: |
+        select
+          3                                   as id,
+          null as case_number, null as date, null as updated_on,
+          'HOMICIDE'                          as primary_type,
+          'FIRST DEGREE MURDER'               as description,
+          null as iucr, null as fbi_code, null as location_description, null as domestic,
+          true                                as arrest,
+          null as district, null as ward, null as beat, null as community_area, null as block,
+          null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+          ST_GeomFromText('POINT(0 0)')       as geometry,
+          '2024-12-13T09:14:29Z'::timestamptz as source_data_updated,
+          null as ingestion_check_time
+
+  - name: chicago_crimes_clean_incremental_mode_no_update_case
+    description: >
+      Scenario: There are new records in the latest pull but somehow they're from a
+        time before records that are already in the output model.
+        (This situation can happen when the timestamp column used to identify
+          new|updated records reflects a time that won't change, but if the column
+          reflects the time the record was updated, this situation can't happen.)
+    model: chicago_crimes_clean
+    overrides:
+      macros:
+        is_incremental: true
+    given:
+      - input: ref('chicago_crimes_standardized')
+        format: sql
+        rows: |
+          select
+            3                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'BATTERY'                           as primary_type,
+            'AGGRAVATED - HANDGUN'              as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            false                               as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-11-21T22:45:31Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+          union all
+          select
+            3                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'BATTERY'                           as primary_type,
+            'AGGRAVATED - HANDGUN'               as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            true                                as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-12-01T15:26:57Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+          union all
+          select
+            3                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'HOMICIDE'                          as primary_type,
+            'FIRST DEGREE MURDER'               as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            true                                as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-12-13T09:14:29Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+          union all
+          select
+            2                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'ROBBERY'                           as primary_type,
+            'ARMED: HANDGUN'                    as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            false                               as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-10-24T08:13:25Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+      - input: this
+        format: sql
+        rows: |
+          select
+            3                                   as id,
+            null as case_number, null as date, null as updated_on,
+            'HOMICIDE'                          as primary_type,
+            'FIRST DEGREE MURDER'               as description,
+            null as iucr, null as fbi_code, null as location_description, null as domestic,
+            true                                as arrest,
+            null as district, null as ward, null as beat, null as community_area, null as block,
+            null as latitude, null as longitude, null as x_coordinate, null as y_coordinate,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-12-13T09:14:29Z'::timestamptz as source_data_updated,
+            null as ingestion_check_time
+    expect:
+      rows: []
