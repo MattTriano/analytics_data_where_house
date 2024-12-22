@@ -217,35 +217,46 @@ unit_tests:
         is_incremental: false
     given:
       - input: ref('chicago_crimes_standardized')
-        format: dict
-        rows:
-          - id: '00001'
-            primary_type: 'HOMICIDE'
-            description: 'FIRST DEGREE MURDER'
-            arrest: false
-            source_data_updated: '2024-11-21T22:45:31Z'
-
-          - id: '00001'
-            primary_type: 'HOMICIDE'
-            description: 'FIRST DEGREE MURDER'
-            arrest: true
-            source_data_updated: '2024-12-01T15:26:57Z'
-
-          - id: '00002'
-            primary_type: 'ROBBERY'
-            description: 'ARMED: HANDGUN'
-            arrest: false
-            source_data_updated: '2024-10-24T08:13:25Z'
+        format: sql
+        rows: |
+          select
+            1                                   as id,
+            'HOMICIDE'                          as primary_type,
+            'FIRST DEGREE MURDER'               as description,
+            false                               as arrest,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-11-21T22:45:31Z'::timestamptz as source_data_updated
+          union all
+          select
+            1                                   as id,
+            'HOMICIDE'                          as primary_type,
+            'FIRST DEGREE MURDER'               as description,
+            true                                as arrest,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-12-01T15:26:57Z'::timestamptz as source_data_updated
+          union all
+          select
+            2                                   as id,
+            'ROBBERY'                           as primary_type,
+            'ARMED: HANDGUN'                    as description,
+            false                               as arrest,
+            ST_GeomFromText('POINT(0 0)')       as geometry,
+            '2024-10-24T08:13:25Z'::timestamptz as source_data_updated
     expect:
-      rows:
-        - id: '00001'
-          primary_type: 'HOMICIDE'
-          description: 'FIRST DEGREE MURDER'
-          arrest: true
-          source_data_updated: '2024-12-01T15:26:57Z'
-
-        - id: '00002'
-          primary_type: 'ROBBERY'
-          description: 'ARMED: HANDGUN'
-          arrest: false
-          source_data_updated: '2024-10-24T08:13:25Z'
+      format: sql
+      rows: |
+        select
+          1                                   as id,
+          'HOMICIDE'                          as primary_type,
+          'FIRST DEGREE MURDER'               as description,
+          true                                as arrest,
+          ST_GeomFromText('POINT(0 0)')       as geometry,
+          '2024-12-01T15:26:57Z'::timestamptz as source_data_updated
+        union all
+        select
+          2                                   as id,
+          'ROBBERY'                           as primary_type,
+          'ARMED: HANDGUN'                    as description,
+          false                               as arrest,
+          ST_GeomFromText('POINT(0 0)')       as geometry,
+          '2024-10-24T08:13:25Z'::timestamptz as source_data_updated
