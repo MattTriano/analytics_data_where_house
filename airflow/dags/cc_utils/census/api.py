@@ -127,7 +127,10 @@ class CensusVariableGroupAPICall(CensusAPIDataset):
             resp_json = resp.json()
             return pd.DataFrame(resp_json[1:], columns=resp_json[0])
         else:
-            raise Exception(f"The API call produced an invalid response ({resp.status_code})")
+            raise Exception(
+                f"The API call produced an invalid response ({resp.status_code}), "
+                f"message: {resp.text}"
+            )
 
 
 class CensusDatasetVariablesAPICaller(CensusAPIDataset):
@@ -160,7 +163,10 @@ class CensusDatasetVariablesAPICaller(CensusAPIDataset):
             resp_json = resp.json()
             return pd.DataFrame(resp_json[1:], columns=resp_json[0])
         else:
-            raise Exception(f"The API call produced an invalid response ({resp.status_code})")
+            raise Exception(
+                f"The API call produced an invalid response ({resp.status_code}), "
+                f"message: {resp.text}."
+            )
 
 
 @dataclass

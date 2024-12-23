@@ -9,6 +9,7 @@ sources:
       - name: cc_hh_earnings_in_last_12mo_by_tract
       - name: cc_hh_income_in_last_12mo_by_tract
       - name: cc_hh_internet_access_by_age_by_tract
+      - name: cc_housing_occupancy_by_tract_acs5
       - name: cc_housing_units_by_tract
       - name: cc_planning_db_housing_and_demos_by_bg
       - name: cc_transportation_to_work_by_occ_by_tract
@@ -55,6 +56,7 @@ sources:
       - name: temp_cc_hh_earnings_in_last_12mo_by_tract
       - name: temp_cc_hh_income_in_last_12mo_by_tract
       - name: temp_cc_hh_internet_access_by_age_by_tract
+      - name: temp_cc_housing_occupancy_by_tract_acs5
       - name: temp_cc_housing_units_by_tract
       - name: temp_cc_planning_db_housing_and_demos_by_bg
       - name: temp_cc_transportation_to_work_by_occ_by_tract
