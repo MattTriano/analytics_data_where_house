@@ -138,7 +138,13 @@ def get_latest_local_freshness_check(
                     row_number() over(
                         partition by dataset_name, source_data_last_modified
                         ORDER BY dataset_name, source_data_last_modified DESC
-                    ) as rn
+                    ) as rn,
+                    EXISTS (
+                        SELECT 1
+                        FROM pg_catalog.pg_tables
+                        WHERE schemaname = 'data_raw'
+                        AND tablename = '{dataset_name}'
+                    ) as table_exists
                 FROM metadata.dataset_metadata
                 WHERE
                     dataset_name = '{dataset_name}'
@@ -205,7 +211,9 @@ def fresher_source_data_available(
 ) -> str:
     context = get_current_context()
     tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
-    dataset_in_local_dwh = len(freshness_check.local_freshness) > 0
+    dataset_in_local_dwh = (len(freshness_check.local_freshness) > 0) & (
+        freshness_check.local_freshness.get("table_exists", pd.Series([False])).values[0] == True
+    )
 
     log_as_info(task_logger, f"Dataset in local dwh: {dataset_in_local_dwh}")
     log_as_info(task_logger, f"freshness_check.local_freshness: {freshness_check.local_freshness}")

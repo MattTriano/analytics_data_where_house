@@ -95,11 +95,9 @@ class CensusGeogBlockGroup(CensusGeography):
 
 
 class CensusAPIDataset(Protocol):
-    def api_call(self) -> str:
-        ...
+    def api_call(self) -> str: ...
 
-    def make_api_call(self) -> pd.DataFrame:
-        ...
+    def make_api_call(self) -> pd.DataFrame: ...
 
 
 class CensusVariableGroupAPICall(CensusAPIDataset):
@@ -174,6 +172,7 @@ class CensusVariableGroupDataset:
     dataset_name: str
     api_call_obj: CensusVariableGroupAPICall
     schedule: Optional[str] = None
+    vintage: Optional[str] = None
 
 
 class CensusAPIDatasetSource:

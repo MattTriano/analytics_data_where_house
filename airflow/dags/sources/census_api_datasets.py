@@ -64,22 +64,6 @@ CC_HOUSING_OCCUPANCY_BY_TRACT_ACS5 = CensusVariableGroupDataset(
             "B25002_001E", "B25002_001EA", "B25002_001M", "B25002_001MA",
             "B25002_002E", "B25002_002EA", "B25002_002M", "B25002_002MA",
             "B25002_003E", "B25002_003EA", "B25002_003M", "B25002_003MA",
-            "B25003_001E", "B25003_001EA", "B25003_001M", "B25003_001MA",
-            "B25003_002E", "B25003_002EA", "B25003_002M", "B25003_002MA",
-            "B25003_003E", "B25003_003EA", "B25003_003M", "B25003_003MA",
-        ],
-    ),
-    schedule="20 5 15 2,6,10 *",
-)
-
-CC_HOUSING_VACANCY_BY_TRACT_ACS5 = CensusVariableGroupDataset(
-    dataset_name="cc_housing_vacancy_by_tract_acs5",
-    api_call_obj=CensusDatasetVariablesAPICaller(
-        dataset_base_url="http://api.census.gov/data/2023/acs/acs5",
-        geographies=COOK_COUNTY_CENSUS_TRACTS,
-        variable_names=[
-            "GEO_ID",
-            "NAME",
             "B25004_001E", "B25004_001EA", "B25004_001M", "B25004_001MA",
             "B25004_002E", "B25004_002EA", "B25004_002M", "B25004_002MA",
             "B25004_003E", "B25004_003EA", "B25004_003M", "B25004_003MA",
@@ -90,7 +74,34 @@ CC_HOUSING_VACANCY_BY_TRACT_ACS5 = CensusVariableGroupDataset(
             "B25004_008E", "B25004_008EA", "B25004_008M", "B25004_008MA",
         ],
     ),
+    schedule="20 5 15 2,6,10 *",
+    vintage="2023",
+)
+
+CC_HOUSING_TENURE_SINGLE_RACE_BY_TRACT_ACS5 = CensusVariableGroupDataset(
+    dataset_name="cc_housing_tenure_single_race_by_tract_acs5",
+    api_call_obj=CensusDatasetVariablesAPICaller(
+        dataset_base_url="http://api.census.gov/data/2023/acs/acs5",
+        geographies=COOK_COUNTY_CENSUS_TRACTS,
+        variable_names=[
+            "GEO_ID",
+            "NAME",
+            "B25003_001E", "B25003_001EA", "B25003_001M", "B25003_001MA",
+            "B25003_002E", "B25003_002EA", "B25003_002M", "B25003_002MA",
+            "B25003_003E", "B25003_003EA", "B25003_003M", "B25003_003MA",
+            "B25003A_001E", "B25003A_001EA", "B25003A_001M", "B25003A_001MA",
+            "B25003A_002E", "B25003A_002EA", "B25003A_002M", "B25003A_002MA",
+            "B25003A_003E", "B25003A_003EA", "B25003A_003M", "B25003A_003MA",
+            "B25003B_001E", "B25003B_001EA", "B25003B_001M", "B25003B_001MA",
+            "B25003B_002E", "B25003B_002EA", "B25003B_002M", "B25003B_002MA",
+            "B25003B_003E", "B25003B_003EA", "B25003B_003M", "B25003B_003MA",
+            "B25003D_001E", "B25003D_001EA", "B25003D_001M", "B25003D_001MA",
+            "B25003D_002E", "B25003D_002EA", "B25003D_002M", "B25003D_002MA",
+            "B25003D_003E", "B25003D_003EA", "B25003D_003M", "B25003D_003MA",
+        ],
+    ),
     schedule="25 5 15 2,6,10 *",
+    vintage="2023",
 )
 
 CC_HH_INCOME_IN_LAST_12MO_BY_TRACT = CensusVariableGroupDataset(
