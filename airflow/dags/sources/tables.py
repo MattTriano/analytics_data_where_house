@@ -198,6 +198,12 @@ COOK_COUNTY_PARCEL_LOCATIONS = SocrataTable(
     schedule="40 6 7 * *",
 )
 
+COOK_COUNTY_PARCEL_PROXIMITY = SocrataTable(
+    table_id="ydue-e5u3",
+    table_name="cook_county_parcel_proximity",
+    schedule="10 6 7 * *",
+)
+
 COOK_COUNTY_PARCEL_SALES = SocrataTable(
     table_id="wvhk-k5uv",
     table_name="cook_county_parcel_sales",
