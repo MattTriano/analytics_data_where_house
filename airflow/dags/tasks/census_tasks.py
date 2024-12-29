@@ -1,43 +1,44 @@
-from pathlib import Path
+import os
 from logging import Logger
-import subprocess
-import re
+from pathlib import Path
+
+import pandas as pd
+from cc_utils.census.api import (
+    CensusAPIDatasetSource,
+    CensusDatasetFreshnessCheck,
+    CensusVariableGroupDataset,
+)
+from cc_utils.cleanup import standardize_column_names
+from cc_utils.db import (
+    execute_dml_orm_query,
+    execute_result_returning_orm_query,
+    execute_result_returning_query,
+    get_data_table_names_in_schema,
+    get_pg_engine,
+    get_reflected_db_table,
+)
+from cc_utils.file_factory import (
+    format_dbt_stub_for_clean_stage,
+    format_dbt_stub_for_standardized_stage,
+    make_dbt_data_raw_model_file,
+    write_lines_to_file,
+)
+from cc_utils.transform import execute_dbt_cmd, format_dbt_run_cmd
+from cc_utils.utils import get_task_group_id_prefix, log_as_info
+from cc_utils.validation import (
+    check_if_checkpoint_exists,
+    get_datasource,
+    register_data_asset,
+    run_checkpoint,
+)
+from sqlalchemy import insert, update
 
 from airflow.decorators import task, task_group
 from airflow.models.baseoperator import chain
 from airflow.operators.python import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.utils.trigger_rule import TriggerRule
 from airflow.utils.edgemodifier import Label
-
-import pandas as pd
-from sqlalchemy import insert, update
-
-from cc_utils.census.api import (
-    CensusVariableGroupDataset,
-    CensusAPIDatasetSource,
-    CensusDatasetFreshnessCheck,
-)
-from cc_utils.cleanup import standardize_column_names
-from cc_utils.db import (
-    get_pg_engine,
-    get_data_table_names_in_schema,
-    get_reflected_db_table,
-    execute_dml_orm_query,
-    execute_result_returning_query,
-    execute_result_returning_orm_query,
-)
-from cc_utils.file_factory import (
-    make_dbt_data_raw_model_file,
-)
-from cc_utils.transform import format_dbt_run_cmd, execute_dbt_cmd
-from cc_utils.utils import get_task_group_id_prefix, log_as_info
-from cc_utils.validation import (
-    run_checkpoint,
-    check_if_checkpoint_exists,
-    get_datasource,
-    register_data_asset,
-)
+from airflow.utils.trigger_rule import TriggerRule
 
 
 @task
@@ -78,6 +79,8 @@ def get_source_dataset_metadata(
     log_as_info(task_logger, f"  - Dataset geographies: {len(dataset_source.geographies_df)}")
     log_as_info(task_logger, f"  - Dataset groups:      {len(dataset_source.groups_df)}")
     log_as_info(task_logger, f"  - Dataset tags:        {len(dataset_source.tags_df)}")
+    context = get_current_context()
+    context["ti"].xcom_push(key="census_dataset_key", value=census_dataset)
     return dataset_source
 
 
@@ -135,7 +138,13 @@ def get_latest_local_freshness_check(
                     row_number() over(
                         partition by dataset_name, source_data_last_modified
                         ORDER BY dataset_name, source_data_last_modified DESC
-                    ) as rn
+                    ) as rn,
+                    EXISTS (
+                        SELECT 1
+                        FROM pg_catalog.pg_tables
+                        WHERE schemaname = 'data_raw'
+                        AND tablename = '{dataset_name}'
+                    ) as table_exists
                 FROM metadata.dataset_metadata
                 WHERE
                     dataset_name = '{dataset_name}'
@@ -202,7 +211,9 @@ def fresher_source_data_available(
 ) -> str:
     context = get_current_context()
     tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
-    dataset_in_local_dwh = len(freshness_check.local_freshness) > 0
+    dataset_in_local_dwh = (len(freshness_check.local_freshness) > 0) & (
+        freshness_check.local_freshness.get("table_exists", pd.Series([False])).values[0] == True
+    )
 
     log_as_info(task_logger, f"Dataset in local dwh: {dataset_in_local_dwh}")
     log_as_info(task_logger, f"freshness_check.local_freshness: {freshness_check.local_freshness}")
@@ -230,7 +241,7 @@ def ingest_dataset_metadata(
 ) -> bool:
     metadata_df = freshness_check.dataset_source.metadata_catalog_df.copy()
     metadata_df["time_of_check"] = freshness_check.source_freshness["time_of_check"].max()
-    log_as_info(task_logger, f"Dataset metadata columns:")
+    log_as_info(task_logger, "Dataset metadata columns:")
     for col in metadata_df.columns:
         log_as_info(task_logger, f"  {col}")
     log_as_info(task_logger, f"{metadata_df.T}")
@@ -244,6 +255,7 @@ def ingest_dataset_metadata(
         .returning(metadata_table)
     )
     ingested_df = execute_result_returning_orm_query(engine=engine, select_query=insert_statement)
+    log_as_info(task_logger, f"ingested_df shape: {ingested_df.shape}, {ingested_df.head(2)}")
     return True
 
 
@@ -420,7 +432,7 @@ def request_and_ingest_dataset(
     if result is not None:
         return "ingested"
     else:
-        raise Exception(f"No rows ingested")
+        raise Exception("No rows ingested")
 
 
 @task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
@@ -510,7 +522,7 @@ def raw_data_validation_tg(
     datasource_name: str,
     task_logger: Logger,
 ):
-    log_as_info(task_logger, f"Entered raw_data_validation_tg task_group")
+    log_as_info(task_logger, "Entered raw_data_validation_tg task_group")
     register_asset_1 = register_temp_table_asset(
         census_dataset=census_dataset, datasource_name=datasource_name, task_logger=task_logger
     )
@@ -559,9 +571,11 @@ def create_table_in_data_raw(
         )
         conn.commit()
     except Exception as e:
-        print(
-            f"Failed to create data_raw table {table_name} from temp_{table_name}. Error: {e}, {type(e)}"
+        task_logger.error(
+            f"Failed to create data_raw table {table_name} from temp_{table_name}. "
+            f"Error: {e}, {type(e)}"
         )
+        raise
     return "table_created"
 
 
@@ -571,7 +585,7 @@ def dbt_data_raw_model_exists(
 ) -> str:
     context = get_current_context()
     tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
-    dbt_data_raw_model_dir = Path(f"/opt/airflow/dbt/models/data_raw")
+    dbt_data_raw_model_dir = Path("/opt/airflow/dbt/models/data_raw")
     log_as_info(task_logger, f"dbt data_raw model dir ('{dbt_data_raw_model_dir}')")
     log_as_info(task_logger, f"Dir exists? {dbt_data_raw_model_dir.is_dir()}")
     table_model_path = dbt_data_raw_model_dir.joinpath(f"{census_dataset.dataset_name}.sql")
@@ -588,7 +602,7 @@ def make_dbt_data_raw_model(
     make_dbt_data_raw_model_file(
         dataset_name=census_dataset.dataset_name, engine=get_pg_engine(conn_id=conn_id)
     )
-    log_as_info(task_logger, f"dbt model file made, leaving make_dbt_data_raw_model")
+    log_as_info(task_logger, "dbt model file made, leaving make_dbt_data_raw_model")
     return True
 
 
@@ -654,6 +668,159 @@ def persist_new_raw_data_tg(
     )
 
 
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def dbt_standardized_model_ready(task_logger: Logger) -> str:
+    context = get_current_context()
+    tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
+    census_dataset = context["ti"].xcom_pull(key="census_dataset_key")
+    airflow_home = os.environ["AIRFLOW_HOME"]
+    file_path = Path(airflow_home).joinpath(
+        "dbt",
+        "models",
+        "standardized",
+        f"{census_dataset.dataset_name}_standardized.sql",
+    )
+    host_file_path = str(file_path).replace(airflow_home, "/airflow")
+    if file_path.is_file():
+        with open(file_path, "r") as f:
+            file_lines = f.readlines()
+        for file_line in file_lines:
+            if (
+                "REPLACE_WITH_COMPOSITE_KEY_COLUMNS" in file_line
+                or "REPLACE_WITH_BETTER_id" in file_line
+            ):
+                log_as_info(
+                    task_logger,
+                    f"Found unfinished stub for dbt _standardized model in {host_file_path}."
+                    + " Please update that model before proceeding to feature engineering.",
+                )
+                return f"{tg_id_prefix}highlight_unfinished_dbt_standardized_stub"
+        log_as_info(
+            task_logger, "Found a _standardized stage dbt model that looks finished; Proceeding"
+        )
+        return f"{tg_id_prefix}dbt_clean_model_ready"
+    else:
+        log_as_info(task_logger, "No _standardized stage dbt model found.")
+        log_as_info(task_logger, f"Creating a stub in loc: {host_file_path}")
+        log_as_info(
+            task_logger, "Edit the stub before proceeding to generate _clean stage dbt models."
+        )
+        return f"{tg_id_prefix}make_dbt_standardized_model"
+
+
+@task
+def highlight_unfinished_dbt_standardized_stub(task_logger: Logger) -> str:
+    log_as_info(
+        task_logger,
+        "Hey! Go finish the dbt _standardized model file indicated in the logs for the "
+        + "dbt_standardized_model_ready task! It still contains at least one placeholder value"
+        + "(REPLACE_WITH_COMPOSITE_KEY_COLUMNS or REPLACE_WITH_BETTER_id).",
+    )
+    return "Please and thank you!"
+
+
+@task
+def make_dbt_standardized_model(conn_id: str, task_logger: Logger) -> bool:
+    context = get_current_context()
+    census_dataset = context["ti"].xcom_pull(key="census_dataset_key")
+    engine = get_pg_engine(conn_id=conn_id)
+    std_file_lines = format_dbt_stub_for_standardized_stage(
+        table_name=census_dataset.dataset_name, engine=engine
+    )
+    file_path = Path(
+        f"/opt/airflow/dbt/models/standardized/{census_dataset.dataset_name}_standardized.sql"
+    )
+    write_lines_to_file(file_lines=std_file_lines, file_path=file_path)
+    log_as_info(task_logger, f"file_lines for table {census_dataset.dataset_name}")
+    for file_line in std_file_lines:
+        log_as_info(task_logger, f"    {file_line}")
+
+    log_as_info(task_logger, "Leaving make_dbt_standardized_model")
+    return True
+
+
+@task.branch(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def dbt_clean_model_ready(task_logger: Logger) -> str:
+    context = get_current_context()
+    tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
+    census_dataset = context["ti"].xcom_pull(key="census_dataset_key")
+    airflow_home = os.environ["AIRFLOW_HOME"]
+    file_path = Path(airflow_home).joinpath(
+        "dbt",
+        "models",
+        "clean",
+        f"{census_dataset.dataset_name}_clean.sql",
+    )
+    if file_path.is_file():
+        log_as_info(task_logger, "Found a _clean stage dbt model that looks finished; Ending")
+        return f"{tg_id_prefix}run_dbt_models__standardized_onward"
+    else:
+        return f"{tg_id_prefix}dbt_make_clean_model"
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def dbt_make_clean_model(task_logger: Logger) -> bool:
+    context = get_current_context()
+    census_dataset = context["ti"].xcom_pull(key="census_dataset_key")
+    airflow_home = os.environ["AIRFLOW_HOME"]
+    clean_file_path = Path(airflow_home).joinpath(
+        "dbt",
+        "models",
+        "clean",
+        f"{census_dataset.dataset_name}_clean.sql",
+    )
+    clean_file_lines = format_dbt_stub_for_clean_stage(table_name=census_dataset.dataset_name)
+    log_as_info(task_logger, f"clean_file_lines: {clean_file_lines}")
+    write_lines_to_file(file_lines=clean_file_lines, file_path=clean_file_path)
+    return True
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def run_dbt_models__standardized_onward(task_logger: Logger) -> bool:
+    context = get_current_context()
+    census_dataset = context["ti"].xcom_pull(key="census_dataset_key")
+    dbt_cmd = format_dbt_run_cmd(
+        dataset_name=census_dataset.dataset_name,
+        schema="standardized",
+        run_downstream=True,
+    )
+    return execute_dbt_cmd(dbt_cmd=dbt_cmd, task_logger=task_logger)
+
+
+@task(trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS)
+def endpoint(task_logger: Logger) -> bool:
+    log_as_info(task_logger, "Ending run")
+    return True
+
+
+@task_group
+def transform_data_tg(conn_id: str, task_logger: Logger):
+    std_model_ready_1 = dbt_standardized_model_ready(task_logger=task_logger)
+    highlight_std_stub_1 = highlight_unfinished_dbt_standardized_stub(task_logger=task_logger)
+    make_std_model_1 = make_dbt_standardized_model(conn_id=conn_id, task_logger=task_logger)
+    clean_model_ready_1 = dbt_clean_model_ready(task_logger=task_logger)
+    make_clean_model_1 = dbt_make_clean_model(task_logger=task_logger)
+    run_dbt_models_1 = run_dbt_models__standardized_onward(task_logger=task_logger)
+    endpoint_1 = endpoint(task_logger=task_logger)
+
+    chain(
+        std_model_ready_1,
+        [
+            Label("No dbt _standardized model found"),
+            Label("dbt _standardized model needs review"),
+            Label("dbt _standardized model looks good"),
+        ],
+        [make_std_model_1, highlight_std_stub_1, clean_model_ready_1],
+    )
+    chain([make_std_model_1, highlight_std_stub_1], endpoint_1)
+    chain(
+        clean_model_ready_1,
+        [Label("dbt _clean model looks good!"), make_clean_model_1],
+        run_dbt_models_1,
+        endpoint_1,
+    )
+
+
 @task_group
 def update_census_table(
     census_dataset: CensusVariableGroupDataset,
@@ -683,6 +850,7 @@ def update_census_table(
         conn_id=conn_id,
         task_logger=task_logger,
     )
+    transform_data_1 = transform_data_tg(conn_id=conn_id, task_logger=task_logger)
 
     chain(
         freshness_check_1,
@@ -694,4 +862,6 @@ def update_census_table(
         get_and_ingest_data_1,
         raw_validation_1,
         persist_raw_1,
+        transform_data_1,
     )
+    chain(local_is_fresh_1, transform_data_1)
