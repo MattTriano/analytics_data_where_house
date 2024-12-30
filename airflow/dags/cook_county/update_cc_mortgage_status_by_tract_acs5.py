@@ -18,7 +18,7 @@ task_logger = logging.getLogger("airflow.task")
     catchup=False,
     tags=["cook_county", "census", "acs5"],
 )
-def update_cc_mortgage_status_by_tract_acs5_dev():
+def update_cc_mortgage_status_by_tract_acs5():
     update_census_table(
         census_dataset=CENSUS_DATASET,
         datasource_name="fluent_dwh_source",
@@ -27,4 +27,4 @@ def update_cc_mortgage_status_by_tract_acs5_dev():
     )
 
 
-update_cc_mortgage_status_by_tract_acs5_dev()
+update_cc_mortgage_status_by_tract_acs5()

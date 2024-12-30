@@ -15,7 +15,7 @@ task_logger = logging.getLogger("airflow.task")
     catchup=False,
     tags=["cook_county", "chicago", "location"],
 )
-def update_chicago_building_violations_dev():
+def update_chicago_building_violations():
     update_1 = update_socrata_table(
         socrata_table=SOCRATA_TABLE,
         conn_id="dwh_db_conn",
@@ -25,4 +25,4 @@ def update_chicago_building_violations_dev():
     update_1
 
 
-update_chicago_building_violations_dev()
+update_chicago_building_violations()
