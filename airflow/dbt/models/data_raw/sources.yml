@@ -12,6 +12,7 @@ sources:
       - name: cc_housing_occupancy_by_tract_acs5
       - name: cc_housing_tenure_single_race_by_tract_acs5
       - name: cc_housing_units_by_tract
+      - name: cc_mortgage_status_by_tract_acs5
       - name: cc_planning_db_housing_and_demos_by_bg
       - name: cc_transportation_to_work_by_occ_by_tract
       - name: chicago_affordable_rental_housing
@@ -62,6 +63,7 @@ sources:
       - name: temp_cc_housing_occupancy_by_tract_acs5
       - name: temp_cc_housing_tenure_single_race_by_tract_acs5
       - name: temp_cc_housing_units_by_tract
+      - name: temp_cc_mortgage_status_by_tract_acs5
       - name: temp_cc_planning_db_housing_and_demos_by_bg
       - name: temp_cc_transportation_to_work_by_occ_by_tract
       - name: temp_chicago_affordable_rental_housing

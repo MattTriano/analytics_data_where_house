@@ -449,8 +449,7 @@ def create_table_in_data_raw(dataset_name: str, conn_id: str, task_logger: Logge
         )
         conn.commit()
     except Exception as e:
-        log_as_info(
-            task_logger,
+        task_logger.error(
             f"Failed to create data_raw table {dataset_name} from temp_{dataset_name}. "
             f"Error: {e}, {type(e)}",
         )
