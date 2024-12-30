@@ -124,6 +124,29 @@ CC_HH_INTERNET_ACCESS_BY_AGE_BY_TRACT = CensusVariableGroupDataset(
     schedule="50 5 20 3,9 *",
 )
 
+CC_MORTGAGE_STATUS_BY_TRACT_ACS5 = CensusVariableGroupDataset(
+    dataset_name="cc_mortgage_status_by_tract_acs5",
+    api_call_obj=CensusDatasetVariablesAPICaller(
+        dataset_base_url="http://api.census.gov/data/2023/acs/acs5",
+        geographies=COOK_COUNTY_CENSUS_TRACTS,
+        variable_names=[
+            "GEO_ID",
+            "NAME",
+            "B25081_001E", "B25081_001EA", "B25081_001M", "B25081_001MA",
+            "B25081_002E", "B25081_002EA", "B25081_002M", "B25081_002MA",
+            "B25081_003E", "B25081_003EA", "B25081_003M", "B25081_003MA",
+            "B25081_004E", "B25081_004EA", "B25081_004M", "B25081_004MA",
+            "B25081_005E", "B25081_005EA", "B25081_005M", "B25081_005MA",
+            "B25081_006E", "B25081_006EA", "B25081_006M", "B25081_006MA",
+            "B25081_007E", "B25081_007EA", "B25081_007M", "B25081_007MA",
+            "B25081_008E", "B25081_008EA", "B25081_008M", "B25081_008MA",
+            "B25081_009E", "B25081_009EA", "B25081_009M", "B25081_009MA",
+        ],
+    ),
+    schedule="25 5 14 2,6,10 *",
+    vintage="2023",
+)
+
 CC_TRANSPORTATION_TO_WORK_BY_OCC_BY_TRACT = CensusVariableGroupDataset(
     dataset_name="cc_transportation_to_work_by_occ_by_tract",
     api_call_obj=CensusVariableGroupAPICall(
