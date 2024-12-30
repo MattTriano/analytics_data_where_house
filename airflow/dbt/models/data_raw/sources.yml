@@ -10,11 +10,13 @@ sources:
       - name: cc_hh_income_in_last_12mo_by_tract
       - name: cc_hh_internet_access_by_age_by_tract
       - name: cc_housing_occupancy_by_tract_acs5
+      - name: cc_housing_tenure_single_race_by_tract_acs5
       - name: cc_housing_units_by_tract
       - name: cc_planning_db_housing_and_demos_by_bg
       - name: cc_transportation_to_work_by_occ_by_tract
       - name: chicago_affordable_rental_housing
       - name: chicago_bike_paths
+      - name: chicago_building_violations
       - name: chicago_city_boundary
       - name: chicago_community_area_boundaries
       - name: chicago_crimes
@@ -42,6 +44,7 @@ sources:
       - name: cook_county_neighborhood_boundaries
       - name: cook_county_parcel_assessment_appeals
       - name: cook_county_parcel_locations
+      - name: cook_county_parcel_proximity
       - name: cook_county_parcel_sales
       - name: cook_county_parcel_value_assessments
       - name: cook_county_roads_2022
@@ -57,11 +60,13 @@ sources:
       - name: temp_cc_hh_income_in_last_12mo_by_tract
       - name: temp_cc_hh_internet_access_by_age_by_tract
       - name: temp_cc_housing_occupancy_by_tract_acs5
+      - name: temp_cc_housing_tenure_single_race_by_tract_acs5
       - name: temp_cc_housing_units_by_tract
       - name: temp_cc_planning_db_housing_and_demos_by_bg
       - name: temp_cc_transportation_to_work_by_occ_by_tract
       - name: temp_chicago_affordable_rental_housing
       - name: temp_chicago_bike_paths
+      - name: temp_chicago_building_violations
       - name: temp_chicago_city_boundary
       - name: temp_chicago_community_area_boundaries
       - name: temp_chicago_crimes
@@ -89,6 +94,7 @@ sources:
       - name: temp_cook_county_neighborhood_boundaries
       - name: temp_cook_county_parcel_assessment_appeals
       - name: temp_cook_county_parcel_locations
+      - name: temp_cook_county_parcel_proximity
       - name: temp_cook_county_parcel_sales
       - name: temp_cook_county_parcel_value_assessments
       - name: temp_cook_county_roads_2022

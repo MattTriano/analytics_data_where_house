@@ -4,7 +4,7 @@ import logging
 from airflow.decorators import dag
 
 from tasks.socrata_tasks import update_socrata_table
-from sources.tables import COOK_COUNTY_PARCEL_PROXIMITY as SOCRATA_TABLE
+from sources.tables import CHICAGO_BUILDING_VIOLATIONS as SOCRATA_TABLE
 
 task_logger = logging.getLogger("airflow.task")
 
@@ -15,7 +15,7 @@ task_logger = logging.getLogger("airflow.task")
     catchup=False,
     tags=["cook_county", "chicago", "location"],
 )
-def update_cook_county_parcel_proximity():
+def update_chicago_building_violations_dev():
     update_1 = update_socrata_table(
         socrata_table=SOCRATA_TABLE,
         conn_id="dwh_db_conn",
@@ -25,4 +25,4 @@ def update_cook_county_parcel_proximity():
     update_1
 
 
-update_cook_county_parcel_proximity()
+update_chicago_building_violations_dev()

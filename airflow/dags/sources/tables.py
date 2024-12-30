@@ -18,6 +18,12 @@ CHICAGO_BIKE_PATHS = SocrataTable(
     schedule="0 22 10 */3 *",
 )
 
+CHICAGO_BUILDING_VIOLATIONS = SocrataTable(
+    table_id="22u3-xenr",
+    table_name="chicago_building_violations",
+    schedule="40 2 3 * *",
+)
+
 CHICAGO_BUSINESS_LICENSES = SocrataTable(
     table_id="r5kz-chrr",
     table_name="chicago_business_licenses",
@@ -82,6 +88,12 @@ CHICAGO_HOMICIDES_AND_SHOOTING_VICTIMIZATIONS = SocrataTable(
     table_id="gumc-mgzr",
     table_name="chicago_homicide_and_shooting_victimizations",
     schedule="30 12 * * 0",
+)
+
+CHICAGO_LIBRARIES = SocrataTable(
+    table_id="x8fc-8rcq",
+    table_name="chicago_libraries",
+    schedule="47 1 3 */3 *",
 )
 
 CHICAGO_MURALS = SocrataTable(
