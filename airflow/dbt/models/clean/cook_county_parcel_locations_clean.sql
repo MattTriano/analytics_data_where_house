@@ -9,8 +9,8 @@
     "ssa_name", "ssa_no", "tif_agencynum", "school_elem_district", "school_hs_district",
     "mailing_address", "mailing_city", "mailing_zip", "mailing_state", "ohare_noise", "floodplain",
     "fs_flood_factor", "fs_flood_risk_direction", "withinmr100", "withinmr101300",
-    "indicator_has_address", "indicator_has_latlon", "longitude", "latitude", "source_data_updated",
-    "ingestion_check_time"
+    "indicator_has_address", "indicator_has_latlon", "longitude", "latitude", "geometry",
+    "source_data_updated", "ingestion_check_time"
 ] %}
 {% set updated_at_col = "source_data_updated" %}
 

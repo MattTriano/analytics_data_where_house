@@ -46,6 +46,10 @@ WITH records_with_basic_cleaning AS (
         indicator_has_latlon::int::boolean                    AS indicator_has_latlon,
         longitude::double precision                           AS longitude,
         latitude::double precision                            AS latitude,
+        CASE
+            WHEN latitude IS NULL or longitude IS NULL THEN NULL
+            ELSE ST_Point(longitude, latitude, 4326)
+        END                                                   AS geometry,
         source_data_updated::timestamptz
             AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS source_data_updated,
         ingestion_check_time::timestamptz
