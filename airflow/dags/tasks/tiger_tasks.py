@@ -1,7 +1,35 @@
 import datetime as dt
 from logging import Logger
 from pathlib import Path
-import subprocess
+
+import pandas as pd
+from cc_utils.census.tiger import (
+    TIGERCatalog,
+    TIGERDataset,
+    TIGERDatasetFreshnessCheck,
+    TIGERGeographicEntityVintage,
+)
+from cc_utils.cleanup import standardize_column_names
+from cc_utils.db import (
+    execute_dml_orm_query,
+    execute_result_returning_orm_query,
+    execute_result_returning_query,
+    get_data_table_names_in_schema,
+    get_pg_engine,
+    get_reflected_db_table,
+)
+from cc_utils.file_factory import (
+    make_dbt_data_raw_model_file,
+)
+from cc_utils.transform import execute_dbt_cmd, format_dbt_run_cmd
+from cc_utils.utils import get_task_group_id_prefix, log_as_info
+from cc_utils.validation import (
+    check_if_checkpoint_exists,
+    get_datasource,
+    register_data_asset,
+    run_checkpoint,
+)
+from sqlalchemy import insert, update
 
 from airflow.decorators import task, task_group
 from airflow.models.baseoperator import chain
@@ -9,41 +37,13 @@ from airflow.operators.python import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
-import pandas as pd
-from sqlalchemy import insert, update
-
-from cc_utils.census.tiger import (
-    TIGERCatalog,
-    TIGERGeographicEntityVintage,
-    TIGERDataset,
-    TIGERDatasetFreshnessCheck,
-)
-from cc_utils.cleanup import standardize_column_names
-from cc_utils.db import (
-    get_pg_engine,
-    get_data_table_names_in_schema,
-    get_reflected_db_table,
-    execute_dml_orm_query,
-    execute_result_returning_query,
-    execute_result_returning_orm_query,
-)
-from cc_utils.file_factory import (
-    make_dbt_data_raw_model_file,
-)
-from cc_utils.transform import format_dbt_run_cmd, execute_dbt_cmd
-from cc_utils.utils import get_task_group_id_prefix, log_as_info
-from cc_utils.validation import (
-    run_checkpoint,
-    check_if_checkpoint_exists,
-    get_datasource,
-    register_data_asset,
-)
+from tasks.dbt_tasks import transform_data_tg
 
 
 @task
 def get_tiger_catalog(task_logger: Logger) -> TIGERCatalog:
     tiger_catalog = TIGERCatalog()
-    log_as_info(task_logger, f"Available TIGER vintages:")
+    log_as_info(task_logger, "Available TIGER vintages:")
     for vintage_row in tiger_catalog.dataset_vintages.iterrows():
         log_as_info(
             task_logger,
@@ -325,7 +325,7 @@ def raw_data_validation_tg(
     tiger_dataset: TIGERDataset,
     task_logger: Logger,
 ):
-    log_as_info(task_logger, f"Entered raw_data_validation_tg task_group")
+    log_as_info(task_logger, "Entered raw_data_validation_tg task_group")
     register_asset_1 = register_temp_table_asset(
         datasource_name=datasource_name, tiger_dataset=tiger_dataset, task_logger=task_logger
     )
@@ -372,9 +372,11 @@ def create_table_in_data_raw(tiger_dataset: TIGERDataset, conn_id: str, task_log
         )
         conn.commit()
     except Exception as e:
-        print(
-            f"Failed to create data_raw table {table_name} from temp_{table_name}. Error: {e}, {type(e)}"
+        task_logger.error(
+            f"Failed to create data_raw table {table_name} from temp_{table_name}. "
+            f"Error: {e}, {type(e)}"
         )
+        raise
     return "table_created"
 
 
@@ -382,7 +384,7 @@ def create_table_in_data_raw(tiger_dataset: TIGERDataset, conn_id: str, task_log
 def dbt_data_raw_model_exists(tiger_dataset: TIGERDataset, task_logger: Logger) -> str:
     context = get_current_context()
     tg_id_prefix = get_task_group_id_prefix(task_instance=context["ti"])
-    dbt_data_raw_model_dir = Path(f"/opt/airflow/dbt/models/data_raw")
+    dbt_data_raw_model_dir = Path("/opt/airflow/dbt/models/data_raw")
     log_as_info(task_logger, f"dbt data_raw model dir ('{dbt_data_raw_model_dir}')")
     log_as_info(task_logger, f"Dir exists? {dbt_data_raw_model_dir.is_dir()}")
     table_model_path = dbt_data_raw_model_dir.joinpath(f"{tiger_dataset.dataset_name}.sql")
@@ -397,7 +399,7 @@ def make_dbt_data_raw_model(tiger_dataset: TIGERDataset, conn_id: str, task_logg
     make_dbt_data_raw_model_file(
         dataset_name=tiger_dataset.dataset_name, engine=get_pg_engine(conn_id=conn_id)
     )
-    log_as_info(task_logger, f"Leaving make_dbt_data_raw_model")
+    log_as_info(task_logger, "Leaving make_dbt_data_raw_model")
     return True
 
 
@@ -464,6 +466,7 @@ def persist_new_raw_data_tg(
 def update_tiger_table(
     tiger_dataset: TIGERDataset, datasource_name: str, conn_id: str, task_logger: Logger
 ):
+    dataset_name = f"{tiger_dataset.base_dataset_name}_{tiger_dataset.vintage_year}"
     freshness_check_1 = check_freshness(
         tiger_dataset=tiger_dataset, conn_id=conn_id, task_logger=task_logger
     )
@@ -481,6 +484,8 @@ def update_tiger_table(
         conn_id=conn_id,
         task_logger=task_logger,
     )
+    transform_data_1 = transform_data_tg(dataset_name, conn_id, task_logger)
 
     chain(freshness_check_1, update_available_1, [update_data_1, local_data_is_fresh_1])
-    chain(update_data_1, raw_validation_1, persist_raw_1)
+    chain(update_data_1, raw_validation_1, persist_raw_1, transform_data_1)
+    chain(local_data_is_fresh_1, transform_data_1)

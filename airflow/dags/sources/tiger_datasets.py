@@ -14,6 +14,14 @@ COOK_COUNTY_AREAWATERS_2022 = TIGERDataset(
     schedule="30 3 2 */3 *",
 )
 
+COOK_COUNTY_LINEAR_WATER_2024 = TIGERDataset(
+    base_dataset_name="cook_county_linear_water",
+    vintage_year=2024,
+    entity_name="LINEARWATER",
+    geography=COOK_COUNTY_CENSUS_TRACTS,
+    schedule="45 4 3 */3 *",
+)
+
 COOK_COUNTY_ROADS_2022 = TIGERDataset(
     base_dataset_name="cook_county_roads",
     vintage_year=2022,

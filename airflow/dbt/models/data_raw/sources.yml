@@ -41,6 +41,7 @@ sources:
       - name: chicago_traffic_crashes
       - name: chicago_vacant_and_abandoned_buildings
       - name: cook_county_areawaters_2022
+      - name: cook_county_linear_water_2024
       - name: cook_county_multifam_parcel_improvements
       - name: cook_county_neighborhood_boundaries
       - name: cook_county_parcel_assessment_appeals
@@ -92,6 +93,7 @@ sources:
       - name: temp_chicago_traffic_crashes
       - name: temp_chicago_vacant_and_abandoned_buildings
       - name: temp_cook_county_areawaters_2022
+      - name: temp_cook_county_linear_water_2024
       - name: temp_cook_county_multifam_parcel_improvements
       - name: temp_cook_county_neighborhood_boundaries
       - name: temp_cook_county_parcel_assessment_appeals
