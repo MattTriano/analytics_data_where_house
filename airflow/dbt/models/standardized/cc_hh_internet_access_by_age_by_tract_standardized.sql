@@ -1,0 +1,105 @@
+{{ config(materialized='view') }}
+{% set ck_cols = ["geo_id"] %}
+{% set record_id = "geo_id" %}
+
+WITH records_with_basic_cleaning AS (
+    SELECT
+        upper(geo_id::text)           AS geo_id,
+        upper(name::text)             AS name,
+        b28005_001e::bigint           AS b28005_001e,
+        upper(b28005_001ea::text)     AS b28005_001ea,
+        b28005_001m::bigint           AS b28005_001m,
+        upper(b28005_001ma::text)     AS b28005_001ma,
+        b28005_002e::bigint           AS b28005_002e,
+        upper(b28005_002ea::text)     AS b28005_002ea,
+        b28005_002m::bigint           AS b28005_002m,
+        upper(b28005_002ma::text)     AS b28005_002ma,
+        b28005_003e::bigint           AS b28005_003e,
+        upper(b28005_003ea::text)     AS b28005_003ea,
+        b28005_003m::bigint           AS b28005_003m,
+        upper(b28005_003ma::text)     AS b28005_003ma,
+        b28005_004e::bigint           AS b28005_004e,
+        upper(b28005_004ea::text)     AS b28005_004ea,
+        b28005_004m::bigint           AS b28005_004m,
+        upper(b28005_004ma::text)     AS b28005_004ma,
+        b28005_005e::bigint           AS b28005_005e,
+        upper(b28005_005ea::text)     AS b28005_005ea,
+        b28005_005m::bigint           AS b28005_005m,
+        upper(b28005_005ma::text)     AS b28005_005ma,
+        b28005_006e::bigint           AS b28005_006e,
+        upper(b28005_006ea::text)     AS b28005_006ea,
+        b28005_006m::bigint           AS b28005_006m,
+        upper(b28005_006ma::text)     AS b28005_006ma,
+        b28005_007e::bigint           AS b28005_007e,
+        upper(b28005_007ea::text)     AS b28005_007ea,
+        b28005_007m::bigint           AS b28005_007m,
+        upper(b28005_007ma::text)     AS b28005_007ma,
+        b28005_008e::bigint           AS b28005_008e,
+        upper(b28005_008ea::text)     AS b28005_008ea,
+        b28005_008m::bigint           AS b28005_008m,
+        upper(b28005_008ma::text)     AS b28005_008ma,
+        b28005_009e::bigint           AS b28005_009e,
+        upper(b28005_009ea::text)     AS b28005_009ea,
+        b28005_009m::bigint           AS b28005_009m,
+        upper(b28005_009ma::text)     AS b28005_009ma,
+        b28005_010e::bigint           AS b28005_010e,
+        upper(b28005_010ea::text)     AS b28005_010ea,
+        b28005_010m::bigint           AS b28005_010m,
+        upper(b28005_010ma::text)     AS b28005_010ma,
+        b28005_011e::bigint           AS b28005_011e,
+        upper(b28005_011ea::text)     AS b28005_011ea,
+        b28005_011m::bigint           AS b28005_011m,
+        upper(b28005_011ma::text)     AS b28005_011ma,
+        b28005_012e::bigint           AS b28005_012e,
+        upper(b28005_012ea::text)     AS b28005_012ea,
+        b28005_012m::bigint           AS b28005_012m,
+        upper(b28005_012ma::text)     AS b28005_012ma,
+        b28005_013e::bigint           AS b28005_013e,
+        upper(b28005_013ea::text)     AS b28005_013ea,
+        b28005_013m::bigint           AS b28005_013m,
+        upper(b28005_013ma::text)     AS b28005_013ma,
+        b28005_014e::bigint           AS b28005_014e,
+        upper(b28005_014ea::text)     AS b28005_014ea,
+        b28005_014m::bigint           AS b28005_014m,
+        upper(b28005_014ma::text)     AS b28005_014ma,
+        b28005_015e::bigint           AS b28005_015e,
+        upper(b28005_015ea::text)     AS b28005_015ea,
+        b28005_015m::bigint           AS b28005_015m,
+        upper(b28005_015ma::text)     AS b28005_015ma,
+        b28005_016e::bigint           AS b28005_016e,
+        upper(b28005_016ea::text)     AS b28005_016ea,
+        b28005_016m::bigint           AS b28005_016m,
+        upper(b28005_016ma::text)     AS b28005_016ma,
+        b28005_017e::bigint           AS b28005_017e,
+        upper(b28005_017ea::text)     AS b28005_017ea,
+        b28005_017m::bigint           AS b28005_017m,
+        upper(b28005_017ma::text)     AS b28005_017ma,
+        b28005_018e::bigint           AS b28005_018e,
+        upper(b28005_018ea::text)     AS b28005_018ea,
+        b28005_018m::bigint           AS b28005_018m,
+        upper(b28005_018ma::text)     AS b28005_018ma,
+        b28005_019e::bigint           AS b28005_019e,
+        upper(b28005_019ea::text)     AS b28005_019ea,
+        b28005_019m::bigint           AS b28005_019m,
+        upper(b28005_019ma::text)     AS b28005_019ma,
+        upper(state::text)            AS state,
+        upper(county::text)           AS county,
+        upper(tract::text)            AS tract,
+        upper(dataset_base_url::text) AS dataset_base_url,
+        dataset_id::bigint AS dataset_id,
+        source_data_updated::timestamptz
+            AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS source_data_updated,
+        ingestion_check_time::timestamptz
+            AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS ingestion_check_time
+    FROM {{ ref('cc_hh_internet_access_by_age_by_tract') }}
+    ORDER BY {% for ck in ck_cols %}{{ ck }}{{ "," if not loop.last }}{% endfor %}
+)
+
+
+SELECT
+    {% if ck_cols|length > 1 %}
+        {{ dbt_utils.generate_surrogate_key(ck_cols) }} AS {{ record_id }},
+    {% endif %}
+    a.*
+FROM records_with_basic_cleaning AS a
+ORDER BY {% for ck in ck_cols %}{{ ck }},{% endfor %} source_data_updated
