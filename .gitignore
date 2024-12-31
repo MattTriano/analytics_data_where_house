@@ -14,3 +14,6 @@ scraps/
 airflow/data_raw
 airflow/backups
 diagramming
+
+config/*.pem
+config/*.der
