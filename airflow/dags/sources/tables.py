@@ -156,6 +156,12 @@ CHICAGO_SHOTSPOTTER_ALERTS = SocrataTable(
     schedule=None,
 )
 
+CHICAGO_SPEED_CAMERA_VIOLATIONS = SocrataTable(
+    table_id="hhkd-xvj4",
+    table_name="chicago_speed_camera_violations",
+    schedule="40 1 * * 1",
+)
+
 CHICAGO_STREET_CENTER_LINES = SocrataTable(
     table_id="6imu-meau",
     table_name="chicago_street_center_lines",
