@@ -1,6 +1,6 @@
 {{ config(materialized='view') }}
-{% set ck_cols = ["REPLACE_WITH_COMPOSITE_KEY_COLUMNS"] %}
-{% set record_id = "REPLACE_WITH_BETTER_id" %}
+{% set ck_cols = ["geoid"] %}
+{% set record_id = "geoid" %}
 
 WITH records_with_basic_cleaning AS (
     SELECT
@@ -15,7 +15,7 @@ WITH records_with_basic_cleaning AS (
         upper(funcstat::text)             AS funcstat,
         aland::bigint                     AS area_land,
         awater::bigint                    AS area_water,
-        intptlon::double precision.       AS longitude,
+        intptlon::double precision        AS longitude,
         intptlat::double precision        AS latitude,
         geometry::GEOMETRY(GEOMETRY,4269) AS geometry,
         source_data_updated::timestamptz

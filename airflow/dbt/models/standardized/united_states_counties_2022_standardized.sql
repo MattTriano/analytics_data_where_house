@@ -1,28 +1,28 @@
 {{ config(materialized='view') }}
-{% set ck_cols = ["REPLACE_WITH_COMPOSITE_KEY_COLUMNS"] %}
-{% set record_id = "REPLACE_WITH_BETTER_id" %}
+{% set ck_cols = ["geoid"] %}
+{% set record_id = "geoid" %}
 
 WITH records_with_basic_cleaning AS (
     SELECT
-        upper(statefp::text) AS statefp,
-        upper(countyfp::text) AS countyfp,
-        upper(countyns::text) AS countyns,
-        upper(geoid::text) AS geoid,
-        upper(name::text) AS name,
-        upper(namelsad::text) AS namelsad,
-        upper(lsad::text) AS lsad,
-        upper(classfp::text) AS classfp,
-        upper(mtfcc::text) AS mtfcc,
-        csafp::double precision AS csafp,
-        cbsafp::double precision AS cbsafp,
-        metdivfp::double precision AS metdivfp,
-        upper(funcstat::text) AS funcstat,
-        aland::bigint AS aland,
-        awater::bigint AS awater,
-        upper(intptlat::text) AS intptlat,
-        upper(intptlon::text) AS intptlon,
-        geometry::GEOMETRY(GEOMETRY,4269) AS geometry,
-        vintage_year::bigint AS vintage_year,
+        upper(geoid::text)                 AS geoid,
+        vintage_year::bigint               AS vintage_year,
+        upper(statefp::text)               AS statefp,
+        upper(countyfp::text)              AS countyfp,
+        upper(countyns::text)              AS countyns,
+        upper(name::text)                  AS name,
+        upper(namelsad::text)              AS namelsad,
+        upper(lsad::text)                  AS lsad,
+        upper(classfp::text)               AS classfp,
+        upper(mtfcc::text)                 AS mtfcc,
+        csafp::double precision            AS csafp,
+        cbsafp::double precision           AS cbsafp,
+        metdivfp::double precision         AS metdivfp,
+        upper(funcstat::text)              AS funcstat,
+        aland::bigint                      AS area_land,
+        awater::bigint                     AS area_water,
+        intptlon::double precision         AS longitude,
+        intptlat::double precision         AS latitude,
+        geometry::GEOMETRY(GEOMETRY, 4269) AS geometry,
         source_data_updated::timestamptz
             AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS source_data_updated,
         ingestion_check_time::timestamptz
