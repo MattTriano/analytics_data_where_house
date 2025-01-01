@@ -102,6 +102,12 @@ CHICAGO_MURALS = SocrataTable(
     schedule="47 6 3 * *",
 )
 
+CHICAGO_PARKS = SocrataTable(
+    table_id="ejsh-fztr",
+    table_name="chicago_parks",
+    schedule="13 6 3 * *",
+)
+
 CHICAGO_POLICE_BEAT_BOUNDARIES = SocrataTable(
     table_id="aerh-rz74",
     table_name="chicago_police_beat_boundaries",
