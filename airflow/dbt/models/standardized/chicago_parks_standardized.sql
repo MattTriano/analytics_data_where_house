@@ -11,7 +11,6 @@ WITH records_with_basic_cleaning AS (
         upper(zip::text)                       AS zip,
         upper(park_class::text)                AS park_class,
         wheelchr_a::smallint                   AS wheelchr_accs,
-
         -- sport, play, wellness
         archery_ra::smallint                   AS archery_ranges,
         artificial::smallint                   AS artificial_turf,
@@ -51,7 +50,6 @@ WITH records_with_basic_cleaning AS (
         track::smallint                        AS track,
         volleyball::smallint                   AS volleyball,
         volleyba_1::smallint                   AS volleyba_1,
-
         -- water
         beach::smallint                        AS beach,
         boat_launc::smallint                   AS boat_launches,
@@ -66,7 +64,6 @@ WITH records_with_basic_cleaning AS (
         spray_feat::smallint                   AS spray_feat,
         water_slid::smallint                   AS water_slid,
         water_play::smallint                   AS water_play,
-
         -- nature
         nature_bir::smallint                   AS nature_birds,
         conservato::smallint                   AS conservato,
@@ -75,19 +72,16 @@ WITH records_with_basic_cleaning AS (
         nature_cen::smallint                   AS nature_cen,
         wetland_ar::smallint                   AS wetland_area,
         zoo::smallint                          AS zoo,
-
         -- arts and culture
         band_shell::smallint                   AS band_shell,
         cultural_c::smallint                   AS cultural_center,
         gallery::smallint                      AS gallery,
         modeltrain::smallint                   AS modeltrain,
-
         -- amenities
         carousel::smallint                     AS carousel,
         community_::smallint                   AS community_center,
         dog_friend::smallint                   AS dog_friend,
         senior_cen::smallint                   AS senior_cen,
-
         -- geometry
         gisobjid::numeric::bigint              AS gisobjid,
         objectid_1::bigint                     AS objectid_1,
