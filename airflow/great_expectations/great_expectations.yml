@@ -685,4 +685,16 @@ fluent_datasources:
         batch_metadata: {}
         table_name: chicago_speed_camera_violations
         schema_name: data_raw
+      data_raw.temp_chicago_parks:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: temp_chicago_parks
+        schema_name: data_raw
+      data_raw.chicago_parks:
+        type: table
+        order_by: []
+        batch_metadata: {}
+        table_name: chicago_parks
+        schema_name: data_raw
     connection_string: ${GX_DWH_DB_CONN}
