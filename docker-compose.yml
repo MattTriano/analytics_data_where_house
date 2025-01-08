@@ -275,6 +275,14 @@ services:
         ]
       interval: 5s
       retries: 5
+    command: >
+      postgres -c work_mem=${POSTGRES_WORK_MEM:-64MB}
+               -c maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM:-512MB}
+               -c max_connections=${POSTGRES_MAX_CONNECTIONS:-50}
+               -c effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-8GB}
+               -c checkpoint_timeout=${POSTGRES_CHECKPOINT_TIMEOUT:-15min}
+               -c max_wal_size=${POSTGRES_MAX_WAL_SIZE:-4GB}
+               -c shared_buffers=${POSTGRES_SHARED_BUFFERS:-8GB}
     restart: always
 
   db_admin:
