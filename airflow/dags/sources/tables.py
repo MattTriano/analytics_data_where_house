@@ -186,6 +186,12 @@ CHICAGO_TRAFFIC_CRASHES = SocrataTable(
     schedule="20 3 1,5 * *",
 )
 
+CHICAGO_TRAFFIC_CONGESTION = SocrataTable(
+    table_id="n4j6-wkkf",
+    table_name="chicago_traffic_congestion",
+    schedule="1/15 * * * *",
+)
+
 CHICAGO_VACANT_AND_ABANDONED_BUILDINGS = SocrataTable(
     table_id="kc9i-wq85",
     table_name="chicago_vacant_and_abandoned_buildings",

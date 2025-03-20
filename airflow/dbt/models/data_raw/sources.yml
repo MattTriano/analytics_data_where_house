@@ -40,6 +40,7 @@ sources:
       - name: chicago_speed_camera_violations
       - name: chicago_street_center_lines
       - name: chicago_towed_vehicles
+      - name: chicago_traffic_congestion
       - name: chicago_traffic_crashes
       - name: chicago_vacant_and_abandoned_buildings
       - name: cook_county_areawaters_2022
@@ -94,6 +95,7 @@ sources:
       - name: temp_chicago_speed_camera_violations
       - name: temp_chicago_street_center_lines
       - name: temp_chicago_towed_vehicles
+      - name: temp_chicago_traffic_congestion
       - name: temp_chicago_traffic_crashes
       - name: temp_chicago_vacant_and_abandoned_buildings
       - name: temp_cook_county_areawaters_2022
