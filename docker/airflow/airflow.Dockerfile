@@ -1,4 +1,5 @@
-FROM apache/airflow:2.10.4-python3.12
+FROM apache/airflow:3.0.3-python3.12
+RUN pip uninstall -y apache-airflow-providers-google google-cloud-secret-manager
 USER root
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \

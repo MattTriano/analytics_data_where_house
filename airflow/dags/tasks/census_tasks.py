@@ -29,7 +29,7 @@ from sqlalchemy import insert, update
 
 from airflow.decorators import task, task_group
 from airflow.models.baseoperator import chain
-from airflow.operators.python import get_current_context
+from airflow.sdk import get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.edgemodifier import Label
 from airflow.utils.trigger_rule import TriggerRule
