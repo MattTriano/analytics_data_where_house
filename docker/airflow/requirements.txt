@@ -5,13 +5,14 @@ dbt-postgres==1.9.0
 Fiona==1.10.1
 GeoAlchemy2==0.17.1
 geopandas==1.1.1
+google-cloud-secret-manager==2.22.1
 great-expectations==0.18.19
 jupyterlab
 jupyterlab-pygments==0.3.0
 jupyterlab-widgets==3.0.11
 networkx==2.8.8
-openmetadata-ingestion[postgres]==1.5.8.0
-openmetadata-managed-apis==1.5.8.0
+openmetadata-ingestion[postgres]==1.8.9.0
+openmetadata-managed-apis==1.8.9.0
 pyproj==3.7.1
 pytest==8.4.1
 pytest-mock==3.14.1

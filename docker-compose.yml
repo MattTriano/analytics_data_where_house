@@ -21,6 +21,7 @@ x-airflow-common: &airflow-common
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/data_raw:/opt/airflow/data_raw
     - ./airflow/backups:/opt/airflow/backups
+    - ./config:/opt/airflow/config
     - ./airflow/dbt:/opt/airflow/dbt
     - ./airflow/great_expectations:/opt/airflow/great_expectations
     - ./airflow/tests:/opt/airflow/tests
@@ -316,7 +317,7 @@ services:
   airflow-webserver:
     <<: *airflow-common
     image: adwh_airflow_webserver:3.0.3
-    command: webserver
+    command: api-server
     ports:
       - "8080:8080"
     healthcheck:
